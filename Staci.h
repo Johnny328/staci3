@@ -50,7 +50,8 @@ public:
     {
         debugLevel = a;
     }
-    void buildSystem();
+    void checkSystem();
+    void buildSystem(bool plotResult);
     void listSystem();
     void saveProperties(bool is_general_property);
     void saveAllProperties(string propertyID);
