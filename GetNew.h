@@ -8,9 +8,8 @@
 #include <cmath>
 #include <ctime>
 #include <stdlib.h>
-#include "/mnt/d/Linux/Staci_30/staci_3.0/Pipe.h"
-#include "/mnt/d/Linux/Staci_30/staci_3.0/Node.h"
-//#include "/mnt/d/Linux/Staci_30/staci_3.0/GetNew.h"
+#include "Pipe.h"
+#include "Node.h"
 
 using namespace std;
 

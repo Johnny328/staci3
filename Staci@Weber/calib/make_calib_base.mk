@@ -1,12 +1,12 @@
 
-STACI_DIR=/home/rweber/Dropbox/0_PhD/staci/Staci@Weber/bin/
+STACI_DIR=../bin/
 FUNC=calib_base
 
 CXX=clang++
 CXXFLAGS=-g -std=c++11 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/include/igraph
 
 OBJS += \
-$(STACI_DIR)AnyOption.o \
+$(STACI_DIR)BasicFileIO.o \
 $(STACI_DIR)Calibration.o \
 $(STACI_DIR)CheckValve.o \
 $(STACI_DIR)Edge.o \
@@ -29,7 +29,7 @@ $(FUNC).o
 %.o: ../../%.cpp
 	@echo '[*] Building file: $<'
 	@echo '[*] Invoking: CLANG++ Compiler'
-	$(CXX) $(CXXFLAGS) -O2 -g -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@"  "$<"
+	$(CXX) $(CXXFLAGS) -O2 -g -c -fmessage-length=0 -MMD -MP -MF "$(@:%.o=%.d)" -MT "$(@:%.o=%.d)" -o "$@"  "$<"
 	@echo '[*] Finished building: $<'
 	@echo ' '
 

@@ -2,112 +2,119 @@
 
 using namespace std;
 
-Calibration::Calibration(string spr_filename) : Sensitivity(spr_filename){}
+Calibration::Calibration(string caseFileName) : Sensitivity(caseFileName){}
 Calibration::~Calibration(){}
 
-void Calibration::GenMeas(const vector<double> &fric, vector<double> d_noise_value, string d_noise_mode){
+void Calibration::generateMeasurement(const vector<double> &fric, vector<double> demandNoiseValue, string demandNoiseMode){
 
-  string spr_filename = getDefinitionFile();
-  string folder = spr_filename.substr(0,spr_filename.rfind('.')) + '/';
+  string caseFileName = getDefinitionFile();
+  string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
 
-  LoadDemSum(spr_filename);
-  if(d_meas_sum.size()==0){
-    cout << endl << "ERROR!!! d_meas_sum is empty i.e. the sum of the overall consumptions must be given in " << folder + "/d_meas_sum.txt file" << endl;
+  measuredDemandSum = readVectorDouble((measurementFolder+"measuredDemandSum.txt").c_str());
+  numberOperationalPoint = measuredDemandSum.rows();
+  if(numberOperationalPoint==0){
+    cout << endl << "ERROR!!! measuredDemandSum is empty i.e. the sum of the overall consumptions must be given in " << measurementFolder + "/measuredDemandSum.txt file" << endl;
     exit(-1);
   }
 
-  LoadPresIDs(spr_filename);
-  if(p_meas_ids.size()==0){
-    cout << endl << "ERROR!!! p_meas_ids is empty i.e. the node IDs are not given in " << folder + "/d_meas_sum.txt file" << endl;
+  measuredPressureID = readVectorString((measurementFolder+"measuredPressureID.txt").c_str());
+  measuredPressureIndex = ID2Index(measuredPressureID);
+  numberPressure = measuredPressureIndex.size();
+  if(numberPressure==0){
+    cout << endl << "ERROR!!! measuredPressureID is empty i.e. the node IDs are not given in " << measurementFolder + "/measuredDemandSum.txt file" << endl;
     exit(-1);
   }
 
-  LoadDem(spr_filename);
+  measuredDemand = readMatrixDouble((measurementFolder+"measuredDemand.txt").c_str(),';');
+  numberDemand = measuredDemandIndex.size();
 
   int numberNodes = nodes.size(), numberEdges = edges.size();
 
   // Saving original frics and demands
-  vector<double> fric_orig(numberNodes,0.), d_orig(numberEdges,0.);
+  vector<double> fricNominal(numberNodes,0.), demandNominal(numberEdges,0.);
   for(int k=0;k<numberNodes;k++)
-    d_orig[k] = nodes.at(k)->getDemand();
+    demandNominal[k] = nodes.at(k)->getDemand();
   for(int k=0;k<numberEdges;k++)
     if(edges[k]->getType() == "Pipe")
-      fric_orig[k] = edges.at(k)->getProperty("roughness");
+      fricNominal[k] = edges.at(k)->getProperty("roughness");
 
-  //if((d_noise_mode == "Uniform" || d_noise_mode == "Normal" || d_noise_mode == "None") == false){
-  if((d_noise_mode == "None") == false){
-    cout << "\n!!!!! ERROR !!!!!\nStaci:GenMeas function\nPerturbation methods available: Uniform || Normal || None\n\"" << d_noise_mode << "\" is not existing.\nChanging to None!!! Continouing...\n\n";
-    d_noise_mode = "None";
+  //if((demandNoiseMode == "Uniform" || demandNoiseMode == "Normal" || demandNoiseMode == "None") == false){
+  if((demandNoiseMode == "None") == false){
+    cout << "\n!!!!! ERROR !!!!!\nCalibration:generateMeasurement function\nPerturbation methods available: Uniform || Normal || None\n\"" << demandNoiseMode << "\" is not existing.\nChanging to None!!! Continouing...\n\n";
+    demandNoiseMode = "None";
   }
 
-  double d_sum_orig = get_sum_of_pos_consumption(); // Sum of every demands at nominal operational point
-  double d_sum_meas_orig=0.; // Sum of measured demands at nominal operational point
-  for(int i=0; i<n_d; i++)
-    d_sum_meas_orig += nodes[d_meas_idx[i]]->getDemand();
+  double demandSumNominal = 0., cons; // Sum of every demands at nominal operational point
+  for(int i=0; i<nodes.size(); i++){
+    cons = nodes.at(i)->getDemand();
+    if (cons > 0.)
+      demandSumNominal += cons;
+  }
+  double demandSumMeasuredNomnial=0.; // Sum of measured demands at nominal operational point
+  for(int i=0; i<numberDemand; i++)
+    demandSumMeasuredNomnial += nodes[measuredDemandIndex[i]]->getDemand();
 
   string save_folder = getDefinitionFile();
   save_folder = save_folder.substr(0,save_folder.rfind('.')) + '/';
 
   FILE *p_file, *pall_file;
-  p_file = fopen((save_folder+"p_meas.txt").c_str(),"w");
+  p_file = fopen((save_folder+"measuredPressure.txt").c_str(),"w");
   if(p_file==NULL)
-    cout << endl << "Warning!!! Folder named: " << save_folder << " does not exist! No saving will be performed in GenMeas..." << endl;
-  pall_file = fopen((save_folder+"p_meas_all.txt").c_str(),"w");
+    cout << endl << "Warning!!! measurementFolder named: " << save_folder << " does not exist! No saving will be performed in generateMeasurement..." << endl;
+  pall_file = fopen((save_folder+"everyPressure.txt").c_str(),"w");
   if(pall_file==NULL)
-    cout << endl << "Warning!!! Folder named: " << save_folder << " does not exist! No saving will be performed in GenMeas..." << endl;
+    cout << endl << "Warning!!! measurementFolder named: " << save_folder << " does not exist! No saving will be performed in generateMeasurement..." << endl;
 
   // Clearing vectors
-  p_meas.clear();
-  p_meas.resize(n_op, vector<double>(n_p));
-  p_meas_all.clear();
-  p_meas_all.resize(n_op, vector<double>(numberNodes));
+  measuredPressure = MatrixXd::Zero(numberOperationalPoint, numberPressure);
+  everyPressure = MatrixXd::Zero(numberOperationalPoint, numberNodes);
 
   for(int k=0;k<numberEdges;k++)
     if(edges[k]->getType() == "Pipe")
       edges[k]->setProperty("roughness",fric[k]);
-  for(int j=0;j<n_op;j++){
-    double d_meas_real=0.;
-    for(int k=0;k<n_d;k++){
-      nodes.at(d_meas_idx[k])->setDemand(d_meas[j][k]);
-      d_meas_real += d_meas[j][k];
+  for(int j=0;j<numberOperationalPoint;j++){
+    double demandSumMeasuredReal=0.;
+    for(int k=0;k<numberDemand;k++){
+      nodes.at(measuredDemandIndex[k])->setDemand(measuredDemand(j,k));
+      demandSumMeasuredReal += measuredDemand(j,k);
     } 
     for(int k=0;k<numberNodes;k++){
       bool measured=false; int l=0;
-      while(l<d_meas_ids.size() && !measured){
-        if(d_meas_ids[l] == nodes[k]->getName())
+      while(l<measuredDemandID.size() && !measured){
+        if(measuredDemandID[l] == nodes[k]->getName())
           measured = true;
         l++;
       }
-      if(d_noise_mode == "Uniform")
+      if(demandNoiseMode == "Uniform")
         if(nodes[k]->getDemand() > 0. && !measured)
-          nodes[k]->setDemand((d_meas_sum[j]*d_sum_orig-d_meas_real)/(d_sum_orig-d_sum_meas_orig)*d_orig[k]*statTools->UniformDist(d_noise_value[0],d_noise_value[1]));
-      if(d_noise_mode == "Normal")
+          nodes[k]->setDemand((measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*UniformDist(demandNoiseValue[0],demandNoiseValue[1]));
+      if(demandNoiseMode == "Normal")
         if(nodes[k]->getDemand() > 0. && !measured)
-          nodes[k]->setDemand((d_meas_sum[j]*d_sum_orig-d_meas_real)/(d_sum_orig-d_sum_meas_orig)*d_orig[k]*statTools->NormalDist(d_noise_value[0],d_noise_value[1]));
-      if(d_noise_mode == "None")
+          nodes[k]->setDemand((measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*NormalDist(demandNoiseValue[0],demandNoiseValue[1]));
+      if(demandNoiseMode == "None")
         if(nodes[k]->getDemand() > 0. && !measured)
-          nodes[k]->setDemand((d_meas_sum[j]*d_sum_orig-d_meas_real)/(d_sum_orig-d_sum_meas_orig)*d_orig[k]); 
+          nodes[k]->setDemand((measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]); 
     }
     // Adjusting the sum of the consumptions in case of noise
-    if(d_noise_mode == "Uniform" || d_noise_mode == "Normal"){
-      d_meas_sum[j] = 0.;
+    if(demandNoiseMode == "Uniform" || demandNoiseMode == "Normal"){
+      measuredDemandSum(j) = 0.;
       for(int k=0; k<numberNodes; k++)
         if(nodes[k]->getDemand()>0.)
-          d_meas_sum[j] += nodes[k]->getDemand();
-      d_meas_sum[j] = d_meas_sum[j]/d_sum_orig;
+          measuredDemandSum(j) += nodes[k]->getDemand();
+      measuredDemandSum(j) = measuredDemandSum(j)/demandSumNominal;
     }
     solveSystem();
-    for(int k=0;k<n_p;k++){
-      p_meas[j][k] = nodes[p_meas_idx[k]]->getHead();
+    for(int k=0;k<numberPressure;k++){
+      measuredPressure(j,k) = nodes[measuredPressureIndex[k]]->getHead();
       if(p_file!=NULL)
-	      fprintf(p_file,"%8.5e;",p_meas[j][k]);
+	      fprintf(p_file,"%8.5e;",measuredPressure(j,k));
     }
     if(p_file!=NULL)
 	    fprintf(p_file,"\n");
     for(int k=0; k<numberNodes; k++){
-      p_meas_all[j][k] = nodes[k]->getHead();
+      everyPressure(j,k) = nodes[k]->getHead();
       if(pall_file!=NULL)
-	      fprintf(pall_file,"%8.5e;",p_meas_all[j][k]);
+	      fprintf(pall_file,"%8.5e;",everyPressure(j,k));
     }
     if(pall_file!=NULL)
 	    fprintf(pall_file,"\n");
@@ -120,59 +127,55 @@ void Calibration::GenMeas(const vector<double> &fric, vector<double> d_noise_val
 
   // setting back original frics and demands
   for(int k=0;k<numberNodes;k++)
-    nodes[k]->setDemand(d_orig[k]);
+    nodes[k]->setDemand(demandNominal[k]);
   for(int k=0;k<numberEdges;k++)
     if(edges[k]->getType() == "Pipe")
-      edges[k]->setProperty("roughness",fric_orig[k]);
+      edges[k]->setProperty("roughness",fricNominal[k]);
   solveSystem();
 
   if(getDebugLevel()>1)
     cout << endl << "Generating measurement data: OK" << endl;
 }
 
-void Calibration::LoadMeas(string spr_filename){
-  string folder = spr_filename.substr(0,spr_filename.rfind('.')) + '/';
-  ifstream ifile;
+void Calibration::loadMeasurement(string caseFileName){
+  string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
 
-  p_meas.clear();
   // Reading the measured pressure values
-  ifile.open((folder+"p_meas.txt").c_str());
-  if(ifile.is_open()){
-    p_meas = CSVRead(ifile,';');
-  }
-  else{
-    cout << endl << "ERROR!!! File " << folder+"p_meas.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
-    exit(-1);
-  }
-  ifile.close();
+  measuredPressure = readMatrixDouble((measurementFolder+"measuredPressure.txt").c_str(),';');
 
   // Reading the IDs of the measured nodes
-  LoadPresIDs(spr_filename);
+  measuredPressureID = readVectorString((measurementFolder+"measuredPressureID.txt").c_str());
+  measuredPressureIndex = ID2Index(measuredPressureID);
+  numberPressure = measuredPressureIndex.size();
 
   // Reading the sum of the consumptions
-  LoadDemSum(spr_filename);
+  measuredDemandSum = readVectorDouble((measurementFolder+"measuredDemandSum.txt").c_str());
+  numberOperationalPoint = measuredDemandSum.rows();
 
-  // Reading the individually measured consumptions
-  LoadDem(spr_filename);
+  // Reading the individually measured demands
+  measuredDemand = readMatrixDouble((measurementFolder+"measuredDemand.txt").c_str(),';');
+  measuredDemandID = readVectorString((measurementFolder+"measuredDemandID.txt").c_str());
+  measuredDemandIndex = ID2Index(measuredDemandID);
+  numberDemand = measuredDemandIndex.size();
 
   // IMPORTANT: CHECKING THE SIZE OF THE VARIABLES
-  if(p_meas.size() != n_op){
-    cout << endl << "ERROR!!! p_meas row size doest not match n_op / d_meas_sum" << endl << "The measured pressure values does not match with the measured operational points" << endl;
+  if(measuredPressure.rows() != numberOperationalPoint){
+    cout << endl << "ERROR!!! measuredPressure row size doest not match numberOperationalPoint(" << numberOperationalPoint << ") / measuredPressure(" << measuredPressure.rows() << ")" << endl << "The measured pressure values does not match with the measured operational points" << endl;
     exit(-1);
-    if(p_meas.size()>0){
-      if(p_meas[0].size() != n_p){
-        cout << endl << "ERROR!!! p_meas col size doest not match n_op / p_meas_ids" << endl << "The measured pressure values does not match with the measured node IDs" << endl;
+    if(measuredPressure.rows()>0){
+      if(measuredPressure.cols() != numberPressure){
+        cout << endl << "ERROR!!! measuredPressure col size doest not match numberOperationalPoint / measuredPressureID" << endl << "The measured pressure values does not match with the measured node IDs" << endl;
         exit(-1);
       }
     }
   }
-  if(n_d>0){
-    if(d_meas.size() != n_op){
-      cout << endl << "ERROR!!! d_meas size doest not match n_op / d_meas_sum" << endl << "The measured demand values does not match with the measured operational points" << endl;
+  if(numberDemand>0){
+    if(measuredDemand.rows() != numberOperationalPoint){
+      cout << endl << "ERROR!!! measuredDemand size doest not match numberOperationalPoint / measuredDemandSum" << endl << "The measured demand values does not match with the measured operational points" << endl;
       exit(-1);
-      if(d_meas.size()>0){
-        if(p_meas[0].size() != n_d){
-          cout << endl << "ERROR!!! d_meas size doest not match n_d / d_meas_ids" << endl << "The measured pressure values does not match with the measured node IDs" << endl;
+      if(measuredDemand.rows()>0){
+        if(measuredPressure.cols() != numberDemand){
+          cout << endl << "ERROR!!! measuredDemand size doest not match numberDemand / measuredDemandID" << endl << "The measured pressure values does not match with the measured node IDs" << endl;
           exit(-1);
         }
       }
@@ -181,80 +184,66 @@ void Calibration::LoadMeas(string spr_filename){
  if(getDebugLevel()>1)
   cout << endl << "Loading measurement data: OK" << endl; 
 }
-
-void Calibration::LoadDemSum(string spr_filename){
-  string folder = spr_filename.substr(0,spr_filename.rfind('.')) + '/';
+/*
+void Calibration::loadDemandSum(string caseFileName){
+  string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
   ifstream ifile;
-
   // Reading the sum of the consumptions
-  ifile.open((folder+"d_meas_sum.txt").c_str());
+  ifile.open((measurementFolder+"measuredDemandSum.txt").c_str());
   if(ifile.is_open()){
-    vector<string> temp = ReadStrings(ifile);    
-    d_meas_sum.clear();
+    vector<string> temp = readStrings(ifile);    
+    measuredDemandSum.clear();
     for(int i=0; i<temp.size(); i++)
-      d_meas_sum.push_back(stod(temp[i],0));
-    n_op = d_meas_sum.size();
-    if(n_op==0)
-      cout << endl << "Warning! File " << folder+"d_meas_sum.txt" << " does exist, but does NOT contain anything!" << endl;
+      measuredDemandSum.push_back(stod(temp[i],0));
+    numberOperationalPoint = measuredDemandSum.rows();
+    if(numberOperationalPoint==0)
+      cout << endl << "Warning! File " << measurementFolder+"measuredDemandSum.txt" << " does exist, but does NOT contain anything!" << endl;
   }
   else{
-    cout << endl << "ERROR!!! File " << folder+"d_meas_sum.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
+    cout << endl << "ERROR!!! File " << measurementFolder+"measuredDemandSum.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
     exit(-1);
   }
   ifile.close();
 }
 
-void Calibration::LoadPresIDs(string spr_filename){
-  string folder = spr_filename.substr(0,spr_filename.rfind('.')) + '/';
+void Calibration::loadPressureID(string caseFileName){
+  string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
   ifstream ifile;
-
+(measurementFolder+"measuredPressureID.txt").c_str()
   // Reading the IDs of the measured nodes
-  ifile.open((folder+"p_meas_ids.txt").c_str());
+  ifile.open((measurementFolder+"measuredPressureID.txt").c_str());
   if(ifile.is_open()){
-    p_meas_ids.clear();
-    p_meas_idx.clear();
-    p_meas_ids = ReadStrings(ifile);
-    p_meas_idx = Id2Idx(p_meas_ids);
-    n_p = p_meas_idx.size();
-    if(n_p==0)
-      cout << endl << "Warning! File " << folder+"p_meas_ids.txt" << " does exist, but does NOT contain anything!" << endl;
+    measuredPressureID.clear();
+    measuredPressureIndex.clear();
+    measuredPressureID = readVectorString((measurementFolder+"measuredPressureID.txt").c_str());
+    measuredPressureIndex = ID2Index(measuredPressureID);
+    numberPressure = measuredPressureIndex.size();
+    if(numberPressure==0)
+      cout << endl << "Warning! File " << measurementFolder+"measuredPressureID.txt" << " does exist, but does NOT contain anything!" << endl;
   }
   else{
-    cout << endl << "ERROR!!! File " << folder+"p_meas_ids.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
+    cout << endl << "ERROR!!! File " << measurementFolder+"measuredPressureID.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
     exit(-1);
   }
   ifile.close();
 }
 
-void Calibration::LoadDem(string spr_filename){
-  ifstream ifile;
-
+void Calibration::loadDemand(string caseFileName){
   // Reading the measured consumptions if they existed
-  ifile.open((folder+"d_meas.txt").c_str());
-  if(ifile.is_open()){
-    d_meas.clear();
-    d_meas = CSVRead(ifile,';');
-  }
-  else{
-    if(getDebugLevel()>2){
-      cout << endl << "Warning!!! File " << folder+"d_meas.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
-    }
-  }
-  ifile.close();
+;
 
   // Reading the ids of the nodes where consumptions were measured if they existed
-  ifile.open((folder+"d_meas_ids.txt").c_str());
+  ifile.open((measurementFolder+"measuredDemandID.txt").c_str());
   if(ifile.is_open()){
-    d_meas_ids.clear();
-    d_meas_idx.clear();
-    d_meas_ids = ReadStrings(ifile);
-    d_meas_idx = Id2Idx(d_meas_ids);
-    n_d = d_meas_idx.size();
+    measuredDemandID.clear();
+    measuredDemandIndex.clear();
+    measuredDemandID = readStrings((measurementFolder+"measuredDemandID.txt").c_str());
+    measuredDemandIndex = ID2Index(measuredDemandID);
   }
   else{
     if(getDebugLevel()>2){
-      cout << endl << "Warning!!! File " << folder+"d_meas_ids.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
+      cout << endl << "Warning!!! File " << measurementFolder+"measuredDemandID.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
     }
   }
   ifile.close();
-}
+}*/

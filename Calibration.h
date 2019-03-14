@@ -1,4 +1,5 @@
 #include "Sensitivity.h"
+
 #include <stdio.h>
 #include <fstream>
 #include <string>
@@ -13,57 +14,56 @@ public:
 
 	// Creating virtual measurent data for testing calibration algorithms
 	// IMPORTANT: demands must be at nominal values!!!
-  void GenMeas(const vector<double> &fric, vector<double> d_noise_value, string d_noise_mode);
-  void LoadMeas(string spr_filename);
-  void LoadDemSum(string spr_filename);
-  void LoadPresIDs(string spr_filename);
-  void LoadDem(string spr_filename);
-
+  void generateMeasurement(const vector<double> &fric, vector<double> demandNoiseValue, string demandNoiseMode);
+  void loadMeasurement(string spr_filename);
+  void loadDemandSum(string spr_filename);
+  void loadPressureID(string spr_filename);
+  void loadDemand(string spr_filename);
 
   //========================
   //GETSETGETSETGETSETGETSET
   //========================
-  vector<vector<double> > Get_p_meas(){
-  	return p_meas;
+  MatrixXd getMeasuredPressure(){
+  	return measuredPressure;
   }
-  vector<vector<double> > Get_p_meas_all(){
-  	return p_meas_all;
+  MatrixXd getEveryPressure(){
+  	return everyPressure;
   }
-  vector<double> Get_d_meas_sum(){
-    return d_meas_sum;
+  VectorXd getMeasuredDemandSum(){
+    return measuredDemandSum;
   }
-  void Set_p_meas_idx(vector<string> a_p_meas_ids){
-  	p_meas_ids = a_p_meas_ids;
-    p_meas_idx = Id2Idx(p_meas_ids);
-  	n_p = p_meas_ids.size();
+  void setMeasuredPressureIndex(vector<string> a_p_meas_ids){
+  	measuredPressureID = a_p_meas_ids;
+    measuredPressureIndex = ID2Index(measuredPressureID);
+  	numberPressure = measuredPressureID.size();
   }
-  void Set_d_meas_idx(vector<string> a_d_meas_ids){
-  	d_meas_ids = a_d_meas_ids;
-    d_meas_idx = Id2Idx(d_meas_ids);
-  	n_d = d_meas_ids.size();
+  void setMeasuredDemandIndex(vector<string> a_d_meas_ids){
+  	measuredDemandID = a_d_meas_ids;
+    measuredDemandIndex = ID2Index(measuredDemandID);
+  	numberDemand = measuredDemandID.size();
   }
-  void Set_d_meas_sum(vector<double> a_d_meas_sum){
-  	d_meas_sum = a_d_meas_sum;
-  	n_op = d_meas_sum.size();
+  void setMeasuredDemandSum(VectorXd a_d_meas_sum){
+  	measuredDemandSum = a_d_meas_sum;
+  	numberOperationalPoint = measuredDemandSum.size();
   }
 
 protected:
-	vector<vector<double> > p_meas; // Pressure values at actual measure nodes
-	vector<vector<double> > p_meas_all; // Every pressure value
-	vector<string> p_meas_ids; // Node IDs for pressure
-	vector<int> p_meas_idx; // Node indicies for pressure
+	MatrixXd measuredPressure; // Pressure values at actual measure nodes
+	MatrixXd everyPressure; // Every pressure value
+	vector<string> measuredPressureID; // Node IDs for pressure
+	vector<int> measuredPressureIndex; // Node indicies for pressure
 
-	vector<double> d_meas_sum; // Overall demands
-	vector<vector<double> > d_meas; // Demand measurement values (can be empty)
-	vector<vector<double> > d_meas_all; // Every demand measurement value (can be empty)
-	vector<string> d_meas_ids; // Node IDs for demands (can be empty)
-	vector<int> d_meas_idx; // Node indicies for demands (can be empty)
+	VectorXd measuredDemandSum; // Overall demands
+	MatrixXd measuredDemand; // Demand measurement values (can be empty)
+	MatrixXd everyDemand; // Every demand measurement value (can be empty)
+	vector<string> measuredDemandID; // Node IDs for demands (can be empty)
+	vector<int> measuredDemandIndex; // Node indicies for demands (can be empty)
 
-	int n_p;  // Number of measured pressure nodes
-	int n_d;  // Number of measured demand nodes
-	int n_op; // Number of measured operational points
+	int numberPressure;  // Number of measured pressure nodes
+	int numberDemand;  // Number of measured demand nodes
+	int numberOperationalPoint; // Number of measured operational points
 
-	vector<double> d_noise_value;
-	string d_noise_mode;
-  string folder;
+	vector<double> demandNoiseValue;
+	string demandNoiseMode;
+  string measurementFolder;
 };

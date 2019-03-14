@@ -1,5 +1,5 @@
 #include <iostream>
-#include "/home/rweber/Dropbox/0_PhD/staci/SVDCalibration.h"
+#include "../../SVDCalibration.h"
 #include <fstream>
 #include <random>
 #include <iomanip>
@@ -22,6 +22,7 @@ int main(int argc, char* argv[]){
   wds->setDebugLevel(2);
   wds->buildSystem();
   wds->initialization();
+  wds->listSystem();
   int numberEdges = wds->edges.size();
 
   cout << endl << "numberEdges: " << numberEdges << endl;
@@ -41,17 +42,17 @@ int main(int argc, char* argv[]){
   string d_noise_mode = "None";
 
   // Evaluating the "measurements"
-  wds->GenMeas(fric_real,d_noise,d_noise_mode);
+  wds->generateMeasurement(fric_real,d_noise,d_noise_mode);
 
   // Printing the loaded measurement data to consol
-  vector<double> d_meas_sum = wds->Get_d_meas_sum();
-  vector<vector<double> > p_meas = wds->Get_p_meas();
+  VectorXd d_meas_sum = wds->getMeasuredDemandSum();
+  MatrixXd p_meas = wds->getMeasuredPressure();
   cout << "\nMeasured values:";
   printf("\n a_fogy | p ");
-  for(int i=0; i<d_meas_sum.size(); i++){
-    printf("\n %6.3f | ",d_meas_sum.at(i));
-    for(int j=0; j<p_meas[0].size(); j++)
-      printf(" %6.3f",p_meas.at(i).at(j));
+  for(int i=0; i<d_meas_sum.rows(); i++){
+    printf("\n %6.3f | ",d_meas_sum(i));
+    for(int j=0; j<p_meas.cols(); j++)
+      printf(" %6.3f",p_meas(i,j));
   }
 
   // Perfroming the calibration

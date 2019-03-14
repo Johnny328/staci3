@@ -1,47 +1,63 @@
 /**
 * @file Staci.h
 * @brief Header file of Staci class
-* @author Csaba Hos
-* @date 09/20/2017
+* @author Csaba HOS, Richard WEBER, Tamas HUZSVAR
+* @date 27/02/2019
 */
 #ifndef STACI_H
 #define STACI_H
 
-#include "AnyOption.h"
-#include "Node.h"
+#include "BasicFileIO.h"
 #include "Edge.h"
 #include "GetNew.h"
-#include "Statistic.h"
 #include "IOxml.h"
+#include "Node.h"
+#include "PressurePoint.h"
+#include "Statistic.h"
 #include "StaciException.h"
 
-
-#include </usr/include/eigen3/Eigen/Eigen>
-//#include "/home/rweber/C_libraries/Eigen/Eigen/Eigen"
+//#include </usr/include/eigen3/Eigen/Eigen>
+#include "Eigen/Eigen/Eigen"
 
 #include <string>
 #include <iomanip>
 #include <vector>
+#include <cmath>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <algorithm>
 
 using namespace Eigen;
 
 class Staci
 {
 public:
-    Statistic *statTools;
-    vector<Node *> nodes;
-    vector<Edge *> edges;
-    void exportNodesEdges();
-    Staci(int argc, char *argv[]);
     Staci(string spr_filename);
     ~Staci();
-    //GetNew *InsertNewElement(vector<Node *> nodes, vector<Edge *> edges);
-    //InsertNewElement << nodes;
-    //InsertNewElement << edges;
-    string getOutputFile()
-    {
-        return outputFile.c_str();
-    }
+
+    // Basic Node and Edge list
+    vector<Node *> nodes;
+    vector<Edge *> edges;
+
+    // Creates the indicies for the nodes of edges and edges of nodes i.e. indexing of the sparse Jacobian
+    void buildSystem();
+
+    // Writing log infos to console and log file
+    void writeLogFile(string msg, int msg_debug_level);
+
+    // Prints everything 
+    void listSystem();
+
+    // Converts node names (IDs) to indicies i.e. finds the node name in the list of the nodes
+    vector<int> ID2Index(const vector<string> &id);
+
+    // Checking the IDs of the edges, if one has identical ones drops exit(-1)
+    void checkSystem();
+    
+    /// ************************************************ ///
+    /// GETSET GETSET GETSET GETSET GETSET GETSET GETSET ///
+    /// ************************************************ ///
     int getDebugLevel()
     {
         return debugLevel;
@@ -50,72 +66,50 @@ public:
     {
         debugLevel = a;
     }
-    void checkSystem();
-    void buildSystem(bool plotResult);
-    void listSystem();
-    void saveProperties(bool is_general_property);
-    void saveAllProperties(string propertyID);
-    void writeLogFile(string msg, int msg_debug_level);
-    void setResultFile(string xml_fnev)
-    {
-        resultFile = xml_fnev;
-    }
     string getResultFile()
     {
         return resultFile;
     }
-    void setInitializationFile(string xml_fnev)
+    void setResultFile(string xml_fnev)
     {
-        initializationFile = xml_fnev;
+        resultFile = xml_fnev;
     }
     void setOutputFile(string fnev)
     {
         outputFile = fnev;
     }
+    string getOutputFile()
+    {
+        return outputFile.c_str();
+    }
     string getDefinitionFile()
     {
         return definitionFile;
     }
-    int getCalculationType()
+    bool getIsInitialization()
     {
-        return calculationType;
+        return isInitialization;
     }
-
-    void copyFile(const string in_f_nev, const string out_f_nev);
+    string getInitializationFile()
+    {
+        return initializationFile;
+    }
+    void setInitializationFile(string xml_fnev)
+    {
+        initializationFile = xml_fnev;
+    }
     void setIsInitialization(const bool van_e)
     {
         isInitialization = van_e;
     }
-    double getElementProperty(string ID, string prop);
-    void setElementProperty(string ID, string prop, double val);
+    //string newDefinitionFile, elementID, propertyID;
+    //double newValue;
 
-    // ADATMODOSITASHOZ
-    string newDefinitionFile, elementID, propertyID;
-    double newValue;
-
-    void listAllElements();
-
-    bool performDemandSensitivityAnalysis;
-    stringstream consolePrint;
-
-    // TODO
-    vector<int> Id2Idx(const vector<string> &id);
-    vector<string> ReadStrings(ifstream &file);
-    vector<vector<double> > CSVRead(ifstream &file, char separator);
-    double get_sum_of_pos_consumption();
-    
-//private:
-
-    int calculationType, debugLevel;
-    AnyOption *opt;
-    string definitionFile;
+private:
+    int debugLevel;
     bool isInitialization;
-    string outputFile, initializationFile, resultFile;
-
-    void setInitialParameters();
-
-    void getCommandLineOptions(int argc, char *argv[]);
-    string trim(string s, const string drop);
+    string definitionFile, outputFile, initializationFile, resultFile;
+    string frictionModel;
 };
 
 #endif //STACI_H

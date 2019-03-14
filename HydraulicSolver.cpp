@@ -13,14 +13,14 @@ bool comparison_function1(const val_and_ID& lhs, const val_and_ID& rhs ) { retur
 }
 
 HydraulicSolver::HydraulicSolver(string spr_filename) : Staci(spr_filename){
-  //maxIterationNumber = atoi(datta_io.read_setting("maxIterationNumber").c_str());
-  //maxPressureError = atof(datta_io.read_setting("maxPressureError").c_str());
-  //maxMassFlowError = atof(datta_io.read_setting("maxMassFlowError").c_str());
-  //relaxationFactor = atof(datta_io.read_setting("relax").c_str());
-  //relaxationFactorIncrement = atof(datta_io.read_setting("relax_mul").c_str());
-  //massFlowInitial = atof(datta_io.read_setting("massFlowInitial").c_str());
-  //pressureInitial = atof(datta_io.read_setting("pressureInitial").c_str());
-  //frictionModel = datta_io.read_setting("frictionModel").c_str();
+  //maxIterationNumber = atoi(IOxml.read_setting("maxIterationNumber").c_str());
+  //maxPressureError = atof(IOxml.read_setting("maxPressureError").c_str());
+  //maxMassFlowError = atof(IOxml.read_setting("maxMassFlowError").c_str());
+  //relaxationFactor = atof(IOxml.read_setting("relax").c_str());
+  //relaxationFactorIncrement = atof(IOxml.read_setting("relax_mul").c_str());
+  //massFlowInitial = atof(IOxml.read_setting("massFlowInitial").c_str());
+  //pressureInitial = atof(IOxml.read_setting("pressureInitial").c_str());
+  //frictionModel = IOxml.read_setting("frictionModel").c_str();
   maxIterationNumber = 1e2;
   maxPressureError = 0.0001;
   maxMassFlowError = 0.01;
@@ -138,6 +138,7 @@ bool HydraulicSolver::solveSystem() {
   double e_mp = 1e10, e_p = 1e10, e_mp_r = 1e10, e_p_r = 1e10;
   bool konv_ok = false;
 
+  ostringstream consolePrint;
   consolePrint.str("");
   consolePrint << "\n\nSolving system...\n====================================" << endl;
 
@@ -176,14 +177,6 @@ bool HydraulicSolver::solveSystem() {
 
   if (!konv_ok)
     printWorstIter(x, f, 1);
-
-  //if (konv_ok) {
-  //  for (unsigned int i = 0; i < edges.size(); i++) {
-  //    if (0 == strcmp( (edges.at(i)->getType()).c_str(), "Channel")) {
-  //      edges.at(i)->build_res();
-  //    }
-  //  }
-  //}
 
   return konv_ok;
 }
@@ -246,6 +239,7 @@ void HydraulicSolver::printWorstIter(const VectorXd &x, const VectorXd &f , cons
   if (N_to_print > nodes.size())
     N_to_print = nodes.size();
 
+  ostringstream consolePrint;
   consolePrint << "\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n";
   consolePrint << "The " << N_to_print << " worst edges:";
   for (int i = 0; i < N_to_print; i++)
@@ -262,7 +256,7 @@ void HydraulicSolver::printWorstIter(const VectorXd &x, const VectorXd &f , cons
 //--------------------------------------------------------------
 void HydraulicSolver::initialization() {
   ostringstream strstrm;
-  if (!isInitialization) {
+  if (!getIsInitialization()) {
     strstrm << endl << " Automatic inicialization...";
 
     strstrm << endl << "\tnodal pressures:\t" << pressureInitial << " mwc ";
@@ -276,15 +270,13 @@ void HydraulicSolver::initialization() {
   } else {
     strstrm << endl
             << endl
-            << "loading initial values from file " << initializationFile << endl;
-    IOxml datta_io(initializationFile.c_str());
-    datta_io.load_ini_values(nodes, edges);
+            << "loading initial values from file " << getInitializationFile() << endl;
+    IOxml IOxml(getInitializationFile().c_str());
+    IOxml.load_ini_values(nodes, edges);
   }
 
-  // Flush info into logfile and screen
   if (getDebugLevel() > 0) {
     writeLogFile(strstrm.str(), 1);
-    // cout << strstrm.str();
   }
 
 }
@@ -346,13 +338,8 @@ void HydraulicSolver::printJacobian(){
 
 //--------------------------------------------------------------
 string HydraulicSolver::iterInfo(const VectorXd &x,const VectorXd &f, int iter, double e_mp, double e_p) {
+  ostringstream consolePrint;
   consolePrint.str("");
-
-  //int num = 0;
-  //for (unsigned int i = 0; i < edges.size(); i++)
-  //  if (edges.at(i)->force_more_iter)
-  //    num++;
-
   consolePrint.setf(ios::dec);
   consolePrint.unsetf(ios::showpos);
   consolePrint << endl << " iter. # " << iter << "./" << maxIterationNumber;
@@ -360,7 +347,6 @@ string HydraulicSolver::iterInfo(const VectorXd &x,const VectorXd &f, int iter, 
   consolePrint << " e_mp=" << e_mp << ",  e_p=" << e_p;
   consolePrint << setprecision(2) << fixed;
   consolePrint << "  relax.=" << relaxationFactor << ", relax.mul.=" << relaxationFactorIncrement;
-  //consolePrint << " (" << num << ")";
 
   return consolePrint.str();
 }

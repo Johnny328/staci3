@@ -1,38 +1,29 @@
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/IOxml.d: \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../IOxml.cpp \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../PressurePoint.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Edge.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Pipe.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Pump.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Valve.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Pool.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Channel.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Weir.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../CheckValve.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../IOxml.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Node.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../xmlParser.h
+../bin/IOxml.d: ../bin/../../IOxml.cpp ../bin/../../PressurePoint.h \
+  ../bin/../../Edge.h ../bin/../../Pipe.h ../bin/../../Pump.h \
+  ../bin/../../Valve.h ../bin/../../Pool.h ../bin/../../Channel.h \
+  ../bin/../../Weir.h ../bin/../../CheckValve.h ../bin/../../IOxml.h \
+  ../bin/../../Node.h ../bin/../../xmlParser.h
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../PressurePoint.h:
+../bin/../../PressurePoint.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Edge.h:
+../bin/../../Edge.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Pipe.h:
+../bin/../../Pipe.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Pump.h:
+../bin/../../Pump.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Valve.h:
+../bin/../../Valve.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Pool.h:
+../bin/../../Pool.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Channel.h:
+../bin/../../Channel.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Weir.h:
+../bin/../../Weir.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../CheckValve.h:
+../bin/../../CheckValve.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../IOxml.h:
+../bin/../../IOxml.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Node.h:
+../bin/../../Node.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../xmlParser.h:
+../bin/../../xmlParser.h:

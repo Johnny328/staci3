@@ -11,48 +11,27 @@ SVDCalibration::~SVDCalibration(){
 /*! WR: Calibration technique using SVD
      *  fric_est:		starting point of the calibration
      *  tol:				NEW: tol determine the part of trace that will be counted || OLD: if tol>0, under tol every singular value will be 0; but if tol<0, the cut is under the largest singular value diveded with (-tol)
-     *  return:     0: no convergence, 1: full convergence (e_p~0), 2: local convergence (d(e_p)>0)
+     *  return:     0: no convergence, 1: full convergence (errorPressure~0), 2: local convergence (d(errorPressure)>0)
      */
 int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
 
-  int n_nodes = nodes.size(), n_edges = edges.size();
+  int numberNodes = nodes.size(), numberEdges = edges.size();
 
   // Filling up fric var, that will contain the friction at each step
-  vector<double> fric(n_edges,0.), d_orig(n_nodes,0.);
-  for (int k=0;k<n_edges;k++)
+  vector<double> fric(numberEdges,0.), demandNominal(numberNodes,0.);
+  for (int k=0;k<numberEdges;k++)
     if(edges[k]->getType() == "Pipe")
       fric[k] = fric_est[k];
   // Saving the nominal demands
-  for (int i=0; i<n_nodes;i++)
-    d_orig[i] = nodes[i]->getDemand();
+  for (int i=0; i<numberNodes;i++)
+    demandNominal[i] = nodes[i]->getDemand();
 
-  LoadMeas(getDefinitionFile());
-  /*cout << endl << "DEBUG" << endl;
-  cout << endl << "d_meas_sum: " << endl;
-  for(int i=0; i<d_meas_sum.size(); i++)
-    cout << d_meas_sum[i] << endl;
-  
-  cout << endl << "p_meas: " << endl;
-  for(int i=0; i<p_meas.size(); i++){
-    for(int j=0; j<p_meas[i].size(); j++)
-      cout << p_meas[i][j] << " | ";
-    cout << endl;
-  }
-  cout << endl << "d_meas_ids: " << endl;
-  for(int i=0; i<d_meas_ids.size(); i++)
-    cout << d_meas_ids[i] << endl;
-  
-  cout << endl << "d_meas: " << endl;
-  for(int i=0; i<d_meas.size(); i++){
-    for(int j=0; j<d_meas[i].size(); j++)
-      cout << d_meas[i][j] << " | ";
-    cout << endl;
-  }*/
+  loadMeasurement(getDefinitionFile());
 
   // Start of main iteration
   if(getDebugLevel()>0)
     cout << "\n\n---------------------------------\n******Starting Calibration******\n---------------------------------\n\n";
-  int iter_max = 1e2; // max iteration number
+  int iterMax = 1e2; // max iteration number
   double relax = .5, satur = 1.; // relaxation factor, saturation factor
   double max_dlambda = .5; // saturation for dlambda with relaxation
   int konv = 0;
@@ -60,35 +39,36 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
   double e_p_norm=1e10;
   double relax_nom = relax;
 
-  for(int i=0;i<iter_max;i++){
+  for(int i=0;i<iterMax;i++){
     bool better = false;
     int j = 0;
     int j_max = 4; // max no. of inner iteration
     MatrixXd SMred;
-    VectorXd e_p(n_op*n_p);
+    VectorXd errorPressure(numberOperationalPoint*numberPressure);
 
-    vector<vector<double> > p_calc;
+    MatrixXd calculatedPressure;
     while(!better && j<j_max){
-      // calculating the reduced sensitivity matrix for every case when measurement occured, moreover it gives back the output pressur for the measured nodes in p_calc
-      SMred = ConstructSM4Calibration(fric, p_calc);
+      // calculating the reduced sensitivity matrix for every case when measurement occured, moreover it gives back the output pressur for the measured nodes in calculatedPressure
+      SMred = ConstructSM4Calibration(fric, calculatedPressure);
 
-      for(int k=0; k<n_op; k++)
-        for(int l=0; l<n_p; l++)
-          e_p(l+k*n_p) = p_meas[k][l] - p_calc[k][l];
+      for(int k=0; k<numberOperationalPoint; k++)
+        errorPressure.segment(k*(numberPressure-1),k*numberPressure-1) = measuredPressure.row(k) - calculatedPressure.row(k);
+        //for(int l=0; l<numberPressure; l++)
+          //errorPressure(l+k*numberPressure) = measuredPressure(k,l) - calculatedPressure(k,l);
       if(getDebugLevel()>1)
-        cout << "e_p_norm_r: " << e_p_norm << "   e_p_norm: " << e_p.norm() << endl;
+        cout << "e_p_norm_r: " << e_p_norm << "   e_p_norm: " << errorPressure.norm() << endl;
 
-      if(e_p_norm > e_p.norm())
+      if(e_p_norm > errorPressure.norm())
         better = true;
       else{
         relax /= 2.;
-        for(int k=0; k<n_edges; k++)
+        for(int k=0; k<numberEdges; k++)
           if(edges[k]->getType() == "Pipe")
             fric[k] -= relax*satur*dlambda(k);
       }
       j++;
     }
-    e_p_norm = e_p.norm();
+    e_p_norm = errorPressure.norm();
     if(j==j_max){
       konv = 2;
       break;
@@ -98,11 +78,11 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
     MatrixXd U,S,V;
     EigenSVD(SMred,tol,U,S,V);
     MatrixXd Sr_pinv = PinvSVD(U,S,V);
-    dlambda = Sr_pinv*e_p;
+    dlambda = Sr_pinv*errorPressure;
 
     // Checking the largest relativa change
     double lth=0.;
-    for(int k=0; k<n_edges; k++)
+    for(int k=0; k<numberEdges; k++)
       if(edges[k]->getType() == "Pipe")
         if(abs(relax*dlambda(k)/fric[k])>max_dlambda)
           lth = abs(dlambda(k)/fric[k]);
@@ -111,13 +91,13 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
     if(lth>max_dlambda)
       satur = max_dlambda/lth;
 
-    for(int k=0; k<n_edges; k++)
+    for(int k=0; k<numberEdges; k++)
       if(edges[k]->getType() == "Pipe")
         fric[k] += relax_nom*satur*dlambda(k);
 
     if(getDebugLevel()>1){
       cout << "\nfrictions:\n";
-      for(int k=0; k<n_edges; k++)
+      for(int k=0; k<numberEdges; k++)
         if(edges[k]->getType() == "Pipe")
           cout << fric[k] << endl;
       cout << endl;
@@ -126,102 +106,99 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
     if(getDebugLevel()>0){
       cout << "\n\n**********Calibration*************";
       printf("\niter: %2i", i);
-      printf("  df_n: %2.4e",dlambda.norm()/pow((double)n_edges,.5));
-      printf("  e_p: %2.4e", e_p.norm()/pow((double)n_nodes,.5));
+      printf("  df_n: %2.4e",dlambda.norm()/pow((double)numberEdges,.5));
+      printf("  errorPressure: %2.4e", errorPressure.norm()/pow((double)numberNodes,.5));
       printf("  relax:  %1.2f",relax);
       printf("  satur:  %1.2f",satur);
       cout << "\n**********Calibration*************\n\n";
     }
     relax = relax_nom;
 
-    if(e_p.norm()/pow((double)n_nodes,.5)<1e-8 || dlambda.norm()/pow((double)n_edges,.5)<1e-8){
+    if(errorPressure.norm()/pow((double)numberNodes,.5)<1e-8 || dlambda.norm()/pow((double)numberEdges,.5)<1e-8){
       konv = 1;
       break;
     }
-    if(i==iter_max-1 && getDebugLevel()>0)
+    if(i==iterMax-1 && getDebugLevel()>0)
         cout << "\nWARNING!! Convergence is not sufficient!";
   }
   if(getDebugLevel()>0)
     cout << "\n\n---------------------------------\n******Ending Calibration******\n---------------------------------\n\n";
   if(konv != 0){
-    for(int k=0; k<n_edges; k++)
+    for(int k=0; k<numberEdges; k++)
       if(edges[k]->getType()=="Pipe")
         edges[k]->setProperty("roughness",fric[k]); 
   }else{
-  	for(int k=0; k<n_edges; k++)
+  	for(int k=0; k<numberEdges; k++)
       if(edges[k]->getType()=="Pipe")
         edges[k]->setProperty("roughness",fric_est[k]); 
   }
-  for(int k=0; k<n_nodes; k++)
-    nodes[k]->setDemand(d_orig[k]);
+  for(int k=0; k<numberNodes; k++)
+    nodes[k]->setDemand(demandNominal[k]);
   calculateSensitivity("friction_coeff",0);
 
   return konv;
 }
 
 /*! WR: Building up the reduced sensitivity matrix for SVDCalibrate
-     *  p_calc:		giving back the calculated pressures for SVDCalibrate
+     *  calculatedPressure:		giving back the calculated pressures for SVDCalibrate
      *	return:		reduced sensitivity matrix
      */
-MatrixXd SVDCalibration::ConstructSM4Calibration(const vector<double> &fric, vector<vector<double > > &p_calc){
+MatrixXd SVDCalibration::ConstructSM4Calibration(const vector<double> &fric, MatrixXd &calculatedPressure){
 
-  int n_nodes = nodes.size(), n_edges = edges.size();
+  int numberNodes = nodes.size(), numberEdges = edges.size();
 
-  //double d_sum_nom = Get_dem_nom_sum();
-  double d_sum_nom = 0.;
-  vector<double> d_orig(n_nodes,0.);
-  for(int i=0; i<n_nodes; i++){
-  	d_orig[i] = nodes[i]->getDemand();
-    if(d_orig[i]>0.)
-      d_sum_nom += nodes[i]->getDemand();
+  double demandSumNominal = 0.;
+  vector<double> demandNominal(numberNodes,0.);
+  for(int i=0; i<numberNodes; i++){
+  	demandNominal[i] = nodes[i]->getDemand();
+    if(demandNominal[i]>0.)
+      demandSumNominal += nodes[i]->getDemand();
   }
   
-  double d_sum_meas_nom=0.;
-  for(int i=0; i<n_d; i++)
-   d_sum_meas_nom += d_orig[d_meas_idx[i]];
+  double demandSumMeasuredNominal=0.;
+  for(int i=0; i<numberDemand; i++)
+   demandSumMeasuredNominal += demandNominal[measuredDemandIndex[i]];
 
-  MatrixXd Sr(n_op*n_p,n_edges);
+  MatrixXd Sr(numberOperationalPoint*numberPressure,numberEdges);
   // Sens analysis on measurement case  A(dimension, vector<int>(dimension));
-  p_calc.clear();
-  p_calc.resize(n_op,vector<double>(n_p));
-  for(int i=0; i<n_op; i++){
+  calculatedPressure = MatrixXd::Zero(numberOperationalPoint,numberPressure);
+  for(int i=0; i<numberOperationalPoint; i++){
     // Setting frictions
-    for(int k=0; k<n_edges; k++)
+    for(int k=0; k<numberEdges; k++)
       if(edges[k]->getType() == "Pipe")
         edges[k]->setProperty("roughness",fric[k]);
     // Setting measured demands
-    double d_meas_real=0.;
-    for(int k=0; k<n_d; k++){
-      nodes[d_meas_idx[k]]->setDemand(d_meas[i][k]);
-      d_meas_real += d_meas[i][k];
+    double demandSumMeasuredReal=0.;
+    for(int k=0; k<numberDemand; k++){
+      nodes[measuredDemandIndex[k]]->setDemand(measuredDemand(i,k));
+      demandSumMeasuredReal += measuredDemand(i,k);
     }
     // Setting the rest of the demands
-    for(int k=0; k<n_nodes; k++){
+    for(int k=0; k<numberNodes; k++){
       bool measured=false;
       int l=0;
-      while(!measured && l<n_d){
-        if(k == d_meas_idx[l])
+      while(!measured && l<numberDemand){
+        if(k == measuredDemandIndex[l])
           measured = true;
         l++;
       }
       if(nodes[k]->getDemand() > 0. && !measured)
-        nodes[k]->setDemand((d_meas_sum[i]*d_sum_nom-d_meas_real)/(d_sum_nom-d_sum_meas_nom)*d_orig[k]); // TODO: d_sum_nom -> d_sum_nom*d_meas_sum[i] ???
+        nodes[k]->setDemand((measuredDemandSum[i]*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNominal)*demandNominal[k]); // TODO: demandSumNominal -> demandSumNominal*measuredDemandSum[i] ???
     }
     // Steady state + sensitivity analysis
     calculateSensitivity("friction_coeff",0.);
-    for(int k=0; k<n_p; k++)
-      p_calc[i][k] = nodes[p_meas_idx[k]]->getHead();
+    for(int k=0; k<numberPressure; k++)
+      calculatedPressure(i,k) = nodes[measuredPressureIndex[k]]->getHead();
     // Filling up the reduced sensitivity matrix
-    for(int k=0; k<n_p; k++)
-      for(int l=0; l<n_edges; l++)
-        Sr.row(i*n_p+k) = pressureSensitivity.row(p_meas_idx[k]);
-        //Sr(i*n_p+k,l) = pressureSensitivity(p_meas_idx[k],l);
+    for(int k=0; k<numberPressure; k++)
+      Sr.row(i*numberPressure+k) = pressureSensitivity.row(measuredPressureIndex[k]);
+        //Sr(i*numberPressure+k,l) = pressureSensitivity(measuredPressureIndex[k],l);
   }
   if(getDebugLevel()>1)
     cout << "\n*Sr:\n" << Sr << endl << endl;
 
-  for(int i=0; i<n_nodes; i++)
-    nodes[i]->setDemand(d_orig[i]);
+  for(int i=0; i<numberNodes; i++)
+    nodes[i]->setDemand(demandNominal[i]);
 
   return Sr;
 }

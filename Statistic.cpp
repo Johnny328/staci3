@@ -2,32 +2,26 @@
 
 using namespace std;
 
-Statistic::Statistic(){
-}
-Statistic::~Statistic(){
-}
-
-void Statistic::Avr_absmax_stddev(const vector<double> &x, double &a, double &m, double &s){
+void Avr_absmax_stddev(const vector<double> &x, double &a, double &m, double &s){
   a = Average(x);
   s = Stddev(x);
   m = Absmax(x);
 }
 
-double Statistic::Average(const vector<double> &x){
+double Average(const vector<double> &x){
   double a=0.;
   for(int i=0; i<x.size() ;i++)
     a += x[i];
   return a/(double)x.size();
 }
-double Statistic::Average(const vector<int> &x){
+double Average(const vector<int> &x){
   double a=0.;
   for(int i=0; i<x.size() ;i++)
     a += x[i];
   return a/(double)x.size();
 }
 
-
-double Statistic::Absmax(const vector<double> &x){
+double Absmax(const vector<double> &x){
   double m=0.;
   for(int i=0; i<x.size(); i++)
     if((x[i]>m))
@@ -35,7 +29,7 @@ double Statistic::Absmax(const vector<double> &x){
   return m;
 }
 
-double Statistic::Stddev(const vector<double> &x){
+double Stddev(const vector<double> &x){
   double s=0.;
   double m = Average(x);
   for(int i=0; i<x.size(); i++)
@@ -43,20 +37,20 @@ double Statistic::Stddev(const vector<double> &x){
   return pow(s/((double)x.size()-1),.5);
 }
 
-double Statistic::NormalDist(double m, double szig){
+double NormalDist(double m, double szig){
   random_device rd;
   default_random_engine generator( rd() );
   normal_distribution<double> dist(m,szig);
   return dist(generator);
 }
 
-double Statistic::UniformDist(double min, double max)
+double UniformDist(double min, double max)
 {
     double f = (double)rand() / RAND_MAX;
     return min + f * (max - min);
 }
 
-bool Statistic::ChiSquared_test(const vector<double> &x, double m, double szig){
+bool ChiSquared_test(const vector<double> &x, double m, double szig){
   bool r=false;
   int no_intervals = 6;
   int n_data = x.size();
@@ -101,7 +95,7 @@ bool Statistic::ChiSquared_test(const vector<double> &x, double m, double szig){
   return r;
 }
 
-bool Statistic::TwoSampleU_test(double m1, double s1, int n1, double m2, double s2, int n2, double p){
+bool TwoSampleU_test(double m1, double s1, int n1, double m2, double s2, int n2, double p){
   bool test_ok = false;
   double u_akt, u_krit;
 
@@ -112,7 +106,7 @@ bool Statistic::TwoSampleU_test(double m1, double s1, int n1, double m2, double 
   return test_ok;
 }
 
-double Statistic::erfinv(double x)
+double erfinv(double x)
 {
   double a3 = -0.140543331, a2 = 0.914624893, a1 = -1.645349621, a0 = 0.886226899;
   double b4 = 0.012229801, b3 = -0.329097515, b2 = 1.442710462, b1 = -2.118377725, b0 = 1;
@@ -122,7 +116,7 @@ double Statistic::erfinv(double x)
   int sign_x;
 
   if (x < -1 || x > 1){
-    cout << "ERROR: Statistic::erfinv(x) function called with fail x, x must be >=-1 AND <=1" << endl;
+    cout << "ERROR: erfinv(x) function called with fail x, x must be >=-1 AND <=1" << endl;
     return -1;
   }
 
@@ -156,9 +150,9 @@ double Statistic::erfinv(double x)
   return r;
 }
 
-double Statistic::CorrelCoef(const vector<double> &x, const vector<double> &y){
+double CorrelCoef(const vector<double> &x, const vector<double> &y){
   if(x.size() != y.size()){
-    cout << "\n\n !!!!! ERROR !!!!!\n Size of x and y are not matching in Statistic::CorrelCoef\n";
+    cout << "\n\n !!!!! ERROR !!!!!\n Size of x and y are not matching in CorrelCoef, Statistic.cpp\n";
     return 0;
   }
   int n = x.size();
@@ -179,7 +173,7 @@ double Statistic::CorrelCoef(const vector<double> &x, const vector<double> &y){
   return szam/sx/sy;
 }
 
-vector<double> Statistic::GrubbsTest(const vector<double> &x){
+vector<double> GrubbsTest(const vector<double> &x){
   double a,m,s;
   Avr_absmax_stddev(x,a,m,s);
   vector<double> y;

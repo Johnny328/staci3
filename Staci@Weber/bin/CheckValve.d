@@ -1,8 +1,6 @@
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/CheckValve.d: \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../CheckValve.cpp \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Edge.h \
-  /mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../CheckValve.h
+../bin/CheckValve.d: ../bin/../../CheckValve.cpp ../bin/../../Edge.h \
+  ../bin/../../CheckValve.h
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../Edge.h:
+../bin/../../Edge.h:
 
-/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/../../CheckValve.h:
+../bin/../../CheckValve.h:

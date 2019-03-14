@@ -1,5 +1,5 @@
 
-STACI_DIR=/mnt/d/Linux/staci_30/staci_3.0/Staci@Weber/bin/
+STACI_DIR=../bin/
 FUNC=CPU
 
 CXX=clang++
@@ -7,6 +7,7 @@ CXXFLAGS=-g -std=c++11 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/inc
 
 OBJS += \
 $(STACI_DIR)AnyOption.o \
+$(STACI_DIR)Calibration.o \
 $(STACI_DIR)CheckValve.o \
 $(STACI_DIR)Edge.o \
 $(STACI_DIR)HydraulicSolver.o \
@@ -17,18 +18,18 @@ $(STACI_DIR)Pool.o \
 $(STACI_DIR)PressurePoint.o \
 $(STACI_DIR)Pump.o \
 $(STACI_DIR)Sensitivity.o \
+$(STACI_DIR)SVDCalibration.o \
 $(STACI_DIR)Staci.o \
 $(STACI_DIR)Statistic.o \
 $(STACI_DIR)Valve.o \
 $(STACI_DIR)Weir.o \
 $(STACI_DIR)xmlParser.o \
-$(STACI_DIR)GetNew.o \
 $(FUNC).o
 
 %.o: ../../%.cpp
 	@echo '[*] Building file: $<'
 	@echo '[*] Invoking: CLANG++ Compiler'
-	$(CXX) $(CXXFLAGS) -O2 -g -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@"  "$<"
+	$(CXX) $(CXXFLAGS) -O2 -c -fmessage-length=0 -MMD -MP -MF "$(@:%.o=%.d)" -MT "$(@:%.o=%.d)" -o "$@"  "$<"
 	@echo '[*] Finished building: $<'
 	@echo ' '
 

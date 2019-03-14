@@ -7,12 +7,6 @@
 
 using namespace std;
 
-class Statistic
-{
-public:
-	Statistic();
-	~Statistic();
-
 // WR Calculates average, max, standard deviation of a vector x
 void Avr_absmax_stddev(const vector<double> &x, double &a, double &m, double &s);
 
@@ -46,5 +40,3 @@ double CorrelCoef(const vector<double> &x, const vector<double> &y);
 
 // Simple Grubbs test, returns a vector without the element under x_mean-3*x_dev and abov x_mean+3*x_dev
 vector<double> GrubbsTest(const vector<double> &x);
-
-};
