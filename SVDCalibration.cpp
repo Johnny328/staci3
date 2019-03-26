@@ -8,25 +8,21 @@ SVDCalibration::SVDCalibration(string spr_filename) : Calibration(spr_filename){
 SVDCalibration::~SVDCalibration(){
 }
 
-/*! WR: Calibration technique using SVD
-     *  fric_est:		starting point of the calibration
-     *  tol:				NEW: tol determine the part of trace that will be counted || OLD: if tol>0, under tol every singular value will be 0; but if tol<0, the cut is under the largest singular value diveded with (-tol)
-     *  return:     0: no convergence, 1: full convergence (errorPressure~0), 2: local convergence (d(errorPressure)>0)
-     */
-int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
+int SVDCalibration::calibrate(const vector<double> &fric_est, double tol){
 
   int numberNodes = nodes.size(), numberEdges = edges.size();
 
   // Filling up fric var, that will contain the friction at each step
   vector<double> fric(numberEdges,0.), demandNominal(numberNodes,0.);
   for (int k=0;k<numberEdges;k++)
-    if(edges[k]->getType() == "Pipe")
+    if(edges[k]->getEdgeStringProperty("type") == "Pipe")
       fric[k] = fric_est[k];
   // Saving the nominal demands
   for (int i=0; i<numberNodes;i++)
-    demandNominal[i] = nodes[i]->getDemand();
+    demandNominal[i] = nodes[i]->getProperty("demand");
 
-  loadMeasurement(getDefinitionFile());
+  string caseFileName = getDefinitionFile();
+  loadMeasurement(caseFileName,true);
 
   // Start of main iteration
   if(getDebugLevel()>0)
@@ -44,17 +40,17 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
     int j = 0;
     int j_max = 4; // max no. of inner iteration
     MatrixXd SMred;
-    VectorXd errorPressure(numberOperationalPoint*numberPressure);
+    VectorXd errorPressure = VectorXd::Zero(numberOperationalPoint*numberPressure);
 
     MatrixXd calculatedPressure;
     while(!better && j<j_max){
       // calculating the reduced sensitivity matrix for every case when measurement occured, moreover it gives back the output pressur for the measured nodes in calculatedPressure
-      SMred = ConstructSM4Calibration(fric, calculatedPressure);
+      SMred = constructSensitivity(fric, calculatedPressure);
 
       for(int k=0; k<numberOperationalPoint; k++)
-        errorPressure.segment(k*(numberPressure-1),k*numberPressure-1) = measuredPressure.row(k) - calculatedPressure.row(k);
-        //for(int l=0; l<numberPressure; l++)
-          //errorPressure(l+k*numberPressure) = measuredPressure(k,l) - calculatedPressure(k,l);
+        for(int l=0; l<numberPressure; l++)
+          errorPressure(l+k*numberPressure) = measuredPressure(k,l) - calculatedPressure(k,l);
+
       if(getDebugLevel()>1)
         cout << "e_p_norm_r: " << e_p_norm << "   e_p_norm: " << errorPressure.norm() << endl;
 
@@ -63,7 +59,7 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
       else{
         relax /= 2.;
         for(int k=0; k<numberEdges; k++)
-          if(edges[k]->getType() == "Pipe")
+          if(edges[k]->getEdgeStringProperty("type") == "Pipe")
             fric[k] -= relax*satur*dlambda(k);
       }
       j++;
@@ -76,14 +72,14 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
 
     // performing SVD and calculate dlambda
     MatrixXd U,S,V;
-    EigenSVD(SMred,tol,U,S,V);
-    MatrixXd Sr_pinv = PinvSVD(U,S,V);
+    eigenSVD(SMred,tol,U,S,V);
+    MatrixXd Sr_pinv = pinvSVD(U,S,V);
     dlambda = Sr_pinv*errorPressure;
 
     // Checking the largest relativa change
     double lth=0.;
     for(int k=0; k<numberEdges; k++)
-      if(edges[k]->getType() == "Pipe")
+      if(edges[k]->getEdgeStringProperty("type") == "Pipe")
         if(abs(relax*dlambda(k)/fric[k])>max_dlambda)
           lth = abs(dlambda(k)/fric[k]);
 
@@ -92,13 +88,13 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
       satur = max_dlambda/lth;
 
     for(int k=0; k<numberEdges; k++)
-      if(edges[k]->getType() == "Pipe")
+      if(edges[k]->getEdgeStringProperty("type") == "Pipe")
         fric[k] += relax_nom*satur*dlambda(k);
 
     if(getDebugLevel()>1){
       cout << "\nfrictions:\n";
       for(int k=0; k<numberEdges; k++)
-        if(edges[k]->getType() == "Pipe")
+        if(edges[k]->getEdgeStringProperty("type") == "Pipe")
           cout << fric[k] << endl;
       cout << endl;
     }
@@ -125,34 +121,30 @@ int SVDCalibration::Calibrate(const vector<double> &fric_est, double tol){
     cout << "\n\n---------------------------------\n******Ending Calibration******\n---------------------------------\n\n";
   if(konv != 0){
     for(int k=0; k<numberEdges; k++)
-      if(edges[k]->getType()=="Pipe")
-        edges[k]->setProperty("roughness",fric[k]); 
+      if(edges[k]->getEdgeStringProperty("type")=="Pipe")
+        edges[k]->setDoubleProperty("roughness",fric[k]); 
   }else{
   	for(int k=0; k<numberEdges; k++)
-      if(edges[k]->getType()=="Pipe")
-        edges[k]->setProperty("roughness",fric_est[k]); 
+      if(edges[k]->getEdgeStringProperty("type")=="Pipe")
+        edges[k]->setDoubleProperty("roughness",fric_est[k]); 
   }
   for(int k=0; k<numberNodes; k++)
-    nodes[k]->setDemand(demandNominal[k]);
+    nodes[k]->setProperty("demand",demandNominal[k]);
   calculateSensitivity("friction_coeff",0);
 
   return konv;
 }
 
-/*! WR: Building up the reduced sensitivity matrix for SVDCalibrate
-     *  calculatedPressure:		giving back the calculated pressures for SVDCalibrate
-     *	return:		reduced sensitivity matrix
-     */
-MatrixXd SVDCalibration::ConstructSM4Calibration(const vector<double> &fric, MatrixXd &calculatedPressure){
+MatrixXd SVDCalibration::constructSensitivity(const vector<double> &fric, MatrixXd &calculatedPressure){
 
   int numberNodes = nodes.size(), numberEdges = edges.size();
 
   double demandSumNominal = 0.;
   vector<double> demandNominal(numberNodes,0.);
   for(int i=0; i<numberNodes; i++){
-  	demandNominal[i] = nodes[i]->getDemand();
+  	demandNominal[i] = nodes[i]->getProperty("demand");
     if(demandNominal[i]>0.)
-      demandSumNominal += nodes[i]->getDemand();
+      demandSumNominal += nodes[i]->getProperty("demand");
   }
   
   double demandSumMeasuredNominal=0.;
@@ -160,17 +152,17 @@ MatrixXd SVDCalibration::ConstructSM4Calibration(const vector<double> &fric, Mat
    demandSumMeasuredNominal += demandNominal[measuredDemandIndex[i]];
 
   MatrixXd Sr(numberOperationalPoint*numberPressure,numberEdges);
-  // Sens analysis on measurement case  A(dimension, vector<int>(dimension));
+  // Sens analysis on measurement case
   calculatedPressure = MatrixXd::Zero(numberOperationalPoint,numberPressure);
   for(int i=0; i<numberOperationalPoint; i++){
     // Setting frictions
     for(int k=0; k<numberEdges; k++)
-      if(edges[k]->getType() == "Pipe")
-        edges[k]->setProperty("roughness",fric[k]);
+      if(edges[k]->getEdgeStringProperty("type") == "Pipe")
+        edges[k]->setDoubleProperty("roughness",fric[k]);
     // Setting measured demands
     double demandSumMeasuredReal=0.;
     for(int k=0; k<numberDemand; k++){
-      nodes[measuredDemandIndex[k]]->setDemand(measuredDemand(i,k));
+      nodes[measuredDemandIndex[k]]->setProperty("demand",measuredDemand(i,k));
       demandSumMeasuredReal += measuredDemand(i,k);
     }
     // Setting the rest of the demands
@@ -182,33 +174,27 @@ MatrixXd SVDCalibration::ConstructSM4Calibration(const vector<double> &fric, Mat
           measured = true;
         l++;
       }
-      if(nodes[k]->getDemand() > 0. && !measured)
-        nodes[k]->setDemand((measuredDemandSum[i]*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNominal)*demandNominal[k]); // TODO: demandSumNominal -> demandSumNominal*measuredDemandSum[i] ???
+      if(nodes[k]->getProperty("demand") > 0. && !measured)
+        nodes[k]->setProperty("demand",(measuredDemandSum[i]*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNominal)*demandNominal[k]);
     }
     // Steady state + sensitivity analysis
     calculateSensitivity("friction_coeff",0.);
     for(int k=0; k<numberPressure; k++)
-      calculatedPressure(i,k) = nodes[measuredPressureIndex[k]]->getHead();
+      calculatedPressure(i,k) = nodes[measuredPressureIndex[k]]->getProperty("head");
     // Filling up the reduced sensitivity matrix
     for(int k=0; k<numberPressure; k++)
       Sr.row(i*numberPressure+k) = pressureSensitivity.row(measuredPressureIndex[k]);
-        //Sr(i*numberPressure+k,l) = pressureSensitivity(measuredPressureIndex[k],l);
   }
   if(getDebugLevel()>1)
     cout << "\n*Sr:\n" << Sr << endl << endl;
 
   for(int i=0; i<numberNodes; i++)
-    nodes[i]->setDemand(demandNominal[i]);
+    nodes[i]->setProperty("demand",demandNominal[i]);
 
   return Sr;
 }
 
-/*! WR: Singular value decomposition using Eigen
-     *  A:    matrix for SVD
-     *  tol:  NEW: tol determine the part of trace that will be counted || OLD: if tol>0, under tol every singular value will be 0; but if tol<0, the cut is under the largest singular value diveded with (-tol)
-     *  U,S,V: returnung matrices
-     */
-void SVDCalibration::EigenSVD(const MatrixXd &A, double &tol, MatrixXd &U, MatrixXd &S, MatrixXd &V){
+void SVDCalibration::eigenSVD(const MatrixXd &A, double &tol, MatrixXd &U, MatrixXd &S, MatrixXd &V){
   JacobiSVD<MatrixXd> svd(A, ComputeThinU | ComputeThinV);
   U = svd.matrixU(), V = svd.matrixV();
   VectorXd v = svd.singularValues();
@@ -242,11 +228,7 @@ void SVDCalibration::EigenSVD(const MatrixXd &A, double &tol, MatrixXd &U, Matri
   }
 }
 
-/*! WR: Pseudoinvere (or normal inverse) using the SVD method (see Numerical Recipes)
-  *U,S,V:   coming from as an output from EigenSVD() function
-  *return:  Pseudoinverse matrix
-*/
-MatrixXd SVDCalibration::PinvSVD(const MatrixXd &U, const MatrixXd &S, const MatrixXd &V){
+MatrixXd SVDCalibration::pinvSVD(const MatrixXd &U, const MatrixXd &S, const MatrixXd &V){
 
   MatrixXd S_inv = MatrixXd::Constant(S.rows(),S.cols(),0.);
   for(int i=0; i<S.rows(); i++){
@@ -256,14 +238,10 @@ MatrixXd SVDCalibration::PinvSVD(const MatrixXd &U, const MatrixXd &S, const Mat
       S_inv(i,i) = 0.0;
   }
 
-  return V*(S_inv*U.transpose()); //See Numerical Recipes
+  return V*(S_inv*U.transpose()); //See Numerical Recipes, Press, Teukolsky
 }
 
-/*! WR: Determines the rank (i.e. linearly independent vectors ) of a matrix using SVD (see Numerical Recipes)
-  *S:       S matrix coming from EigenSVD()
-  *return:  rank of the matrix
-*/
-int SVDCalibration::RankSVD(const MatrixXd &S){
+int SVDCalibration::rankSVD(const MatrixXd &S){
   int rank=0;
   for(int i=0; i<S.rows(); i++)
     if(S(i,i)>1e-15)
@@ -272,11 +250,7 @@ int SVDCalibration::RankSVD(const MatrixXd &S){
   return rank;
 }
 
-/*! WR: Determinant (i.e. product of non-zero eigen values) of a matrix
-  *S:       coming from EigenSVD()
-  *return:  det of the matrix
-*/
-double SVDCalibration::DetSVD(const MatrixXd &S){
+double SVDCalibration::detSVD(const MatrixXd &S){
   double det=1.;
   for(int i=0; i<S.rows(); i++)
     if(S(i,i)>1e-10)
@@ -285,11 +259,7 @@ double SVDCalibration::DetSVD(const MatrixXd &S){
   return det;
 }
 
-/*! WR: Trace (i.e. sum of the eigen values) of a matrix
-  *S:       coming from EigenSVD()
-  *return:  det of the matrix
-*/
-double SVDCalibration::TraceSVD(const MatrixXd &S){
+double SVDCalibration::traceSVD(const MatrixXd &S){
   double tr=0.;
   for(int i=0; i<S.rows(); i++)
     tr += S(i,i);

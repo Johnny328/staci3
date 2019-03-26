@@ -21,10 +21,10 @@ Staci::Staci(string spr_filename) {
   consolePrint.str("");
 
   IOxml IOxmlObj(definitionFile.c_str());
-  IOxmlObj.load_system(nodes, edges);
+  IOxmlObj.loadSystem(nodes, edges);
 
-  debugLevel = atoi(IOxmlObj.read_setting("debug_level").c_str());
-  frictionModel = IOxmlObj.read_setting("friction_model");
+  debugLevel = atoi(IOxmlObj.readSetting("debug_level").c_str());
+  frictionModel = IOxmlObj.readSetting("friction_model");
 }
 
 //--------------------------------------------------------------
@@ -44,7 +44,7 @@ void Staci::buildSystem() {
     startGotIt = false;
     j = 0;
     while((j < nodes.size()) && (!startGotIt)){
-      if((edges[i]->getStartNodeName()).compare(nodes[j]->getName()) == 0){
+      if((edges[i]->getEdgeStringProperty("startNodeName")).compare(nodes[j]->getName()) == 0){
         startGotIt = true;
         startNode = j;
         nodes[j]->edgeOut.push_back(i);
@@ -53,16 +53,16 @@ void Staci::buildSystem() {
     }
     if(!startGotIt){
       consolePrint.str("");
-      consolePrint << "\n!!! Edge name: " << edges[i]->getName().c_str() << ", startnode not found !!!";
+      consolePrint << "\n!!! Edge name: " << edges[i]->getEdgeStringProperty("name").c_str() << ", startnode not found !!!";
       writeLogFile(consolePrint.str(), 0);
       exit(-1);
     } 
 
-    if(edges[i]->getNumberNode() == 2){
+    if(edges[i]->getEdgeIntProperty("numberNode") == 2){
       endGotIt = false;
       j = 0;
       while ((j < nodes.size()) && (!endGotIt)) {
-        if ((edges[i]->getEndNodeName()).compare(nodes[j]->getName()) == 0) {
+        if ((edges[i]->getEdgeStringProperty("endNodeName")).compare(nodes[j]->getName()) == 0) {
           endGotIt = true;
           endNode = j;
           nodes[j]->edgeIn.push_back(i);
@@ -71,20 +71,24 @@ void Staci::buildSystem() {
       }
       if (!endGotIt) {
         consolePrint.str("");
-        consolePrint << "\n!!! Edge name: " << edges[i]->getName().c_str() << ", endnode not found !!!";
+        consolePrint << "\n!!! Edge name: " << edges[i]->getEdgeStringProperty("name").c_str() << ", endnode not found !!!";
         writeLogFile(consolePrint.str(), 0);
         exit(-1);
       }
     }
 
-    if(edges[i]->getNumberNode() == 2) 
-      edges[i]->addNodes(startNode, endNode);
-    else
-      edges[i]->addNodes(startNode, -1);
+    if(edges[i]->getEdgeIntProperty("numberNode") == 2){
+      edges[i]->setEdgeIntProperty("startNodeIndex", startNode);
+      edges[i]->setEdgeIntProperty("endNodeIndex", endNode);
+    }
+    else{
+      edges[i]->setEdgeIntProperty("startNodeIndex", startNode);
+      edges[i]->setEdgeIntProperty("endNodeIndex", -1);
+    }
   }
 
   for(int i = 0; i < edges.size(); i++){
-    if(edges[i]->getType() == "Pipe")
+    if(edges[i]->getEdgeStringProperty("type") == "Pipe")
       edges[i]->setFrictionModel(frictionModel);
   }
 
@@ -154,9 +158,9 @@ void Staci::checkSystem()
   writeLogFile("\n [*] Looking for identical IDs  ", 3);
   string name1, name2;
   for(int i = 0; i < edges.size(); i++){
-    name1 = edges.at(i)->getName();
+    name1 = edges.at(i)->getEdgeStringProperty("name");
     for(int j = 0; j < edges.size(); j++){
-      name2 = edges.at(j)->getName();
+      name2 = edges.at(j)->getEdgeStringProperty("name");
       if(i != j){
         if(name1 == name2){
           ostringstream msg;

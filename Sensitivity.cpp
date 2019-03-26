@@ -47,7 +47,7 @@ bool Sensitivity::calculateSensitivity(string parameter, int scale){
   {
     for(int i=0; i<numberEdges; i++)
     {
-      elementID = edges[i]->getName();
+      elementID = edges[i]->getEdgeStringProperty("name");
 
       calculateFunctionDerivative();
 
@@ -55,7 +55,7 @@ bool Sensitivity::calculateSensitivity(string parameter, int scale){
 
       for(int i=0; i<numberEquations; i++)
         if(isnan(resultDerivative(i))){
-          cout << "\n!!!!\nSensitivity.cpp, dxdmu() -> x[" << i << "]=NaN!!!\nName: " << edges.at(i-nodes.size())->getName() << "   Type: " << edges.at(i-nodes.size())->getType() << endl;
+          cout << "\n!!!!\nSensitivity.cpp, dxdmu() -> x[" << i << "]=NaN!!!\nName: " << edges.at(i-nodes.size())->getEdgeStringProperty("name") << "   Type: " << edges.at(i-nodes.size())->getEdgeStringProperty("type") << endl;
         }
 
       massFlowRateSensitivity.col(i) = resultDerivative.head(numberEdges);
@@ -94,7 +94,7 @@ void Sensitivity::calculateFunctionDerivative(){
 
   for(int i=0; i<edges.size(); i++)
   {
-    if ((propertyID == "diameter" || propertyID == "friction_coeff") && elementID == edges.at(i)->getName())
+    if ((propertyID == "diameter" || propertyID == "friction_coeff") && elementID == edges.at(i)->getEdgeStringProperty("name"))
     {
       double dfdmu = edges.at(i)->getFunctionDerivative(propertyID);
       functionDerivative(i) = dfdmu;
@@ -119,7 +119,7 @@ void Sensitivity::calculateFunctionDerivative(){
             << " not found (propertyID = demand | diameter)!";
     writeLogFile(strstrm.str(), 1);
     cout << strstrm.str();
-    StaciException hiba(strstrm.str());
-    throw hiba;
+    //StaciException hiba(strstrm.str());
+    //throw hiba;
   }
 }

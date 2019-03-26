@@ -31,8 +31,8 @@ int main(int argc, char* argv[]){
   vector<double> fric_real, fric_est;
   cout << "\nfric_real:\n";
   for(int i=0; i<numberEdges; i++)
-    if(wds->edges.at(i)->getType() == "Pipe"){
-      fric_real.push_back(wds->edges.at(i)->getProperty("roughness"));
+    if(wds->edges.at(i)->getEdgeStringProperty("type") == "Pipe"){
+      fric_real.push_back(wds->edges.at(i)->getDoubleProperty("roughness"));
       fric_est.push_back(fric_real.at(i)*1.5);
       cout << "f at " << i << "\t" << fric_real.at(i) << endl;
     }
@@ -57,15 +57,15 @@ int main(int argc, char* argv[]){
 
   // Perfroming the calibration
   double tol = 1.0;
-  int konv = wds->Calibrate(fric_est, tol);
+  int konv = wds->calibrate(fric_est, tol);
 
   // Printing the frictions after, before the calibration and the "real"
   cout << "\nfrics after Calibration: \n";
   printf(" # |    calib   |    real    |   estima   |\n");
   printf("---+------------+------------+------------|\n");
   for(int i=0; i<numberEdges; i++)
-    if(wds->edges.at(i)->getType() == "Pipe")
-      printf("%2i | %10.3f | %10.3f | %10.3f |\n", i, wds->edges.at(i)->getProperty("roughness"), fric_real.at(i),fric_est.at(i));
+    if(wds->edges.at(i)->getEdgeStringProperty("type") == "Pipe")
+      printf("%2i | %10.3f | %10.3f | %10.3f |\n", i, wds->edges.at(i)->getDoubleProperty("roughness"), fric_real.at(i),fric_est.at(i));
 
   // Calculating the norm of the differences
   double e_fric=0.;
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]){
 
   e_fric=0.;
   for(int i=0; i<fric_real.size(); i++)
-    e_fric += pow(wds->edges.at(i)->getProperty("roughness") - fric_real.at(i), 2.);
+    e_fric += pow(wds->edges.at(i)->getDoubleProperty("roughness") - fric_real.at(i), 2.);
   e_fric = pow(e_fric/(numberEdges-1),.5);
   cout << "\n Fric difference after calib:   " << e_fric;
 

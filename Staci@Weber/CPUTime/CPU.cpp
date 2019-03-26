@@ -14,12 +14,14 @@ int main(int argc, char* argv[]){
   // Name of containing folder of staci file
   //string case_folder = "/mnt/d/Linux/Staci_On_Windows/staci-master/Halozatok/sopron_halozatok/";
   string case_folder = "/home/rweber/0_PhD/Halozatok/sopron_halozatok/";
+  //string case_folder = "/home/rweber/0_PhD/Halozatok/general_alap/";
 
   string case_name;
   if(argc == 1){
     //case_name = "VIZ-SOPTVR-O-68-input_mod_94_2";
     //case_name = "VIZ-SOPTVR-O-68-input_mod";
-    case_name = "VIZ-SOPTVR-J-55-input_mod";
+    //case_name = "VIZ-SOPTVR-J-55-input_mod";
+    case_name = "VIZ-SOPTVR-M-input_mod";
     //case_name =  "lin_alap_9";
     //case_name =  "racs_alap_9";
   }else if(argc == 2){
@@ -39,7 +41,7 @@ int main(int argc, char* argv[]){
   wds->initialization();
   cout << "\nInit:    " << double(clock()-ido)/ CLOCKS_PER_SEC << " s" << endl;
   ido = clock();
-  wds->buildSystem(0);
+  wds->buildSystem();
   cout << "\nBuild:   " << double(clock()-ido)/ CLOCKS_PER_SEC << " s" << endl;
   ido = clock();
   wds->solveSystem();
@@ -52,14 +54,6 @@ int main(int argc, char* argv[]){
   ido = clock();
   wds->calculateSensitivity("demand",0);
   cout << "\nS demand: " << double(clock()-ido)/ CLOCKS_PER_SEC << " s" << endl;
-  
-  //cout << "eddig megvan";
-  //GetNew *InsertNewElement(wds->nodes,wds->edges);
-  //InsertNewElement->ListPipes();
-  //cout << endl;
-  //InsertNewElement->PiPe("NODE_1336044", "NODE_1312884", 1000,0.5,.02);
-  ////wds->solve_system();
-  //InsertNewElement->ListPipes();
 
   cout << endl << endl;
   return 0;

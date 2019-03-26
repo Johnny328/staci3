@@ -8,7 +8,6 @@ CXXFLAGS=-g -std=c++11 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/inc
 OBJS += \
 $(STACI_DIR)BasicFileIO.o \
 $(STACI_DIR)Calibration.o \
-$(STACI_DIR)CheckValve.o \
 $(STACI_DIR)Edge.o \
 $(STACI_DIR)HydraulicSolver.o \
 $(STACI_DIR)IOxml.o \
@@ -16,13 +15,11 @@ $(STACI_DIR)Node.o \
 $(STACI_DIR)Pipe.o \
 $(STACI_DIR)Pool.o \
 $(STACI_DIR)PressurePoint.o \
-$(STACI_DIR)Pump.o \
 $(STACI_DIR)Sensitivity.o \
 $(STACI_DIR)SVDCalibration.o \
 $(STACI_DIR)Staci.o \
 $(STACI_DIR)Statistic.o \
 $(STACI_DIR)Valve.o \
-$(STACI_DIR)Weir.o \
 $(STACI_DIR)xmlParser.o \
 $(FUNC).o
 

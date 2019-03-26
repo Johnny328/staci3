@@ -1,9 +1,18 @@
-/**
-* @file Staci.h
-* @brief Header file of Staci class
-* @author Csaba HOS, Richard WEBER, Tamas HUZSVAR
-* @date 27/02/2019
-*/
+/*===================================================================*\
+                                 Staci
+                            ---------------
+
+  Main Staci class. Contains basic variables (e.g. vector for Node
+  and Edge) and functions (e.g. building the system topology for
+  solving the equations).
+ 
+  staci3 is using Eigen, see http://eigen.tuxfamily.org
+
+    staci3
+    Cs. Hos, R. Weber, T. Huzsvar
+    https://github.com/weberrichard/staci3
+\*==================================================================*/
+
 #ifndef STACI_H
 #define STACI_H
 
@@ -14,9 +23,7 @@
 #include "Node.h"
 #include "PressurePoint.h"
 #include "Statistic.h"
-#include "StaciException.h"
 
-//#include </usr/include/eigen3/Eigen/Eigen>
 #include "Eigen/Eigen/Eigen"
 
 #include <string>
@@ -102,8 +109,6 @@ public:
     {
         isInitialization = van_e;
     }
-    //string newDefinitionFile, elementID, propertyID;
-    //double newValue;
 
 private:
     int debugLevel;

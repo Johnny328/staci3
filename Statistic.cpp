@@ -2,12 +2,14 @@
 
 using namespace std;
 
+//--------------------------------------------------------------
 void Avr_absmax_stddev(const vector<double> &x, double &a, double &m, double &s){
   a = Average(x);
   s = Stddev(x);
   m = Absmax(x);
 }
 
+//--------------------------------------------------------------
 double Average(const vector<double> &x){
   double a=0.;
   for(int i=0; i<x.size() ;i++)
@@ -21,6 +23,7 @@ double Average(const vector<int> &x){
   return a/(double)x.size();
 }
 
+//--------------------------------------------------------------
 double Absmax(const vector<double> &x){
   double m=0.;
   for(int i=0; i<x.size(); i++)
@@ -29,6 +32,7 @@ double Absmax(const vector<double> &x){
   return m;
 }
 
+//--------------------------------------------------------------
 double Stddev(const vector<double> &x){
   double s=0.;
   double m = Average(x);
@@ -37,6 +41,7 @@ double Stddev(const vector<double> &x){
   return pow(s/((double)x.size()-1),.5);
 }
 
+//--------------------------------------------------------------
 double NormalDist(double m, double szig){
   random_device rd;
   default_random_engine generator( rd() );
@@ -44,12 +49,14 @@ double NormalDist(double m, double szig){
   return dist(generator);
 }
 
+//--------------------------------------------------------------
 double UniformDist(double min, double max)
 {
     double f = (double)rand() / RAND_MAX;
     return min + f * (max - min);
 }
 
+//--------------------------------------------------------------
 bool ChiSquared_test(const vector<double> &x, double m, double szig){
   bool r=false;
   int no_intervals = 6;
@@ -95,6 +102,7 @@ bool ChiSquared_test(const vector<double> &x, double m, double szig){
   return r;
 }
 
+//--------------------------------------------------------------
 bool TwoSampleU_test(double m1, double s1, int n1, double m2, double s2, int n2, double p){
   bool test_ok = false;
   double u_akt, u_krit;
@@ -106,6 +114,7 @@ bool TwoSampleU_test(double m1, double s1, int n1, double m2, double s2, int n2,
   return test_ok;
 }
 
+//--------------------------------------------------------------
 double erfinv(double x)
 {
   double a3 = -0.140543331, a2 = 0.914624893, a1 = -1.645349621, a0 = 0.886226899;
@@ -150,6 +159,7 @@ double erfinv(double x)
   return r;
 }
 
+//--------------------------------------------------------------
 double CorrelCoef(const vector<double> &x, const vector<double> &y){
   if(x.size() != y.size()){
     cout << "\n\n !!!!! ERROR !!!!!\n Size of x and y are not matching in CorrelCoef, Statistic.cpp\n";
@@ -173,6 +183,7 @@ double CorrelCoef(const vector<double> &x, const vector<double> &y){
   return szam/sx/sy;
 }
 
+//--------------------------------------------------------------
 vector<double> GrubbsTest(const vector<double> &x){
   double a,m,s;
   Avr_absmax_stddev(x,a,m,s);
@@ -181,4 +192,153 @@ vector<double> GrubbsTest(const vector<double> &x){
     if(x.at(i) > m-3.*s && x.at(i) < m+3.*s)
       y.push_back(x.at(i));
   return y;
+}
+
+//--------------------------------------------------------------
+double interpolate(vector<double> x, vector<double> y, double xp){
+
+  double yp = 0.0;
+  int nx=x.size(), ny=y.size();
+  if(nx == 0 || ny == 0 || nx == 1 || ny ==1)
+  {
+    cout << endl << " !!!ERROR!!! interpolate: Number of x/y coordinates (" << nx << "/" << ny << " is equal to 0 or 1!" << endl << " Exiting..." << endl;
+    exit(0);
+  }
+  if(nx == ny)
+  {
+    int idx;
+    if(xp<min(x,idx)){
+      cout << endl << " !!!WARNING!! interpolate: xp = " << xp << " is smaller than min(x) = " << min(x,idx) << endl << " Overriding xp = min(x), then Continouing..." << endl;
+      xp = min(x,idx);
+      yp = y[idx];
+    }
+    else if(xp>max(x,idx))
+    {
+      cout << endl << " !!!WARNING!! xp = " << xp << " is larger than max(x) = " << max(x,idx) << endl << " Overriding xp = max(x), then Continouing..." << endl;
+      xp = max(x,idx);
+      yp = y[idx];
+    }else
+    {
+      if(nx == 2) // Fitting a linear
+      {
+        double a = (y[1]-y[0])/(x[1]-x[0]);
+        double b = y[1] - a*x[1];
+        yp = a*xp + b;
+      }
+      if(nx>=3)// Above 3 points, fitting a parabole with the three closest
+      {
+        vector<double> xdist(nx);
+        vector<int> idx;
+        for(int i=0; i<nx; i++)
+          xdist[i] = abs(x[i] - xp);
+        quickSortWithIndicies(xdist,idx,0,nx-1);
+        yp = (xp-x[idx[1]])*(xp-x[idx[2]])/(x[idx[0]]-x[idx[1]])/(x[idx[0]]-x[idx[2]])*y[idx[0]] + (xp-x[idx[0]])*(xp-x[idx[2]])/(x[idx[1]]-x[idx[0]])/(x[idx[1]]-x[idx[2]])*y[idx[1]] + (xp-x[idx[0]])*(xp-x[idx[1]])/(x[idx[2]]-x[idx[0]])/(x[idx[2]]-x[idx[1]])*y[idx[2]]; // Lagrange polinomial
+      }
+    }
+  }
+  else
+  {
+    cout << endl << " !!!ERROR!!! Number of x coordinates (" << nx << ") NOT equal to number of y coordinates(" << ny << ") !" << endl;
+    exit(0);
+  }
+
+  return yp;
+}
+
+//-------------------------------------------------------------- 
+void quickSortWithIndicies(vector<double> &x, vector<int> &idx, int low, int high){
+
+  idx.clear();
+  idx.resize(x.size());
+  for(int i=0; i<idx.size(); i++)
+    idx[i] = i;
+  quickSort(x,idx,low,high);
+}
+
+
+/* The main function that implements QuickSort 
+ arr[] --> Array to be sorted, 
+  low  --> Starting index, 
+  high  --> Ending index */
+void quickSort(vector<double> &x, vector<int> &idx, int low, int high) 
+{
+  if (low < high) 
+  { 
+    /* pi is partitioning index, arr[p] is now 
+       at right place */
+    int pi = partition(x, idx, low, high); 
+
+    // Separately sort elements before 
+    // partition and after partition 
+    quickSort(x, idx, low, pi - 1); 
+    quickSort(x, idx, pi + 1, high); 
+  } 
+} 
+
+/* This function takes last element as pivot, places 
+   the pivot element at its correct position in sorted 
+    array, and places all smaller (smaller than pivot) 
+   to left of pivot and all greater elements to right 
+   of pivot */
+int partition(vector<double> &x, vector<int> &idx, int low, int high) 
+{ 
+  int pivot = x[high];    // pivot 
+  int i = (low - 1);  // Index of smaller element 
+
+  for (int j = low; j <= high- 1; j++) 
+  { 
+    // If current element is smaller than or 
+    // equal to pivot 
+    if (x[j] <= pivot) 
+    { 
+      i++;    // increment index of smaller element 
+      swap(x,i,j);
+      if(idx.size() == x.size())
+        swap(idx,i,j);
+    } 
+  } 
+  swap(x,i+1,high); 
+  if(idx.size() == x.size())
+    swap(idx,i+1,high);
+  return (i + 1); 
+}
+
+//--------------------------------------------------------------
+void swap(vector<double> &x, int i, int j){
+  double temp = x[i];
+  x[i] = x[j];
+  x[j] = temp;
+}
+
+//--------------------------------------------------------------
+void swap(vector<int> &x, int i, int j){
+  int temp = x[i];
+  x[i] = x[j];
+  x[j] = temp;
+}
+
+//--------------------------------------------------------------
+double min(vector<double> x, int &idx){
+  double min=x[0];
+  idx = 0;
+  for(int i=1; i<x.size(); i++){
+    if(min > x[i]){
+      min = x[i];
+      idx = i;
+    }
+  }
+  return min;
+}
+
+//--------------------------------------------------------------
+double max(vector<double> x, int &idx){
+  double max=x[0];
+  idx = 0;
+  for(int i=1; i<x.size(); i++){
+    if(max < x[i]){
+      max = x[i];
+      idx = i;
+    }
+  }
+  return max;
 }

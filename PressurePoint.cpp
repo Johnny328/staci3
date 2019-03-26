@@ -53,21 +53,55 @@ void PressurePoint::initialization(int mode, double value) {
         massFlowRate = value;
 }
 
+
 //--------------------------------------------------------------
-void PressurePoint::setProperty(string property, double value) {
-    if(property == "head")
-        setHead(value);
-    else
-        cout << endl << "ERROR! PressurePoint::setProperty(property), unkown input: property=" << property << endl << endl;
+double PressurePoint::getDoubleProperty(string prop){
+  double out = 0.;
+  if(prop == "head")
+    out = head;
+  else if(prop == "pressure")
+    out = head * gravity * density;
+  else if(prop == "massFlowRate" || prop == "mass_flow_rate")
+    out = massFlowRate;
+  else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
+    out = massFlowRate / density;
+  else if(prop == "velicoty")
+    out = massFlowRate / density / referenceCrossSection;
+  else if(prop == "density")
+    out = density;
+  else if(prop == "referenceCrossSection" || prop == "reference_cross_section" || prop == "Aref")
+    out = referenceCrossSection;
+  else if(prop == "user1")
+    out = user1;
+  else if(prop == "user2")
+    out = user2;
+  else
+  {
+    cout << endl << endl << "DOUBLE PressurePoint::getDoubleProperty() wrong argument:" << prop;
+    cout << ", right values: head | pressure | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+  }
+  return out;
 }
 
-double PressurePoint::getProperty(string property) {
-    double out = 0.0;
-    if (property == "pres")
-        out = head;
-    else {
-        cout << endl << "ERROR! Cso::getProperty(property), unkown input: property=" << property << endl << endl;
-        cout << endl << "Name of PressurePoint: " << name << endl;
-    }
-    return out;
+//--------------------------------------------------------------
+void PressurePoint::setDoubleProperty(string prop, double value){
+  if(prop == "head")
+    head = value;
+  else if(prop == "pressure")
+    head = value / density / gravity;
+  else if(prop == "massFlowRate" || prop == "mass_flow_rate")
+    massFlowRate = value;
+  else if(prop == "density")
+    density = value;
+  else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
+    referenceCrossSection = value;
+  else if(prop == "user1")
+    user1 = value;
+  else if(prop == "user2")
+    user2 = value;
+  else
+  {  
+    cout << endl << endl << "PressurePoint::setProperty( DOUBLE ) wrong argument:" << prop;
+    cout << ", right values: head | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+  }
 }

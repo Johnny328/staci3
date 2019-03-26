@@ -11,10 +11,9 @@ Pool::Pool(const string a_name, const string a_startNodeName, const double a_den
     type = "Pool";
     numberNode = 1;
     startNodeName = a_startNodeName;
-    endNodeName = "<nincs>";
+    endNodeName = "endNothingYet";
     bottomLevel = a_bottomLevel;
     waterLevel = a_waterLevel;
-    head = (bottomLevel + waterLevel) * density * gravity;
 }
 
 //--------------------------------------------------------------
@@ -38,7 +37,7 @@ double Pool::function(vector<double> x) { //TODO L,D,A = ????
     double D = 0.5;
     double A = D * D * M_PI / 4.;
     double c = 0.02 * L / D / 2. / gravity / density / density / A / A;
-    double result = x[0] + x[2] + 0. * c * massFlowRate * fabs(massFlowRate) - (bottomLevel + waterLevel);
+    double result = x[0] + x[2] + 0. * c * massFlowRate * abs(massFlowRate) - (bottomLevel + waterLevel);
 
     return result;
 }
@@ -48,12 +47,13 @@ vector<double> Pool::functionDerivative(vector<double> x) {
     vector<double> result;
     result.push_back(1.0);
     result.push_back(0.0);
-    double L = 1;
+    /*double L = 1;
     double D = 0.5;
     double A = D * D * M_PI / 4;
     double c = 0.02 * L / D / 2. / gravity / density / density / A / A;
-    result.push_back(0 * 2 * c * fabs(massFlowRate));
+    result.push_back(0 * 2 * c * fabs(massFlowRate));*/
     //result.push_back(-head / density / gravity);
+    result.push_back(0.0);
     result.push_back(-(bottomLevel + waterLevel));
 
     return result;
@@ -61,46 +61,64 @@ vector<double> Pool::functionDerivative(vector<double> x) {
 
 //--------------------------------------------------------------
 void Pool::initialization(int mode, double value) {
-    if (mode == 0)
-        massFlowRate = 1;
-    else
-        massFlowRate = value;
+  if (mode == 0)
+    massFlowRate = 1;
+  else
+    massFlowRate = value;
 }
 
 //--------------------------------------------------------------
-void Pool::setProperty(string mit, double mire) {
-
-    if (mit == "bottLevel")
-        bottomLevel = mire;
-    else if (mit == "waterLevel")
-        waterLevel = mire;
-    else
-        cout << endl
-             << "HIBA! Pool::setProperty(mit), ismeretlen bemenet: mit="
-             << mit << endl << endl;
+double Pool::getDoubleProperty(string prop){
+  double out = 0.;
+  if(prop == "waterLevel")
+    out = waterLevel;
+  else if(prop == "bottomLevel")
+    out = bottomLevel;
+  else if(prop == "head")
+    out = (bottomLevel + waterLevel);
+  else if(prop == "pressure")
+    out = (bottomLevel + waterLevel) * density * gravity;
+  else if(prop == "massFlowRate" || prop == "mass_flow_rate")
+    out = massFlowRate;
+  else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
+    out = massFlowRate / density;
+  else if(prop == "velicoty")
+    out = massFlowRate / density / referenceCrossSection;
+  else if(prop == "density")
+    out = density;
+  else if(prop == "referenceCrossSection" || prop == "reference_cross_section" || prop == "Aref")
+    out = referenceCrossSection;
+  else if(prop == "user1")
+    out = user1;
+  else if(prop == "user2")
+    out = user2;
+  else
+  {
+    cout << endl << endl << "DOUBLE Pool::getDoubleProperty() wrong argument:" << prop;
+    cout << ", right values: waterLevel | bottomLevel | head | pressure | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+  }
+  return out;
 }
 
 //--------------------------------------------------------------
-double Pool::getProperty(string mit) {
-
-    double out = 0.0;
-    if (mit == "bottLevel")
-        out = bottomLevel;
-    else if (mit == "massFlowRate")
-        out = massFlowRate;
-    else if (mit == "waterLevel")
-        out = waterLevel;
-    else if (mit == "headLoss")
-        out = 0.0;
-    else if (mit == "referenceCrossSection")
-        out = referenceCrossSection;
-    else {
-        cout << endl
-             << "HIBA! Pool::getProperty(mit), ismeretlen bemenet: mit="
-             << mit << endl << endl;
-        out = 0.0;
-    }
-    return out;
+void Pool::setDoubleProperty(string prop, double value){
+  if(prop == "waterLevel")
+    waterLevel = value;
+  else if(prop == "bottomLevel")
+    bottomLevel = value;
+  else if(prop == "massFlowRate" || prop == "mass_flow_rate")
+    massFlowRate = value;
+  else if(prop == "density")
+    density = value;
+  else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
+    referenceCrossSection = value;
+  else if(prop == "user1")
+    user1 = value;
+  else if(prop == "user2")
+    user2 = value;
+  else
+  {  
+    cout << endl << endl << "Pool::setProperty( DOUBLE ) wrong argument:" << prop;
+    cout << ", right values: head | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+  }
 }
-
-

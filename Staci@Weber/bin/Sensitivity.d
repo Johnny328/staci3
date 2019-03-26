@@ -3,8 +3,8 @@
   ../bin/../../Staci.h ../bin/../../BasicFileIO.h ../bin/../../Edge.h \
   ../bin/../../GetNew.h ../bin/../../Pipe.h ../bin/../../Node.h \
   ../bin/../../IOxml.h ../bin/../../xmlParser.h \
-  ../bin/../../PressurePoint.h ../bin/../../Statistic.h \
-  ../bin/../../StaciException.h
+  ../bin/../../PressurePoint.h ../bin/../../Valve.h \
+  ../bin/../../Statistic.h ../bin/../../Pool.h
 
 ../bin/../../Sensitivity.h:
 
@@ -28,6 +28,8 @@
 
 ../bin/../../PressurePoint.h:
 
+../bin/../../Valve.h:
+
 ../bin/../../Statistic.h:
 
-../bin/../../StaciException.h:
+../bin/../../Pool.h:

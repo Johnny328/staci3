@@ -1,37 +1,56 @@
+/*===================================================================*\
+                                  IOxml
+                            ---------------
+
+  Loading/saving staci3 files from/to xml file format.
+  xml files can be loaded with the graphical interface of staci3.
+ 
+  staci3 is using Eigen, see http://eigen.tuxfamily.org
+
+    staci3
+    Cs. Hos, R. Weber, T. Huzsvar
+    https://github.com/weberrichard/staci3
+\*==================================================================*/
+
 #include <string>
 #include <fstream>
 #include <vector>
+#include <math.h>
+#include <algorithm>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 #include "Node.h"
 #include "Edge.h"
 #include "xmlParser.h"
+#include "PressurePoint.h"
+#include "Pipe.h"
+//#include "Pump.h"
+#include "Valve.h"
+#include "Pool.h"
+//#include "Channel.h"
+//#include "Weir.h"
+//#include "CheckValve.h"
 
 class IOxml
 {
 
 public:
-    /// Konstruktor
-    IOxml(const char *xml_fnev);
-    void load_system(vector<Node *> &nodes, vector<Edge *> &edges);
-    void load_ini_values(vector<Node *> &nodes, vector<Edge *> &edges);
-    void writingTagValue(XMLNode node, string tag_name, double tag_value);
-    void save_results(double fluidVolume, double sum_of_inflow, double sum_of_demand, vector<Node *> nodes, vector<Edge *> edges, bool conv_reached, int staci_debug_level);
-    void save_mod_prop(vector<Node *> nodes, vector<Edge *> edges, string eID, string pID, bool is_property_general);
-    void save_mod_prop_all_elements(vector<Node *> nodes, vector<Edge *> edges, string pID);
-    //void save_transport(int mode, vector<Node *> nodes, vector<Edge *> edges);
-    string read_setting(string which);
+  IOxml(const char *xmlFileName);
+  void loadSystem(vector<Node *> &nodes, vector<Edge *> &edges);
+  void loadInitialValue(vector<Node *> &nodes, vector<Edge *> &edges);
+  void saveResult(double fluidVolume, double sum_of_inflow, double sum_of_demand, vector<Node *> nodes, vector<Edge *> edges, bool conv_reached, int staci_debug_level);
+  string readSetting(string which);
 
 private:
-    /// debug info a kepernyore
-    const char *xml_fnev;
-    /// debug info a kepernyore
-    bool debug;
-    /// Nodeok es agak szama
-    int nodeNumber, edgeNumber;
-    /// agelem tipusok
-    vector<string> edge_type;
-    int edge_type_number;
-    vector<int> edge_type_occur;
-    /// gorbek kiolvasasa
-    void curve_reader(const string id, const XMLNode node, vector<double> &, vector<double> &);
-    double string_to_double( const string &s , const string &elem_name, const string &tag_name, const double &def_value);
+  XMLNode xmlMain; // main XMLNode
+  XMLNode nodeSetting;
+  XMLNode nodeNodes;
+  XMLNode nodesEdges;
+  const char *xmlFileName;
+  bool debug;
+  int nodeNumber, edgeNumber;
+  void curveReader(const string id, const XMLNode elem, vector<double> &px, vector<double> &py);
+  void writingTagValue(XMLNode node, string tag_name, double tag_value);
 };

@@ -1,6 +1,8 @@
-../bin/Valve.d: ../bin/../../Valve.cpp ../bin/../../Edge.h \
-  ../bin/../../Valve.h
+../bin/Valve.d: ../bin/../../Valve.cpp ../bin/../../Valve.h \
+  ../bin/../../Edge.h ../bin/../../Statistic.h
+
+../bin/../../Valve.h:
 
 ../bin/../../Edge.h:
 
-../bin/../../Valve.h:
+../bin/../../Statistic.h:

@@ -1,8 +1,8 @@
 #include <iostream>
-#include "/home/rweber/Dropbox/0_PhD/staci/HydraulicSolver.h"
-#include "/home/rweber/Dropbox/0_PhD/staci/PressurePoint.h"
-#include "/home/rweber/Dropbox/0_PhD/staci/Node.h"
-#include "/home/rweber/Dropbox/0_PhD/staci/Valve.h"
+#include "../../HydraulicSolver.h"
+#include "../../PressurePoint.h"
+#include "../../Node.h"
+#include "../../Valve.h"
 #include <fstream>
 #include <random>
 #include <iomanip>
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]){
       idx++;
     }
 
-    wds->nodes.push_back(new Node("Hout", 0., 0., wds->nodes[hydrant_idx]->getGeodeticHeight(), 0., 0., 1000.));
+    wds->nodes.push_back(new Node("Hout", 0., 0., wds->nodes[hydrant_idx]->getProperty("height"), 0., 0., 1000.));
     vector<double> e,zeta;
     e.push_back(0);  e.push_back(100);
     zeta.push_back(0);  zeta.push_back(dzeta);
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]){
     wds->buildSystem();
     wds->solveSystem();
 
-    firewater.push_back(wds->edges[wds->edges.size()-1]->getMassFlowRate()*60.);
+    firewater.push_back(wds->edges[wds->edges.size()-1]->getDoubleProperty("massFlowRate")*60.);
     wfile << firewater[i] << '\n';
 
     delete wds;

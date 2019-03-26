@@ -1,3 +1,18 @@
+/*===================================================================*\
+                              BasicFileIO
+                            ---------------
+
+  Reading and writing data from and to files.
+
+  Can be used independently from staci3.
+  
+  staci3 is using Eigen, see http://eigen.tuxfamily.org
+
+    staci3
+    Cs. Hos, R. Weber, T. Huzsvar
+    https://github.com/weberrichard/staci3
+\*==================================================================*/
+
 #include <vector>
 #include <iostream>
 #include <fstream>

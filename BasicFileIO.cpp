@@ -104,7 +104,7 @@ vector<int> countRowsCols(string fileName, char separator){
     if(*j == separator)
       cols++;
   }
-  rows = countRows(fileName) + 1;
+  rows = countRows(fileName);
   v.push_back(rows);
   v.push_back(cols);
   ifile.close();

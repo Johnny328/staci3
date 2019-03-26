@@ -10,33 +10,18 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
   string caseFileName = getDefinitionFile();
   string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
 
-  measuredDemandSum = readVectorDouble((measurementFolder+"measuredDemandSum.txt").c_str());
-  numberOperationalPoint = measuredDemandSum.rows();
-  if(numberOperationalPoint==0){
-    cout << endl << "ERROR!!! measuredDemandSum is empty i.e. the sum of the overall consumptions must be given in " << measurementFolder + "/measuredDemandSum.txt file" << endl;
-    exit(-1);
-  }
-
-  measuredPressureID = readVectorString((measurementFolder+"measuredPressureID.txt").c_str());
-  measuredPressureIndex = ID2Index(measuredPressureID);
-  numberPressure = measuredPressureIndex.size();
-  if(numberPressure==0){
-    cout << endl << "ERROR!!! measuredPressureID is empty i.e. the node IDs are not given in " << measurementFolder + "/measuredDemandSum.txt file" << endl;
-    exit(-1);
-  }
-
-  measuredDemand = readMatrixDouble((measurementFolder+"measuredDemand.txt").c_str(),';');
-  numberDemand = measuredDemandIndex.size();
+  // loading the operation point where the simulated measuremts will occur
+  loadMeasurement(caseFileName,false);
 
   int numberNodes = nodes.size(), numberEdges = edges.size();
 
   // Saving original frics and demands
   vector<double> fricNominal(numberNodes,0.), demandNominal(numberEdges,0.);
   for(int k=0;k<numberNodes;k++)
-    demandNominal[k] = nodes.at(k)->getDemand();
+    demandNominal[k] = nodes.at(k)->getProperty("demand");
   for(int k=0;k<numberEdges;k++)
-    if(edges[k]->getType() == "Pipe")
-      fricNominal[k] = edges.at(k)->getProperty("roughness");
+    if(edges[k]->getEdgeStringProperty("type") == "Pipe")
+      fricNominal[k] = edges.at(k)->getDoubleProperty("roughness");
 
   //if((demandNoiseMode == "Uniform" || demandNoiseMode == "Normal" || demandNoiseMode == "None") == false){
   if((demandNoiseMode == "None") == false){
@@ -46,13 +31,13 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
 
   double demandSumNominal = 0., cons; // Sum of every demands at nominal operational point
   for(int i=0; i<nodes.size(); i++){
-    cons = nodes.at(i)->getDemand();
+    cons = nodes.at(i)->getProperty("demand");
     if (cons > 0.)
       demandSumNominal += cons;
   }
   double demandSumMeasuredNomnial=0.; // Sum of measured demands at nominal operational point
   for(int i=0; i<numberDemand; i++)
-    demandSumMeasuredNomnial += nodes[measuredDemandIndex[i]]->getDemand();
+    demandSumMeasuredNomnial += nodes[measuredDemandIndex[i]]->getProperty("demand");
 
   string save_folder = getDefinitionFile();
   save_folder = save_folder.substr(0,save_folder.rfind('.')) + '/';
@@ -70,12 +55,12 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
   everyPressure = MatrixXd::Zero(numberOperationalPoint, numberNodes);
 
   for(int k=0;k<numberEdges;k++)
-    if(edges[k]->getType() == "Pipe")
-      edges[k]->setProperty("roughness",fric[k]);
+    if(edges[k]->getEdgeStringProperty("type") == "Pipe")
+      edges[k]->setDoubleProperty("roughness",fric[k]);
   for(int j=0;j<numberOperationalPoint;j++){
     double demandSumMeasuredReal=0.;
     for(int k=0;k<numberDemand;k++){
-      nodes.at(measuredDemandIndex[k])->setDemand(measuredDemand(j,k));
+      nodes.at(measuredDemandIndex[k])->setProperty("demand",measuredDemand(j,k));
       demandSumMeasuredReal += measuredDemand(j,k);
     } 
     for(int k=0;k<numberNodes;k++){
@@ -86,33 +71,33 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
         l++;
       }
       if(demandNoiseMode == "Uniform")
-        if(nodes[k]->getDemand() > 0. && !measured)
-          nodes[k]->setDemand((measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*UniformDist(demandNoiseValue[0],demandNoiseValue[1]));
+        if(nodes[k]->getProperty("demand") > 0. && !measured)
+          nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*UniformDist(demandNoiseValue[0],demandNoiseValue[1]));
       if(demandNoiseMode == "Normal")
-        if(nodes[k]->getDemand() > 0. && !measured)
-          nodes[k]->setDemand((measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*NormalDist(demandNoiseValue[0],demandNoiseValue[1]));
+        if(nodes[k]->getProperty("demand") > 0. && !measured)
+          nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*NormalDist(demandNoiseValue[0],demandNoiseValue[1]));
       if(demandNoiseMode == "None")
-        if(nodes[k]->getDemand() > 0. && !measured)
-          nodes[k]->setDemand((measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]); 
+        if(nodes[k]->getProperty("demand") > 0. && !measured)
+          nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]); 
     }
     // Adjusting the sum of the consumptions in case of noise
     if(demandNoiseMode == "Uniform" || demandNoiseMode == "Normal"){
       measuredDemandSum(j) = 0.;
       for(int k=0; k<numberNodes; k++)
-        if(nodes[k]->getDemand()>0.)
-          measuredDemandSum(j) += nodes[k]->getDemand();
+        if(nodes[k]->getProperty("demand")>0.)
+          measuredDemandSum(j) += nodes[k]->getProperty("demand");
       measuredDemandSum(j) = measuredDemandSum(j)/demandSumNominal;
     }
     solveSystem();
     for(int k=0;k<numberPressure;k++){
-      measuredPressure(j,k) = nodes[measuredPressureIndex[k]]->getHead();
+      measuredPressure(j,k) = nodes[measuredPressureIndex[k]]->getProperty("head");
       if(p_file!=NULL)
 	      fprintf(p_file,"%8.5e;",measuredPressure(j,k));
     }
     if(p_file!=NULL)
 	    fprintf(p_file,"\n");
     for(int k=0; k<numberNodes; k++){
-      everyPressure(j,k) = nodes[k]->getHead();
+      everyPressure(j,k) = nodes[k]->getProperty("head");
       if(pall_file!=NULL)
 	      fprintf(pall_file,"%8.5e;",everyPressure(j,k));
     }
@@ -127,30 +112,39 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
 
   // setting back original frics and demands
   for(int k=0;k<numberNodes;k++)
-    nodes[k]->setDemand(demandNominal[k]);
+    nodes[k]->setProperty("demand",demandNominal[k]);
   for(int k=0;k<numberEdges;k++)
-    if(edges[k]->getType() == "Pipe")
-      edges[k]->setProperty("roughness",fricNominal[k]);
+    if(edges[k]->getEdgeStringProperty("type") == "Pipe")
+      edges[k]->setDoubleProperty("roughness",fricNominal[k]);
   solveSystem();
 
   if(getDebugLevel()>1)
     cout << endl << "Generating measurement data: OK" << endl;
 }
 
-void Calibration::loadMeasurement(string caseFileName){
+void Calibration::loadMeasurement(string caseFileName, bool isPressure){
   string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
 
+  // Reading the sum of the consumptions
+  measuredDemandSum = readVectorDouble((measurementFolder+"measuredDemandSum.txt").c_str());
+  numberOperationalPoint = measuredDemandSum.rows();
+  if(numberOperationalPoint==0){
+    cout << endl << "ERROR!!! measuredDemandSum is empty i.e. the sum of the overall consumptions must be given in " << measurementFolder + "/measuredDemandSum.txt file" << endl;
+    exit(-1);
+  }
+
   // Reading the measured pressure values
-  measuredPressure = readMatrixDouble((measurementFolder+"measuredPressure.txt").c_str(),';');
+  if(isPressure)
+    measuredPressure = readMatrixDouble((measurementFolder+"measuredPressure.txt").c_str(),';');
 
   // Reading the IDs of the measured nodes
   measuredPressureID = readVectorString((measurementFolder+"measuredPressureID.txt").c_str());
   measuredPressureIndex = ID2Index(measuredPressureID);
   numberPressure = measuredPressureIndex.size();
-
-  // Reading the sum of the consumptions
-  measuredDemandSum = readVectorDouble((measurementFolder+"measuredDemandSum.txt").c_str());
-  numberOperationalPoint = measuredDemandSum.rows();
+  if(numberPressure==0){
+    cout << endl << "ERROR!!! measuredPressureID is empty i.e. the node IDs are not given in " << measurementFolder + "/measuredDemandSum.txt file" << endl;
+    exit(-1);
+  }
 
   // Reading the individually measured demands
   measuredDemand = readMatrixDouble((measurementFolder+"measuredDemand.txt").c_str(),';');
@@ -159,23 +153,23 @@ void Calibration::loadMeasurement(string caseFileName){
   numberDemand = measuredDemandIndex.size();
 
   // IMPORTANT: CHECKING THE SIZE OF THE VARIABLES
-  if(measuredPressure.rows() != numberOperationalPoint){
-    cout << endl << "ERROR!!! measuredPressure row size doest not match numberOperationalPoint(" << numberOperationalPoint << ") / measuredPressure(" << measuredPressure.rows() << ")" << endl << "The measured pressure values does not match with the measured operational points" << endl;
-    exit(-1);
-    if(measuredPressure.rows()>0){
+  if(isPressure){
+    if(measuredPressure.rows() != numberOperationalPoint){
+      cout << endl << "ERROR!!! measuredPressure row size doest not match numberOperationalPoint(" << numberOperationalPoint << ") / measuredPressure(" << measuredPressure.rows() << ")" << endl << "Th size of measured pressure values does not match with the measured operational points" << endl;
+      exit(-1);
       if(measuredPressure.cols() != numberPressure){
-        cout << endl << "ERROR!!! measuredPressure col size doest not match numberOperationalPoint / measuredPressureID" << endl << "The measured pressure values does not match with the measured node IDs" << endl;
+        cout << endl << "ERROR!!! measuredPressure col size doest not match numberOperationalPoint(" << numberOperationalPoint << ") / measuredPressureID(" << measuredPressure.cols() << ")" << endl << "The size of measured pressure values does not match with the measured node IDs" << endl;
         exit(-1);
       }
     }
   }
   if(numberDemand>0){
     if(measuredDemand.rows() != numberOperationalPoint){
-      cout << endl << "ERROR!!! measuredDemand size doest not match numberOperationalPoint / measuredDemandSum" << endl << "The measured demand values does not match with the measured operational points" << endl;
+      cout << endl << "ERROR!!! measuredDemand size doest not match numberOperationalPoint(" << numberOperationalPoint << ") / measuredDemandSum(" << measuredDemand.rows() << ")" << endl << "The measured demand values does not match with the measured operational points" << endl;
       exit(-1);
       if(measuredDemand.rows()>0){
-        if(measuredPressure.cols() != numberDemand){
-          cout << endl << "ERROR!!! measuredDemand size doest not match numberDemand / measuredDemandID" << endl << "The measured pressure values does not match with the measured node IDs" << endl;
+        if(measuredDemand.cols() != numberDemand){
+          cout << endl << "ERROR!!! measuredDemand size doest not match numberDemand(" << measuredDemand.cols() << ") / measuredDemandID(" << numberDemand << ")" << endl << "The measured pressure values does not match with the measured node IDs" << endl;
           exit(-1);
         }
       }
@@ -184,66 +178,3 @@ void Calibration::loadMeasurement(string caseFileName){
  if(getDebugLevel()>1)
   cout << endl << "Loading measurement data: OK" << endl; 
 }
-/*
-void Calibration::loadDemandSum(string caseFileName){
-  string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
-  ifstream ifile;
-  // Reading the sum of the consumptions
-  ifile.open((measurementFolder+"measuredDemandSum.txt").c_str());
-  if(ifile.is_open()){
-    vector<string> temp = readStrings(ifile);    
-    measuredDemandSum.clear();
-    for(int i=0; i<temp.size(); i++)
-      measuredDemandSum.push_back(stod(temp[i],0));
-    numberOperationalPoint = measuredDemandSum.rows();
-    if(numberOperationalPoint==0)
-      cout << endl << "Warning! File " << measurementFolder+"measuredDemandSum.txt" << " does exist, but does NOT contain anything!" << endl;
-  }
-  else{
-    cout << endl << "ERROR!!! File " << measurementFolder+"measuredDemandSum.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
-    exit(-1);
-  }
-  ifile.close();
-}
-
-void Calibration::loadPressureID(string caseFileName){
-  string measurementFolder = caseFileName.substr(0,caseFileName.rfind('.')) + '/';
-  ifstream ifile;
-(measurementFolder+"measuredPressureID.txt").c_str()
-  // Reading the IDs of the measured nodes
-  ifile.open((measurementFolder+"measuredPressureID.txt").c_str());
-  if(ifile.is_open()){
-    measuredPressureID.clear();
-    measuredPressureIndex.clear();
-    measuredPressureID = readVectorString((measurementFolder+"measuredPressureID.txt").c_str());
-    measuredPressureIndex = ID2Index(measuredPressureID);
-    numberPressure = measuredPressureIndex.size();
-    if(numberPressure==0)
-      cout << endl << "Warning! File " << measurementFolder+"measuredPressureID.txt" << " does exist, but does NOT contain anything!" << endl;
-  }
-  else{
-    cout << endl << "ERROR!!! File " << measurementFolder+"measuredPressureID.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
-    exit(-1);
-  }
-  ifile.close();
-}
-
-void Calibration::loadDemand(string caseFileName){
-  // Reading the measured consumptions if they existed
-;
-
-  // Reading the ids of the nodes where consumptions were measured if they existed
-  ifile.open((measurementFolder+"measuredDemandID.txt").c_str());
-  if(ifile.is_open()){
-    measuredDemandID.clear();
-    measuredDemandIndex.clear();
-    measuredDemandID = readStrings((measurementFolder+"measuredDemandID.txt").c_str());
-    measuredDemandIndex = ID2Index(measuredDemandID);
-  }
-  else{
-    if(getDebugLevel()>2){
-      cout << endl << "Warning!!! File " << measurementFolder+"measuredDemandID.txt" << " does NOT exist!" << endl << "Exiting..." << endl;
-    }
-  }
-  ifile.close();
-}*/

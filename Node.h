@@ -1,3 +1,17 @@
+/*===================================================================*\
+                                  Node
+                            ---------------
+
+  Node class for organizing every Node property and function.
+  Staci has a vector<Node*> type variable, called nodes.
+ 
+  staci3 is using Eigen, see http://eigen.tuxfamily.org
+
+    staci3
+    Cs. Hos, R. Weber, T. Huzsvar
+    https://github.com/weberrichard/staci3
+\*==================================================================*/
+
 #ifndef NODE_H
 #define NODE_H
 
@@ -15,73 +29,42 @@ using namespace std;
 class Node
 {
 public:
-    vector<int> edgeIn;
-    vector<int> edgeOut;
+  /// Containing the INgoing and OUTgoing edges, important to create the equation system
+  vector<int> edgeIn;
+  vector<int> edgeOut;
+
+  Node(const string a_name, const double a_xPosition, const double a_yPosition, const double a_geodeticHeight, const double a_demand, const double a_pressure, const double a_density);
+  ~Node();
+
+  /// Giving initial values for pressure
+  void initialization(int mode, double value);
+
+  /// Setting a certain node double property
+  /// demand|head|pressure|density|height|xPosition|yPosition|user1|user2
+  void setProperty(string mit, double value);
+
+  /// Getting a certain node double property
+  /// demand|head|pressure|density|height|xPosition|yPosition|user1|user2
+  double getProperty(string mit);
+
+  /// Printing basic information about the node to console and log file
+  string info(bool check_if_lonely);
+
+  //========================
+  //GETSETGETSETGETSETGETSET
+  //========================
+  string getName()
+  {
+    return name;
+  }
 
 private:
-    string name;
-    double head;
-    double density;
-    double xPosition, yPosition;
-    double geodeticHeight;
-    double demand;
-    double user1, user2;
-
-public:
-    Node(const string a_name, const double a_xPosition, const double a_yPosition, const double a_geodeticHeight, const double a_demand, const double a_head, const double a_density);
-    ~Node();
-    string info(bool check_if_lonely);
-    void setHead(double x)
-    {
-        head = x;
-    }
-    double getXPosition()
-    {
-        return xPosition;
-    }
-    double getYPosition()
-    {
-        return yPosition;
-    }
-    double getDemand()
-    {
-        return demand;
-    }
-    void setDemand(double a_fogy)
-    {
-        demand = a_fogy;
-    }
-    string getName()
-    {
-        return name;
-    }
-    double getHead()
-    {
-        return head;
-    }
-    double getGeodeticHeight()
-    {
-        return geodeticHeight;
-    }
-    void setGeodeticHeight(double a_h)
-    {
-        geodeticHeight = a_h;
-    }
-    void setUser1(double val) {
-        user1 = val;
-    }
-    void setUser2(double val) {
-        user2 = val;
-    }
-    double getUser1() {
-        return user1;
-    }
-    double getUser2() {
-        return user2;
-    }
-
-    void initialization(int mode, double value);
-    void setProperty(string mit, double value);
-    double getProperty(string mit);
+  string name;
+  double head;
+  double density;
+  double xPosition, yPosition;
+  double geodeticHeight;
+  double demand;
+  double user1, user2;
 };
 #endif
