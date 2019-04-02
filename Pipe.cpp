@@ -1,9 +1,3 @@
-#include <cmath>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include "Edge.h"
 #include "Pipe.h"
 
 using namespace std;
@@ -45,9 +39,14 @@ Pipe::~Pipe() {}
 string Pipe::info() {
   ostringstream strstrm;
   strstrm << Edge::info();
-  strstrm << "\n       type  : " << type;
-  strstrm << "\n  connection : " << startNodeName << "(index:" << startNodeIndex << ") --> " << endNodeName << "(index:" << endNodeIndex << ")\n";
-  strstrm << "       data    : length=" << length << "[m], diameter=" << diameter << "[m], roughness=" << roughness << "[mm], lambda=" << lambda << "[-]" << endl;
+  strstrm << "\n type                  : " << type;
+  strstrm << "\n connection            : " << startNodeName << "(index:" << startNodeIndex << ") --> " << endNodeName << "(index:" << endNodeIndex << ")";
+  strstrm << "\n length                : " << length << " [m]";
+  strstrm << "\n diameter              : " << diameter << " [m]";
+  strstrm << "\n roughness             : " << roughness << " [mm]";
+  strstrm << "\n lambda                : " << lambda << " [-]";
+  strstrm << "\n headloss              : " << getDoubleProperty("headLoss") << " [m]";
+  strstrm << "\n velocity              : " << massFlowRate / density / referenceCrossSection << " [m/s]" << endl;
 
   return strstrm.str();
 }
@@ -83,7 +82,7 @@ vector<double> Pipe::functionDerivative(vector<double> x) {
 
 //--------------------------------------------------------------
 void Pipe::initialization(int mode, double value) {
-  if (mode == 0)
+  if(mode == 0)
     setDoubleProperty("massFlowRate", 1.);
   else
     setDoubleProperty("massFlowRate", value);
@@ -121,15 +120,14 @@ double Pipe::getLambda() {
     else {
       double Re = fabs(velocity) * diameter / nu;
 
-      double hiba = 1.0e10, ize = 0.0, lambda_uj = 0.0;
+      double hiba = 1.0e10, tmp = 0.0, lambda_uj = 0.0;
       unsigned int i = 0;
       while ((hiba > 1e-6) && (i < 20)) {
         if (Re < 2300)
           lambda_uj = 64. / Re;
         else {
-          ize = -2.0 *
-                log10(roughness / 1000 / diameter / 3.71 + 2.51 / Re / sqrt(lambda));
-          lambda_uj = 1 / ize / ize;
+          tmp = -2.0 * log10(roughness / 1000 / diameter / 3.71 + 2.51 / Re / sqrt(lambda));
+          lambda_uj = 1 / tmp / tmp;
         }
 
         if (lambda_uj < lambda_min)
@@ -158,8 +156,7 @@ double Pipe::getLambda() {
         roughness = C_MIN;
       }
 
-      dp = length / pow(C_factor, 1.85) / pow(diameter, 4.87) * 7.88 / pow(0.85, 1.85) *
-           pow(abs(velocity*referenceCrossSection), 0.85) * (velocity * referenceCrossSection) * density * gravity;
+      dp = length / pow(C_factor, 1.85) / pow(diameter, 4.87) * 7.88 / pow(0.85, 1.85) * pow(abs(velocity*referenceCrossSection), 0.85) * (velocity * referenceCrossSection) * density * gravity;
 
       lambda = abs(dp / (length / diameter * density / 2 * velocity * fabs(velocity)));      
     }
@@ -168,20 +165,20 @@ double Pipe::getLambda() {
 }
 
 //--------------------------------------------------------------
-double Pipe::getFunctionDerivative(string parameter) {
+double Pipe::functionParameterDerivative(string parameter) {
   double out = 0.0;
   if (parameter == "diameter")
     out = -5. * getLambda() * length / pow(diameter, 6) * 8 / density / pow(M_PI, 2) * massFlowRate * abs(massFlowRate);  // Pa/m
   else if (parameter == "friction_coeff") {
     double old = roughness;
-    double delta = roughness * 0.01;
+    double delta = roughness * 0.001;
     roughness += delta;
     double f1 = computeHeadloss();
     roughness = old;
     double f0 = computeHeadloss();
     out = (f1 - f0) / delta;
   } else {
-    cout << endl << "HIBA! Pipe::getFunctionDerivative(parameter), unkown input: parameter=" << parameter << endl << endl;
+    cout << endl << "!!!ERROR!!! Pipe::functionParameterDerivative(parameter), unkown input: parameter=" << parameter << endl << "Available parameters: diameter | friction_coeff" << endl;
     cout << endl << "Name of pipe: " << name << endl;
     out = 0.0;
   }
@@ -192,17 +189,17 @@ double Pipe::getFunctionDerivative(string parameter) {
 double Pipe::computeHeadloss() {
   double velocity = massFlowRate / density / referenceCrossSection;
   double lambda = getLambda();
-  double headloss = lambda * length / diameter * density / 2. * velocity * fabs(velocity);
+  double headloss = lambda * length / diameter * density / 2. * velocity * abs(velocity);
 
   return headloss;
 }
 
 //--------------------------------------------------------------
 double Pipe::computeHeadlossDerivative() {
-  double der;
-  der = getLambda() * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 *
+  double out;
+  out = getLambda() * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 *
         abs(massFlowRate);  // Pa/(kg/s)
-  return der;
+  return out;
 }
 
 //--------------------------------------------------------------

@@ -26,7 +26,7 @@
 #include "xmlParser.h"
 #include "PressurePoint.h"
 #include "Pipe.h"
-//#include "Pump.h"
+#include "Pump.h"
 #include "Valve.h"
 #include "Pool.h"
 //#include "Channel.h"

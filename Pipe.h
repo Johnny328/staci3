@@ -31,11 +31,11 @@ public:
     /// A line of F(x) = equation, rearranged to 0 in w.c.m.
     double function(vector<double>);
 
-    /// Jacobian: df/dhe, df/dhv, df/dmp
+    /// Function ferivative w.r.t. variable (head / mass flow rate)
     vector<double> functionDerivative(vector<double>);
 
     /// Function ferivative w.r.t. parameter (diameter / roughness)
-    double getFunctionDerivative(string parameter);
+    double functionParameterDerivative(string parameter);
 
     /// Initialization, mode: 0->automatic | 1-> using value
     void initialization(int mode, double value);

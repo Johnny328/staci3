@@ -14,14 +14,7 @@
 #ifndef VALVE_H
 #define VALVE_H
 
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <vector>
-#include <string>
-#include <cmath>
 #include "Edge.h"
-#include "Statistic.h"
 
 class Valve : public Edge
 {

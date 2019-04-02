@@ -25,7 +25,7 @@ int SVDCalibration::calibrate(const vector<double> &fric_est, double tol){
   loadMeasurement(caseFileName,true);
 
   // Start of main iteration
-  if(getDebugLevel()>0)
+  if(debugLevelSVD>0)
     cout << "\n\n---------------------------------\n******Starting Calibration******\n---------------------------------\n\n";
   int iterMax = 1e2; // max iteration number
   double relax = .5, satur = 1.; // relaxation factor, saturation factor
@@ -51,7 +51,7 @@ int SVDCalibration::calibrate(const vector<double> &fric_est, double tol){
         for(int l=0; l<numberPressure; l++)
           errorPressure(l+k*numberPressure) = measuredPressure(k,l) - calculatedPressure(k,l);
 
-      if(getDebugLevel()>1)
+      if(debugLevelSVD>1)
         cout << "e_p_norm_r: " << e_p_norm << "   e_p_norm: " << errorPressure.norm() << endl;
 
       if(e_p_norm > errorPressure.norm())
@@ -91,7 +91,7 @@ int SVDCalibration::calibrate(const vector<double> &fric_est, double tol){
       if(edges[k]->getEdgeStringProperty("type") == "Pipe")
         fric[k] += relax_nom*satur*dlambda(k);
 
-    if(getDebugLevel()>1){
+    if(debugLevelSVD>1){
       cout << "\nfrictions:\n";
       for(int k=0; k<numberEdges; k++)
         if(edges[k]->getEdgeStringProperty("type") == "Pipe")
@@ -99,25 +99,25 @@ int SVDCalibration::calibrate(const vector<double> &fric_est, double tol){
       cout << endl;
     }
 
-    if(getDebugLevel()>0){
+    if(debugLevelSVD>0){
       cout << "\n\n**********Calibration*************";
       printf("\niter: %2i", i);
-      printf("  df_n: %2.4e",dlambda.norm()/pow((double)numberEdges,.5));
-      printf("  errorPressure: %2.4e", errorPressure.norm()/pow((double)numberNodes,.5));
+      printf("  dlambda: %2.4e",dlambda.norm()/pow((double)numberEdges,.5));
+      printf("  e_p: %2.4e", errorPressure.norm()/pow((double)numberNodes,.5));
       printf("  relax:  %1.2f",relax);
       printf("  satur:  %1.2f",satur);
       cout << "\n**********Calibration*************\n\n";
     }
     relax = relax_nom;
 
-    if(errorPressure.norm()/pow((double)numberNodes,.5)<1e-8 || dlambda.norm()/pow((double)numberEdges,.5)<1e-8){
+    if(errorPressure.norm()/pow((double)numberNodes,.5) < 1e-5 || dlambda.norm()/pow((double)numberEdges,.5) < 1e-5){
       konv = 1;
       break;
     }
-    if(i==iterMax-1 && getDebugLevel()>0)
+    if(i==iterMax-1 && debugLevelSVD>0)
         cout << "\nWARNING!! Convergence is not sufficient!";
   }
-  if(getDebugLevel()>0)
+  if(debugLevelSVD>0)
     cout << "\n\n---------------------------------\n******Ending Calibration******\n---------------------------------\n\n";
   if(konv != 0){
     for(int k=0; k<numberEdges; k++)
@@ -130,7 +130,7 @@ int SVDCalibration::calibrate(const vector<double> &fric_est, double tol){
   }
   for(int k=0; k<numberNodes; k++)
     nodes[k]->setProperty("demand",demandNominal[k]);
-  calculateSensitivity("friction_coeff",0);
+  calculateSensitivity("friction_coeff");
 
   return konv;
 }
@@ -178,14 +178,14 @@ MatrixXd SVDCalibration::constructSensitivity(const vector<double> &fric, Matrix
         nodes[k]->setProperty("demand",(measuredDemandSum[i]*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNominal)*demandNominal[k]);
     }
     // Steady state + sensitivity analysis
-    calculateSensitivity("friction_coeff",0.);
+    calculateSensitivity("friction_coeff");
     for(int k=0; k<numberPressure; k++)
       calculatedPressure(i,k) = nodes[measuredPressureIndex[k]]->getProperty("head");
     // Filling up the reduced sensitivity matrix
     for(int k=0; k<numberPressure; k++)
       Sr.row(i*numberPressure+k) = pressureSensitivity.row(measuredPressureIndex[k]);
   }
-  if(getDebugLevel()>1)
+  if(debugLevelSVD>1)
     cout << "\n*Sr:\n" << Sr << endl << endl;
 
   for(int i=0; i<numberNodes; i++)
@@ -213,7 +213,7 @@ void SVDCalibration::eigenSVD(const MatrixXd &A, double &tol, MatrixXd &U, Matri
     }else
       break;
 
-  if(getDebugLevel()>0){
+  if(debugLevelSVD>0){
     printf("\n*Singuar values of Sr (tol: %5.2f %%) : ", tol*100.);
     int i=0;
     while(i<v.rows() && S(i,i)>0.){

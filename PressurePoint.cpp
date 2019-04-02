@@ -24,7 +24,9 @@ PressurePoint::~PressurePoint() {
 string PressurePoint::info() {
     ostringstream strstrm;
     strstrm << Edge::info();
-    strstrm << endl << "  kapcsolodas : " << startNodeName << "(index:" << startNodeIndex << ")\n";
+    strstrm << "\n connection            : " << startNodeName << "(index:" << startNodeIndex << ")";
+    strstrm << "\n pressure              : " << head << " [Pa]";
+    strstrm << "\n head                  : " << head/density/gravity << " [m]" << endl;
     return strstrm.str();
 }
 

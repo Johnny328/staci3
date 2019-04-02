@@ -1,22 +1,16 @@
 #include "Statistic.h"
 
 using namespace std;
+using namespace Eigen;
 
 //--------------------------------------------------------------
-void Avr_absmax_stddev(const vector<double> &x, double &a, double &m, double &s){
-  a = Average(x);
-  s = Stddev(x);
-  m = Absmax(x);
-}
-
-//--------------------------------------------------------------
-double Average(const vector<double> &x){
+double average(const vector<double> &x){
   double a=0.;
   for(int i=0; i<x.size() ;i++)
     a += x[i];
   return a/(double)x.size();
 }
-double Average(const vector<int> &x){
+double average(const vector<int> &x){
   double a=0.;
   for(int i=0; i<x.size() ;i++)
     a += x[i];
@@ -24,7 +18,7 @@ double Average(const vector<int> &x){
 }
 
 //--------------------------------------------------------------
-double Absmax(const vector<double> &x){
+double absoluteMax(const vector<double> &x){
   double m=0.;
   for(int i=0; i<x.size(); i++)
     if((x[i]>m))
@@ -33,16 +27,16 @@ double Absmax(const vector<double> &x){
 }
 
 //--------------------------------------------------------------
-double Stddev(const vector<double> &x){
+double standardDeviation(const vector<double> &x){
   double s=0.;
-  double m = Average(x);
+  double m = average(x);
   for(int i=0; i<x.size(); i++)
     s += pow(x[i]-m,2.);
   return pow(s/((double)x.size()-1),.5);
 }
 
 //--------------------------------------------------------------
-double NormalDist(double m, double szig){
+double normalDistribution(double m, double szig){
   random_device rd;
   default_random_engine generator( rd() );
   normal_distribution<double> dist(m,szig);
@@ -50,14 +44,14 @@ double NormalDist(double m, double szig){
 }
 
 //--------------------------------------------------------------
-double UniformDist(double min, double max)
+double uniformDistribution(double min, double max)
 {
     double f = (double)rand() / RAND_MAX;
     return min + f * (max - min);
 }
 
 //--------------------------------------------------------------
-bool ChiSquared_test(const vector<double> &x, double m, double szig){
+bool chiSquaredTest(const vector<double> &x, double m, double szig){
   bool r=false;
   int no_intervals = 6;
   int n_data = x.size();
@@ -103,7 +97,7 @@ bool ChiSquared_test(const vector<double> &x, double m, double szig){
 }
 
 //--------------------------------------------------------------
-bool TwoSampleU_test(double m1, double s1, int n1, double m2, double s2, int n2, double p){
+bool twoSampleUTest(double m1, double s1, int n1, double m2, double s2, int n2, double p){
   bool test_ok = false;
   double u_akt, u_krit;
 
@@ -160,7 +154,7 @@ double erfinv(double x)
 }
 
 //--------------------------------------------------------------
-double CorrelCoef(const vector<double> &x, const vector<double> &y){
+double correlCoefficient(const vector<double> &x, const vector<double> &y){
   if(x.size() != y.size()){
     cout << "\n\n !!!!! ERROR !!!!!\n Size of x and y are not matching in CorrelCoef, Statistic.cpp\n";
     return 0;
@@ -184,9 +178,11 @@ double CorrelCoef(const vector<double> &x, const vector<double> &y){
 }
 
 //--------------------------------------------------------------
-vector<double> GrubbsTest(const vector<double> &x){
+vector<double> grubbsTest(const vector<double> &x){
   double a,m,s;
-  Avr_absmax_stddev(x,a,m,s);
+  a = average(x);
+  m = absoluteMax(x);
+  s = standardDeviation(x);
   vector<double> y;
   for(int i=0; i<x.size(); i++)
     if(x.at(i) > m-3.*s && x.at(i) < m+3.*s)
@@ -329,6 +325,11 @@ double min(vector<double> x, int &idx){
   }
   return min;
 }
+//--------------------------------------------------------------
+double min(vector<double> x){
+  int idx;
+  return min(x,idx);
+}
 
 //--------------------------------------------------------------
 double max(vector<double> x, int &idx){
@@ -341,4 +342,61 @@ double max(vector<double> x, int &idx){
     }
   }
   return max;
+}
+//--------------------------------------------------------------
+double max(vector<double> x){
+  int idx;
+  return max(x,idx);
+}
+
+VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int order){
+
+  if(x.rows() != y.rows()){
+    cout << endl << "!!!ERROR!!! Statistic::leastSquaresPolynomial(): size of X is not equal to size of Y" << endl << "Exiting..." << endl;
+    exit(0);
+  }
+  if(order>x.rows()-1){
+    cout << endl << "!!!WARNING!!! Statistic::leastSquaresPolynomial(): order(" << order << ") is larger or equal than number of points(" << x.rows() << ")!" << endl << "order is decreased to x.rows()-1 (" << x.rows()-1 << "), then continouing..." << endl;
+    order = x.rows()-1;
+  }
+
+  VectorXd out = VectorXd::Zero(order+1);
+  MatrixXd Gram = MatrixXd::Zero(order+1,order+1);
+
+  for(int i=0; i<Gram.rows(); i++){
+    for(int j=i; j<Gram.cols(); j++){
+      Gram(i,j) = (eigenVectorXdPow(x,i).transpose()*eigenVectorXdPow(x,j)).sum(); // <fi,fj> = [x1^i, ... xm^i]*[x1^j, ... xm^j]^T
+      if(j!=i)
+        Gram(j,i) = Gram(i,j); // Since Gram matrix is symmetric
+    }
+  }
+
+  VectorXd b = VectorXd::Zero(order+1);
+  for(int i=0; i<b.rows(); i++)
+    b(i) = (y.transpose()*eigenVectorXdPow(x,i)).sum();
+
+  out = Gram.ldlt().solve(b); //LDL decomposition is suitable, since Gram is positive definite (also symmetric)
+
+  return out;
+}
+
+VectorXd eigenVectorXdPow(const VectorXd &x, int order){
+  int n=x.rows();
+  VectorXd out;
+  if(order==0)
+    out = VectorXd::Constant(n,1.);
+  else
+    out = x;
+
+  if(order>=2 || order <=-2){
+    for(int i=0; i<n; i++)
+      for(int j=0; j<order-1; j++)
+        out(i) = out(i)*out(i);
+  }
+
+  if(order<0){
+    for(int i=0; i<n; i++)
+      out(i) = 1./out(i);
+  }
+  return out;
 }

@@ -50,9 +50,6 @@ public:
     // Creates the indicies for the nodes of edges and edges of nodes i.e. indexing of the sparse Jacobian
     void buildSystem();
 
-    // Writing log infos to console and log file
-    void writeLogFile(string msg, int msg_debug_level);
-
     // Prints everything 
     void listSystem();
 
@@ -65,14 +62,6 @@ public:
     /// ************************************************ ///
     /// GETSET GETSET GETSET GETSET GETSET GETSET GETSET ///
     /// ************************************************ ///
-    int getDebugLevel()
-    {
-        return debugLevel;
-    }
-    void setDebugLevel(int a)
-    {
-        debugLevel = a;
-    }
     string getResultFile()
     {
         return resultFile;
@@ -109,9 +98,11 @@ public:
     {
         isInitialization = van_e;
     }
+    string getFrictionModel(){
+        return frictionModel;
+    }
 
 private:
-    int debugLevel;
     bool isInitialization;
     string definitionFile, outputFile, initializationFile, resultFile;
     string frictionModel;

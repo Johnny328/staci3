@@ -31,7 +31,7 @@ void Node::initialization(int mode, double value)
 void Node::setProperty(string prop, double value)
 {
   if(prop == "demand")
-    demand = value / 3600 * density;
+    demand = value;
   else if(prop == "head")
     head = value;
   else if(prop == "density")
@@ -56,32 +56,32 @@ void Node::setProperty(string prop, double value)
 //--------------------------------------------------------------
 double Node::getProperty(string prop)
 {
-  double dataOut = 0.0;
+  double out = 0.0;
 
   if(prop == "demand")
-    dataOut = demand * 3600 / density; //saved in kg/s, but returned in m3/h
+    out = demand;
   else if(prop == "pressure")
-    dataOut = head / density / 9.81;
+    out = head / density / 9.81;
   else if(prop == "head")
-    dataOut = head;
+    out = head;
   else if(prop == "density")
-    dataOut = density;
+    out = density;
   else if(prop == "height" || prop == "geodeticHeight")
-    dataOut = geodeticHeight;
+    out = geodeticHeight;
   else if(prop == "xPosition")
-    dataOut = xPosition;
+    out = xPosition;
   else if(prop == "yPosition")
-    dataOut = yPosition;
+    out = yPosition;
   else if(prop == "user1")
-    dataOut = user1;
+    out = user1;
   else if(prop == "user2")
-    dataOut = user2;
+    out = user2;
   else
   {
     cout << endl << endl << "Node::getProperty() wrong argument:" << prop;
     cout << ", right values: demand|head|pressure|density|height|xPosition|yPosition|user1|user2" << endl << endl;
   }
-  return dataOut;
+  return out;
 }
 
 //--------------------------------------------------------------
@@ -104,7 +104,7 @@ string Node::info(bool check_if_lonely)
 
   if (check_if_lonely && ((edgeIn.size() + edgeOut.size()) == 0))
   {
-    strstrm << "\n!!! PANIC !!! Lonely node: " << name << " !!!\n";
+    strstrm << "\n!!! ERROR !!! Lonely node: " << name << " !!!\n";
     cout << strstrm.str();
     exit(-1);
   }

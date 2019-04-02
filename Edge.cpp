@@ -54,7 +54,7 @@ double Edge::getEdgeDoubleProperty(string prop){
     out = massFlowRate;
   else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
     out = massFlowRate / density;
-  else if(prop == "velicoty")
+  else if(prop == "velocity")
     out = massFlowRate / density / referenceCrossSection;
   else if(prop == "density")
     out = density;
@@ -67,7 +67,7 @@ double Edge::getEdgeDoubleProperty(string prop){
   else
   {
     cout << endl << endl << "DOUBLE Edge::getEdgeDoubleProperty() wrong argument:" << prop;
-    cout << ", right values: massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: massFlowRate | velocity | density | length | referenceCrossSection | user1 | user2" << endl << endl;
   }
   return out;
 }

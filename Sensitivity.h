@@ -25,13 +25,13 @@ public:
 	~Sensitivity();
 
   /*! Calculating the sensitivity on a per-pipe basis.
-      Paramter can be either Pipe diameter, roughness or Node demand.*/
-	bool calculateSensitivity(string parameter, int scale);
+      Paramter can be either Pipe diameter, roughness or Node demand.
+      diameter | friction_coeff | demand */
+	bool calculateSensitivity(string parameter);
 	
 private:
   VectorXd functionDerivative; // derivative of eqs. w.r.t. parameter
   VectorXd resultDerivative; // derivative of eqs. w.r.t. parameter
 
-  string propertyID, elementID;
-	void calculateFunctionDerivative();
+	VectorXd calculateFunctionDerivative(string parameter, string elementID);
 };

@@ -36,7 +36,7 @@ public:
 
 	/*! Giving initial values for unknows (i.e. x vector) using another
 			Staci type objective.*/
-	void initialization(const Staci * IniStaci);
+	void initialization(const Staci * inStaci);
 
 	/// Printing the solution to consol and log file (for debugging)
 	string listResult();
@@ -46,18 +46,18 @@ protected:
 	/// Used in f(x) = 0, and also in Sensitivity class
   SparseMatrix<double, ColMajor> jacobianMatrix; 
 
+  /// Maximal accepted error of pressure and mass flow rate
+  /// in case of hydraulic solver (2* in case of SVD calibration)
+  double maxMassFlowError, maxPressureError;
+
 private:
   double relaxationFactor, relaxationFactorIncrement, minRelaxationFactor, maxRelaxationFactor;
-  double maxMassFlowError, maxPressureError;
   double pressureInitial, massFlowInitial;
   int maxIterationNumber;
   string frictionModel; // Darcy-Weisbach or Hazen-Williams
 
-  /// Printing the basic iteration informaition to console and log file
-	string iterInfo(const VectorXd &x,const VectorXd &f, int iter, double e_mp, double e_p);
-
 	/// Linear solver with Newton's technique
-  bool linearSolver(VectorXd &x, VectorXd &f);
+  void linearSolver(VectorXd &x, VectorXd &f);
 
   /// Updating the Jacobian matrix and relaxation factor
 	void updateJacobian(VectorXd &x, VectorXd &f, int iter);
@@ -66,8 +66,8 @@ private:
 	/// Computing the change in x, explicitly in pressure and massflowrate
 	void computeError(const VectorXd &f, double & e_mp, double & e_p, double & e_mp_r, double & e_p_r, bool & konv_ok);
 
-	/// For debugging, debugLevel > TODO
-	void printJacobian();
-	/// For debugging, debugLevel > TODO
-	void printWorstIter(const VectorXd &x, const VectorXd &f , const int a_debug_level);
+	/// Printing the basic iteration informaition to console and log file
+	string iterInfo(int iter, double e_mp, double e_p);
+  /// Printing the detailed iteration informaition to console and log file
+	string iterInfoDetail(const VectorXd &x, const VectorXd &f);
 };

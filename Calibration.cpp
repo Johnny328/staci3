@@ -24,7 +24,7 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
       fricNominal[k] = edges.at(k)->getDoubleProperty("roughness");
 
   //if((demandNoiseMode == "Uniform" || demandNoiseMode == "Normal" || demandNoiseMode == "None") == false){
-  if((demandNoiseMode == "None") == false){
+  if((demandNoiseMode == "None") == false && (demandNoiseMode == "Normal") == false && (demandNoiseMode == "Uniform") == false){
     cout << "\n!!!!! ERROR !!!!!\nCalibration:generateMeasurement function\nPerturbation methods available: Uniform || Normal || None\n\"" << demandNoiseMode << "\" is not existing.\nChanging to None!!! Continouing...\n\n";
     demandNoiseMode = "None";
   }
@@ -72,10 +72,10 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
       }
       if(demandNoiseMode == "Uniform")
         if(nodes[k]->getProperty("demand") > 0. && !measured)
-          nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*UniformDist(demandNoiseValue[0],demandNoiseValue[1]));
+          nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*uniformDistribution(demandNoiseValue[0],demandNoiseValue[1]));
       if(demandNoiseMode == "Normal")
         if(nodes[k]->getProperty("demand") > 0. && !measured)
-          nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*NormalDist(demandNoiseValue[0],demandNoiseValue[1]));
+          nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]*normalDistribution(demandNoiseValue[0],demandNoiseValue[1]));
       if(demandNoiseMode == "None")
         if(nodes[k]->getProperty("demand") > 0. && !measured)
           nodes[k]->setProperty("demand",(measuredDemandSum(j)*demandSumNominal-demandSumMeasuredReal)/(demandSumNominal-demandSumMeasuredNomnial)*demandNominal[k]); 
@@ -118,8 +118,6 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
       edges[k]->setDoubleProperty("roughness",fricNominal[k]);
   solveSystem();
 
-  if(getDebugLevel()>1)
-    cout << endl << "Generating measurement data: OK" << endl;
 }
 
 void Calibration::loadMeasurement(string caseFileName, bool isPressure){
@@ -175,6 +173,4 @@ void Calibration::loadMeasurement(string caseFileName, bool isPressure){
       }
     }
   }
- if(getDebugLevel()>1)
-  cout << endl << "Loading measurement data: OK" << endl; 
 }

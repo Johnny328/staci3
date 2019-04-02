@@ -1,9 +1,3 @@
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <math.h>
-#include "Edge.h"
 #include "Pool.h"
 
 Pool::Pool(const string a_name, const string a_startNodeName, const double a_density, const double a_referenceCrossSection, const double a_bottomLevel, const double a_waterLevel, const double a_massFlowRate) :
@@ -24,10 +18,10 @@ Pool::~Pool() {
 string Pool::info() {
     ostringstream strstrm;
     strstrm << Edge::info();
-    strstrm << "\n               type : " << type;
-    strstrm << "\n         connection : " << startNodeName << "(index:" << startNodeIndex << ")\n";
-    strstrm << "     bottom level [m] : " << bottomLevel << endl;
-    strstrm << "      water level [m] : " << waterLevel << endl;
+    strstrm << "\n type                  : " << type;
+    strstrm << "\n connection            : " << startNodeName << "(index:" << startNodeIndex << ")\n";
+    strstrm << " bottom level [m]      : " << bottomLevel << endl;
+    strstrm << " water level [m]       : " << waterLevel << endl;
     return strstrm.str();
 }
 

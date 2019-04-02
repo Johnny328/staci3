@@ -19,8 +19,16 @@
 #ifndef EDGE_H
 #define EDGE_H
 
+#include "Statistic.h"
+
+#include "Eigen/Eigen/Eigen"
+
+#include <sstream>
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include <iomanip>
+#include <string>
 
 using namespace std;
 
@@ -58,7 +66,7 @@ public:
   virtual string info();
 
   /// Get equation derivative w.r.t. parameter
-  virtual double getFunctionDerivative(string prop) { return 0.0; }
+  virtual double functionParameterDerivative(string prop) { return 0.0; }
 
   /// Setting the fricition model: DW (Darcy-Weisbach) | HW (Hazen-Williams)
   virtual void setFrictionModel(string friction_model) {};

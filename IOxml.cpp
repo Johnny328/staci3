@@ -109,6 +109,13 @@ void IOxml::loadSystem(vector<Node *> &nodes, vector<Edge *> &edges) {
 
       edges.push_back(new Valve(id, node_from, node_to, density, aref, e, zeta, state, mass_flow_rate));
     }
+    else if(edgeType == "pump") // PUMP
+    {
+      vector<double> Q, H;
+      curveReader(id, nodeEdgeSpec.getChildNode("curve"), Q, H);
+
+      edges.push_back(new Pump(id, node_from, node_to, density, aref, Q, H, mass_flow_rate));
+    }
     else
     {
       cout << endl << " !!!WARNING!!! " << endl << " Reading from XML file, unknown edge type: " << edgeType << "  ID: " << id << endl << " Continouing..." << endl;

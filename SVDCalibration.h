@@ -55,9 +55,20 @@ public:
   *return:  det of the matrix*/
   double traceSVD(const MatrixXd &S);
 
+  //========================
+  //GETSETGETSETGETSETGETSET
+  //========================
+  void setDebugLevelSVD(int a)
+  {
+    debugLevelSVD = a;
+  }
+
 private:
 		/*! WR: Building up the reduced sensitivity matrix for SVDCalibrate
 	*  calculatedPressure:		giving back the calculated pressures for SVDCalibrate
 	*	return:		reduced sensitivity matrix*/
   MatrixXd constructSensitivity(const vector<double> &fric, MatrixXd &calculatedPressure);
+
+  /// Debugging the SVDCalibration class
+  int debugLevelSVD;
 };
