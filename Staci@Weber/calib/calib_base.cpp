@@ -19,10 +19,9 @@ int main(int argc, char* argv[]){
 
   // Creating the case
   wds = new SVDCalibration(case_name + ".spr");
-  wds->setDebugLevel(2);
+  wds->setDebugLevelSVD(1);
   wds->buildSystem();
   wds->initialization();
-  wds->listSystem();
   int numberEdges = wds->edges.size();
 
   cout << endl << "numberEdges: " << numberEdges << endl;

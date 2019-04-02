@@ -43,7 +43,6 @@ int main(int argc, char* argv[]){
   // Creating the case
   //wds = new Staci(case_folder + case_name + ".spr");
   wds = new SVDCalibration(case_folder + case_name + ".spr");
-  wds->setDebugLevel(1);
   wds->buildSystem();
   wds->initialization();
   int n_nodes = wds->nodes.size();
@@ -130,7 +129,7 @@ int main(int argc, char* argv[]){
       fric_est.push_back(fric_real.at(i)*1.5);
       wds->edges.at(i)->setDoubleProperty("roughness",fric_est.at(i));
     }
-  wds->calculateSensitivity(sens_par_name,0.);
+  wds->calculateSensitivity(sens_par_name);
 
   int konv = wds->calibrate(fric_est, tol);
 
