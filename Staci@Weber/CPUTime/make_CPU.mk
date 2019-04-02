@@ -15,6 +15,7 @@ $(STACI_DIR)Node.o \
 $(STACI_DIR)Pipe.o \
 $(STACI_DIR)Pool.o \
 $(STACI_DIR)PressurePoint.o \
+$(STACI_DIR)Pump.o \
 $(STACI_DIR)Sensitivity.o \
 $(STACI_DIR)SVDCalibration.o \
 $(STACI_DIR)Staci.o \
