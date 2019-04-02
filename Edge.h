@@ -47,6 +47,7 @@ public:
   void setEdgeStringProperty(string prop, string value);
 
   virtual double getDoubleProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0); return 0.; }
+  virtual vector<double> getVectorProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0); vector<double> x; return x; }
   virtual int getIntProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0);  return 0; }
   virtual string getStringProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0);  return ""; };
   virtual void setDoubleProperty(string prop, double value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };

@@ -176,3 +176,18 @@ void Pump::setDoubleProperty(string prop, double value){
     cout << ", right values: massFlowRate | density | referenceCrossSection | user1 | user2" << endl << endl;
   }
 }
+
+//--------------------------------------------------------------
+vector<double> Pump::getVectorProperty(string prop){
+  vector<double> out;
+  if(prop == "volumeFlowRate")
+    out = volumeFlowRate;
+  else if(prop == "head")
+    out = head;
+  else
+  {  
+    cout << endl << endl << "vector <double> Pump::getVectorProperty( string prop ) wrong argument:" << prop;
+    cout << ", right values: volumeFlowRate | head " << endl << endl;
+  }
+  return out;
+}

@@ -40,9 +40,10 @@ public:
   //========================
   double getDoubleProperty(string prop);
   void setDoubleProperty(string prop, double value);
+  vector<double> getVectorProperty(string prop);
 
 private:
-	vector<double> volumeFlowRate, head;
+	vector<double> volumeFlowRate, head; // Pump CURVE at nominal revolution speed
 	vector<double> coefficients; // coefficients of fitted polynomails
 	int curveOrder;
 
