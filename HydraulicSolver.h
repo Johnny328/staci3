@@ -38,8 +38,8 @@ public:
 			Staci type objective.*/
 	void initialization(const Staci * inStaci);
 
-	/// Printing the solution to consol and log file (for debugging)
-	string listResult();
+	/// Printing the solution to consol (for debugging)
+	void listResult();
 
 protected:
 	/// Jacobian matrix in a sparse Eigen type container

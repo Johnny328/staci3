@@ -94,12 +94,6 @@ vector<double> Pump::functionDerivative(vector<double> x){
     derivative += coefficients[i] * i * pow(massFlowRate / density, i - 1);
   derivative /= -density;
 
-  // In case of negative derivative, we overwrite with zero
-  //if(derivative < 0){
-  //  derivative = 0;
-  //  cout << "\n derivative is negative" << endl;
-  //}
-
   result.push_back(derivative);
   result.push_back(0.0);
 
@@ -126,7 +120,7 @@ double Pump::characteristicCurve(double Q){
     cout << endl << "!!!WARNING!!! Pump (" << name << ") characteristic curve: volume flow rate (" << Q << ") is larger than curve minimum (" << max(volumeFlowRate) << ")" << endl << "Extrapolating..." << endl;
 
   for(int i=0; i<coefficients.size(); i++)
-    H += coefficients[i] * pow(Q,i);
+    H += coefficients[i] * pow(revolutionNumber,2-i) * pow(Q,i);
 
   return H;
 }
@@ -138,6 +132,8 @@ double Pump::getDoubleProperty(string prop){
     out = referenceCrossSection;
   else if(prop == "head")
     out = characteristicCurve(massFlowRate / density);
+  else if(prop == "revolutionNumber")
+    out = revolutionNumber;
   else if(prop == "massFlowRate" || prop == "mass_flow_rate")
     out = massFlowRate;
   else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
@@ -152,7 +148,7 @@ double Pump::getDoubleProperty(string prop){
     out = user2;
   else{
     cout << endl << endl << "DOUBLE Pump::getDoubleProperty() wrong argument:" << prop;
-    cout << ", right values: massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: massFlowRate | head | revolutionNumber | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
     out = 0.0;
   }
   return out;
@@ -164,6 +160,8 @@ void Pump::setDoubleProperty(string prop, double value){
     massFlowRate = value;
   else if(prop == "density")
     density = value;
+  else if(prop == "revolutionNumber")
+    revolutionNumber = value;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     referenceCrossSection = value;
   else if(prop == "user1")
@@ -173,7 +171,7 @@ void Pump::setDoubleProperty(string prop, double value){
   else
   {  
     cout << endl << endl << "Pump::setDoubleProperty( DOUBLE ) wrong argument:" << prop;
-    cout << ", right values: massFlowRate | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: massFlowRate | density | revolutionNumber | referenceCrossSection | user1 | user2" << endl << endl;
   }
 }
 

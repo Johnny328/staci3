@@ -46,6 +46,7 @@ private:
 	vector<double> volumeFlowRate, head; // Pump CURVE at nominal revolution speed
 	vector<double> coefficients; // coefficients of fitted polynomails
 	int curveOrder;
+  double revolutionNumber = 1.; // revolution of the pump, if equal one it is the nominal (that is also the default value)
 
 	double characteristicCurve(double q);
 };

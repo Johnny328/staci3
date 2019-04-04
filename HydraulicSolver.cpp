@@ -92,18 +92,20 @@ void HydraulicSolver::linearSolver(VectorXd &x, VectorXd &f) {
 }
 
 //--------------------------------------------------------------
-string HydraulicSolver::listResult() {
+void HydraulicSolver::listResult() {
  
-  ostringstream strstrm;
-  strstrm << scientific << setprecision(3) << showpos;
-  strstrm << endl << endl << "RESULTS:";
-  for(int i = 0; i < edges.size(); i++)
-    strstrm << endl << "\t" << edges[i]->getEdgeStringProperty("name") << ":\tmp=" << edges[i]->getEdgeDoubleProperty("massFlowRate") << " kg/s" << "\tQ=" << (3600 * (edges[i]->getEdgeDoubleProperty("volumeFlowRate"))) << " m3/h" << "\tv=" << edges[i]->getEdgeDoubleProperty("velocity") << " m/s";
-  strstrm << endl << "\t" << "-----------------------------------------------------------------";
-  for(int i = 0; i < nodes.size(); i++)
-    strstrm << endl << "\t" << nodes[i]->getName() << ":\t p=" << nodes[i]->getProperty("head") * 1000 * 9.81 / 1e5 << " bar" << "\tH=" << nodes[i]->getProperty("head") << " m" << ",   H+height=" << nodes[i]->getProperty("head") + nodes[i]->getProperty("height") << " m";
-  strstrm << endl << endl;
-  return strstrm.str();
+  cout << scientific << setprecision(3) << showpos;
+  cout << endl << endl << "RESULTS:";
+  for(int i = 0; i < edges.size(); i++){
+    printf("\n %-12s:",edges[i]->getEdgeStringProperty("name").c_str());
+    cout << "  mp = " << edges[i]->getEdgeDoubleProperty("massFlowRate") << " kg/s" << "   Q = " << (3600 * (edges[i]->getEdgeDoubleProperty("volumeFlowRate"))) << " m3/h" << "   v = " << edges[i]->getEdgeDoubleProperty("velocity") << " m/s";
+  }
+  cout << endl << "\t" << "-----------------------------------------------------------------";
+  for(int i = 0; i < nodes.size(); i++){
+    printf("\n %-12s:", nodes[i]->getName().c_str());
+    cout << "  p = " << nodes[i]->getProperty("head") * 1000 * 9.81 / 1e5 << " bar" << "     H = " << nodes[i]->getProperty("head") << " m" << "      H+height=" << nodes[i]->getProperty("head") + nodes[i]->getProperty("height") << " m";
+  }
+  cout << endl << endl;
 }
 
 //--------------------------------------------------------------
