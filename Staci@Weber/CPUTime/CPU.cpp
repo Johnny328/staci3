@@ -13,19 +13,15 @@ using namespace Eigen;
 int main(int argc, char* argv[]){
 
   // Name of containing folder of staci file
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/sopron_halozatok/";
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/anytown/";
-  string case_folder = "/home/rweber/0_PhD/Halozatok/general_alap/";
+  string case_folder = "../../Networks/";
 
   string case_name;
   if(argc == 1){
-    //case_name = "VIZ-SOPTVR-O-68-input_mod_94_2";
-    //case_name = "VIZ-SOPTVR-O-68-input_mod";
-    //case_name = "VIZ-SOPTVR-J-55-input_mod";
-    //case_name = "VIZ-SOPTVR-M-input_mod";
-    //case_name = "Anytown_DC1";
-    case_name =  "lin_alap_9";
-    //case_name =  "racs_alap_9";
+    case_name = "Anytown";
+    //case_name =  "linear_9";
+    //case_name =  "grid_9";
+    //case_name =  "ky2";
+    //case_name =  "Net1";
   }else if(argc == 2){
     case_name = argv[1];
   }
