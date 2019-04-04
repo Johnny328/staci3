@@ -16,15 +16,9 @@ int main(int argc, char* argv[]){
 
   double dzeta = 0.5;
 
-  // Name of containing folder of staci file
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/sopron_halozatok/";
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/general_alap/";
-
   string case_name;
   if(argc == 1){
-    //case_name = "VIZ-SOPTVR-O-68-input_mod_94_2";
-    //case_name = "VIZ-SOPTVR-O-68-input_mod";
-    case_name =  "lin_alap_9";
+    case_name =  "linear_9";
   }else if(argc == 2){
     case_name = argv[1];
   }
