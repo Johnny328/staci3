@@ -40,18 +40,17 @@ int main(int argc, char* argv[]){
 
   string case_name;
   if(argc == 1){
-    case_name = "Anytown";
+    case_name = "Net1";
   }else if(argc == 2){
     case_name = argv[1];
   }
-
-  cout << endl << "Case: " << case_name << endl;
 
   // Creating the case, loading the data
   wds = new Staci(case_name + ".spr");
   wds->buildSystem();
   int n_nodes = wds->nodes.size(), n_edges=wds->edges.size();
 
+  cout << endl << "[*] File loaded successfully: " << case_name << ".spr" << endl;
   // Start of writing the file
   string file_name = case_name + ".inp";
   FILE *wfile;
@@ -192,6 +191,8 @@ int main(int argc, char* argv[]){
   // End of writing the file
   fprintf(wfile, "\n[END]\n");
   fclose(wfile);
+
+  cout << endl << "[*] File written successfully: " << case_name << ".inp" << endl;
 
   cout << endl << endl;
   return 0;
