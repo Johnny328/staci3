@@ -16,32 +16,15 @@ int main(int argc, char* argv[]){
 
   double tol = 1.0;
   // Name of containing folder of staci file
-  string case_name;
-  if(argc == 1){
-      //case_name = "VIZ-SOPTVR-B-input_mod";
-      //case_name = "Anytown_DC1";
-      //case_name = "C-town_mod_10";
-      //case_name = "VIZ-SOPTVR-M-input_mod";
-      //case_name = "VIZ-SOPTVR-Q-input_mod";
-      //case_name = "lin_tank_10";
-      case_name = "lin_alap_9";
-      //case_name = "racs_alap_9";
-      //case_name = "kor_alap_6";
-  }else if(argc == 2){
-      case_name = argv[1];
-  }
+  string case_name = "linear_9";
+
   cout << endl << "Case: " << case_name << endl;
   cout << setprecision(6) << fixed;
   srand((unsigned int) time(0));
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/sopron_halozatok/";
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/general_alap/";
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/anytown/";
-  //string case_folder = "/home/rweber/0_PhD/Halozatok/";
   string case_folder = "";
 
   string sens_par_name = "friction_coeff";
   // Creating the case
-  //wds = new Staci(case_folder + case_name + ".spr");
   wds = new SVDCalibration(case_folder + case_name + ".spr");
   wds->buildSystem();
   wds->initialization();

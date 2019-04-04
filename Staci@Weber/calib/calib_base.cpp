@@ -13,7 +13,8 @@ SVDCalibration *wds;
 int main(int argc, char* argv[]){
 
   // Name of containing folder of staci file
-  string case_name = "lin_alap_9";
+  string case_name = "linear_9";
+
   cout << endl << "Case: " << case_name << endl;
   string sens_par_name = "friction_coeff";
 
