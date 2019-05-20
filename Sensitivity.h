@@ -1,5 +1,5 @@
 /*===================================================================*\
-                                  Pool
+                              Sensitivity
                             ---------------
 
   Derived from HydraulicSolver class. This class is capable of
@@ -30,8 +30,8 @@ public:
 	bool calculateSensitivity(string parameter);
 	
 private:
-  VectorXd functionDerivative; // derivative of eqs. w.r.t. parameter
+  //SparseMatrix<double, ColMajor> functionDerivative; // derivative of eqs. w.r.t. parameter
+  //MatrixXd resultDerivative; // derivative of eqs. w.r.t. parameter
+  SparseVector<double> functionDerivative; // derivative of eqs. w.r.t. parameter
   VectorXd resultDerivative; // derivative of eqs. w.r.t. parameter
-
-	VectorXd calculateFunctionDerivative(string parameter, string elementID);
 };

@@ -41,10 +41,20 @@ public:
 	/// Printing the solution to consol (for debugging)
 	void listResult();
 
+  /// density of the fluid
+  double density = 1000.0;
+
+  // Is the demands depending on pressure
+  bool isPressureDemand = false;
+  double exponent = 2., pressureDes = 25., pressureMin = 10.;
+
 protected:
 	/// Jacobian matrix in a sparse Eigen type container
 	/// Used in f(x) = 0, and also in Sensitivity class
-  SparseMatrix<double, ColMajor> jacobianMatrix; 
+  SparseMatrix<double, ColMajor> jacobianMatrix;
+  
+  // Eigen Sparse LU decomposition solver
+  SparseLU<SparseMatrix<double, ColMajor> > solver;
 
   /// Maximal accepted error of pressure and mass flow rate
   /// in case of hydraulic solver (2* in case of SVD calibration)
@@ -56,11 +66,14 @@ private:
   int maxIterationNumber;
   string frictionModel; // Darcy-Weisbach or Hazen-Williams
 
-	/// Linear solver with Newton's technique
+	/// Linear solver Jac*x = -f
   void linearSolver(VectorXd &x, VectorXd &f);
 
-  /// Updating the Jacobian matrix and relaxation factor
-	void updateJacobian(VectorXd &x, VectorXd &f, int iter);
+  /// Building up the Jacobian matrix (also calculating the function f(x)) before the Newtonian iteration
+	void buildJacobian(VectorXd &x, VectorXd &f);
+	void updateJacobian(VectorXd &x, VectorXd &f);
+
+  /// Updating relaxation factor for the Newtonian iteration
 	void updateRelaxationFactor(double e_mp, double e_p, double & e_mp_r, double & e_p_r);
 
 	/// Computing the change in x, explicitly in pressure and massflowrate
