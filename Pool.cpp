@@ -16,40 +16,26 @@ Pool::~Pool() {
 
 //--------------------------------------------------------------
 string Pool::info() {
-    ostringstream strstrm;
-    strstrm << Edge::info();
-    strstrm << "\n type                  : " << type;
-    strstrm << "\n connection            : " << startNodeName << "(index:" << startNodeIndex << ")\n";
-    strstrm << " bottom level [m]      : " << bottomLevel << endl;
-    strstrm << " water level [m]       : " << waterLevel << endl;
-    return strstrm.str();
+  ostringstream strstrm;
+  strstrm << Edge::info();
+  strstrm << "\n type                  : " << type;
+  strstrm << "\n connection            : " << startNodeName << "(index:" << startNodeIndex << ")";
+  strstrm << "\n bottom level          : " << bottomLevel << " [m]";
+  strstrm << "\n water level           : " << waterLevel << " [m]" << endl;
+  return strstrm.str();
 }
 
 //--------------------------------------------------------------
-double Pool::function(vector<double> x) { //TODO L,D,A = ????
-    double L = 1.;
-    double D = 0.5;
-    double A = D * D * M_PI / 4.;
-    double c = 0.02 * L / D / 2. / gravity / density / density / A / A;
-    double result = x[0] + x[2] + 0. * c * massFlowRate * abs(massFlowRate) - (bottomLevel + waterLevel);
-
-    return result;
+double Pool::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
+  return x[0] + height - (bottomLevel + waterLevel);
 }
 
 //--------------------------------------------------------------
-vector<double> Pool::functionDerivative(vector<double> x) {
+vector<double> Pool::functionDerivative(vector<double> x){
     vector<double> result;
     result.push_back(1.0);
     result.push_back(0.0);
-    /*double L = 1;
-    double D = 0.5;
-    double A = D * D * M_PI / 4;
-    double c = 0.02 * L / D / 2. / gravity / density / density / A / A;
-    result.push_back(0 * 2 * c * fabs(massFlowRate));*/
-    //result.push_back(-head / density / gravity);
     result.push_back(0.0);
-    result.push_back(-(bottomLevel + waterLevel));
-
     return result;
 }
 
@@ -110,6 +96,8 @@ void Pool::setDoubleProperty(string prop, double value){
     user1 = value;
   else if(prop == "user2")
     user2 = value;
+  else if(prop == "height")
+    height = value;
   else
   {  
     cout << endl << endl << "Pool::setProperty( DOUBLE ) wrong argument:" << prop;

@@ -349,6 +349,7 @@ double max(vector<double> x){
   return max(x,idx);
 }
 
+//--------------------------------------------------------------
 VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int order){
 
   if(x.rows() != y.rows()){
@@ -376,10 +377,12 @@ VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int order)
     b(i) = (y.transpose()*eigenVectorXdPow(x,i)).sum();
 
   out = Gram.ldlt().solve(b); //LDL decomposition is suitable, since Gram is positive definite (also symmetric)
+  //out = Gram.fullPivLu().solve(b);
 
   return out;
 }
 
+//--------------------------------------------------------------
 VectorXd eigenVectorXdPow(const VectorXd &x, int order){
   int n=x.rows();
   VectorXd out;

@@ -6,53 +6,49 @@
 #include "PressurePoint.h"
 
 PressurePoint::PressurePoint(const string a_name, const double a_referenceCrossSection, const string a_startNodeName, const double a_density, const double a_head, const double a_massFlowRate) :
-
-    Edge(a_name, a_referenceCrossSection, a_massFlowRate, a_density) {
+    Edge(a_name, a_referenceCrossSection, a_massFlowRate, a_density){
     type = "PressurePoint";
     numberNode = 1;
 
     endNodeName = "<nincs>";
     startNodeName = a_startNodeName;
-    head = a_head;
+    head = a_head / density / gravity;
 }
 
 //--------------------------------------------------------------
-PressurePoint::~PressurePoint() {
+PressurePoint::~PressurePoint(){
 }
 
 //--------------------------------------------------------------
-string PressurePoint::info() {
+string PressurePoint::info(){
     ostringstream strstrm;
     strstrm << Edge::info();
     strstrm << "\n connection            : " << startNodeName << "(index:" << startNodeIndex << ")";
-    strstrm << "\n pressure              : " << head << " [Pa]";
-    strstrm << "\n head                  : " << head/density/gravity << " [m]" << endl;
+    strstrm << "\n pressure              : " << head*density*gravity << " [Pa]";
+    strstrm << "\n head                  : " << head << " [m]" << endl;
     return strstrm.str();
 }
 
 //--------------------------------------------------------------
-double PressurePoint::function(vector<double> x) {
-    double result = x[0] - head / density / gravity;
-    return result;
+double PressurePoint::function(vector<double> x){
+    return x[0] - head;
 }
 
 //--------------------------------------------------------------
-vector<double> PressurePoint::functionDerivative(vector<double> x) {
+vector<double> PressurePoint::functionDerivative(vector<double> x){
     vector<double> result;
-    result.push_back(1);
-    result.push_back(0);
-    result.push_back(0);
-    result.push_back(-head / density / gravity);
-
+    result.push_back(1.);
+    result.push_back(0.);
+    result.push_back(0.);
     return result;
 }
 
 //--------------------------------------------------------------
-void PressurePoint::initialization(int mode, double value) {
-    if (mode == 0)
-        massFlowRate = 0.01;
-    else
-        massFlowRate = value;
+void PressurePoint::initialization(int mode, double value){
+  if (mode == 0)
+    massFlowRate = 0.01;
+  else
+    massFlowRate = value;
 }
 
 
@@ -77,6 +73,8 @@ double PressurePoint::getDoubleProperty(string prop){
     out = user1;
   else if(prop == "user2")
     out = user2;
+  else if(prop == "height")
+    out = height;
   else
   {
     cout << endl << endl << "DOUBLE PressurePoint::getDoubleProperty() wrong argument:" << prop;
@@ -101,6 +99,8 @@ void PressurePoint::setDoubleProperty(string prop, double value){
     user1 = value;
   else if(prop == "user2")
     user2 = value;
+  else if(prop == "height")
+    height = value;
   else
   {  
     cout << endl << endl << "PressurePoint::setProperty( DOUBLE ) wrong argument:" << prop;

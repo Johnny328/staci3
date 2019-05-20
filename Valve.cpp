@@ -39,17 +39,7 @@ string Valve::info() {
 
 //--------------------------------------------------------------
 double Valve::function(vector<double> x) {
-  double result;
-  double pe = x[0] * density * gravity;
-  double pv = x[1] * density * gravity;
-  double he = x[2];
-  double hv = x[3];
-
-  result = (pv - pe) / density / gravity + (hv - he) + loss * massFlowRate * fabs(massFlowRate);
-
-  headLoss = loss * massFlowRate * abs(massFlowRate);
-
-  return result;
+  return x[1] - x[0] + (endHeight-startHeight) + loss * x[2] * abs(x[2]);
 }
 
 //--------------------------------------------------------------
@@ -57,8 +47,7 @@ vector<double> Valve::functionDerivative(vector<double> x) {
   vector<double> result;
   result.push_back(-1.0);
   result.push_back(+1.0);
-  result.push_back(+2 * loss * abs(massFlowRate));
-  result.push_back(0.0);
+  result.push_back(+2 * loss * abs(x[2]));
 
   return result;
 }
@@ -76,7 +65,11 @@ void Valve::setDoubleProperty(string property, double value) {
   if (property == "position") {
     position = value;
     updateLoss();
-  } else {
+  }else if (property == "startHeight")
+      startHeight = value;
+  else if (property == "endHeight")
+      endHeight = value;
+  else {
     cout << endl << endl << "ERROR! Valve::setDoubleProperty(property), unkown property: property=" << property << endl << endl;
   }
 }
@@ -92,13 +85,17 @@ double Valve::getDoubleProperty(string property) {
   else if (property == "massFlowRate")
     out = massFlowRate;
   else if (property == "headLoss")
-    out = headLoss;
+    out = loss * massFlowRate * abs(massFlowRate);
   else if (property == "headLoss_per_unit_length")
     out = headLoss;
   else if ((property == "length") || (property == "L"))
     out = 0.5;
   else if (property == "cross_section")
     out = referenceCrossSection;
+  else if (property == "startHeight")
+    out = startHeight;
+  else if (property == "endHeight")
+    out = endHeight;
   else
     cout << endl << "ERROR! Valve::getDoubleProperty(property), unkown property: property=" << property << endl << endl;
 

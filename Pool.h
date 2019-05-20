@@ -22,6 +22,7 @@ class Pool:public Edge{
 private:
   double bottomLevel;
   double waterLevel;
+  double height; // Height of the connecting node (NOT equal to waterLevel)
 
 public:
   Pool(const string a_name, const string a_startNodeName, const double a_density, const double a_referenceCrossSection, const double a_bottomLevel, const double a_waterLevel, const double a_massFlowRate);

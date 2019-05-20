@@ -72,6 +72,9 @@ public:
   /// Setting the fricition model: DW (Darcy-Weisbach) | HW (Hazen-Williams)
   virtual void setFrictionModel(string friction_model) {};
 
+  /// If this equals to true, it counts as closed, thus no equation will be solved, like it is not part of the system
+  bool isClosed = false;
+
 protected:
   double massFlowRate; // [kg/s]
   double density; // [kg/m3]
@@ -80,6 +83,7 @@ protected:
   const double gravity = 9.81; // [m/s2]
   int startNodeIndex, endNodeIndex;
   int numberNode;
+  int segment=-1; // the edge takes place in which segment
   string startNodeName, endNodeName;
   string name;
   string type; // Pipe, pool, pump, etc.

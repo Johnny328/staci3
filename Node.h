@@ -39,6 +39,10 @@ public:
   /// Giving initial values for pressure
   void initialization(int mode, double value);
 
+  // In case of pressure dependent demands, df/dx i.e. dd/dp is not zero
+  double function(double pressure, vector<double> parameters);
+  double functionDerivative(double pressure, vector<double> parameters);
+
   /// Setting a certain node double property
   /// demand|head|pressure|density|height|xPosition|yPosition|user1|user2
   void setProperty(string mit, double value);
@@ -50,12 +54,27 @@ public:
   /// Printing basic information about the node to console and log file
   string info(bool check_if_lonely);
 
+  /// If every connecting edges are closed, then the node will be as well, basically closed if edgeIn.size() + edgeOut.size() is zero
+  bool isClosed = false;
+
   //========================
   //GETSETGETSETGETSETGETSET
   //========================
   string getName()
   {
     return name;
+  }
+  void setName(string a)
+  {
+    name = a;
+  }
+  int getSegment()
+  {
+    return segment;
+  }
+  void setSegment(int a)
+  {
+    segment = a;
   }
 
 private:
@@ -66,5 +85,7 @@ private:
   double geodeticHeight;
   double demand;
   double user1, user2;
+  int segment=-1; // the node takes place in which segment
+
 };
 #endif

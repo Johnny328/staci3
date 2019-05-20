@@ -1,9 +1,6 @@
 #include "IOxml.h"
 
-// TODO
-// 2014.05.07. HCs. Ha a felhasznalo veletlenul kitorli pl. a klor adatot dnal, elhasal az egesz! Hibavisszajelzest!
-
-
+//--------------------------------------------------------------------------------
 IOxml::IOxml(const char *a_xmlFileName) {
   xmlFileName = a_xmlFileName;
 
@@ -52,6 +49,7 @@ void IOxml::loadSystem(vector<Node *> &nodes, vector<Edge *> &edges) {
       pressure = stod(nodeNodes.getChildNode("node", i).getChildNode("pressure").getText());
       density = stod(nodeNodes.getChildNode("node", i).getChildNode("density").getText());
 
+      demand = demand / 3.6; // stored in m^3/h, handeld in l/s in Staci
       nodes.push_back(new Node(id, xpos, ypos, height, demand, pressure, density));
 
       if(debug)
@@ -79,12 +77,12 @@ void IOxml::loadSystem(vector<Node *> &nodes, vector<Edge *> &edges) {
 
     string edgeType = nodesEdges.getChildNode("edge", i).getChildNode("edge_spec").getChildNode(0).getName();
     XMLNode nodeEdgeSpec = nodesEdges.getChildNode("edge", i).getChildNode("edge_spec").getChildNode(edgeType.c_str());
-    if(edgeType == "press") //PRESSUREPOINT
+    if(edgeType == "press") // PRESSUREPOINT
     {
       double pres = stod(nodeEdgeSpec.getChildNode("pressure").getText());
       edges.push_back(new PressurePoint(id, aref, node_from, density, pres, mass_flow_rate));
     }
-    else if(edgeType == "pipe") //PIPELINE
+    else if(edgeType == "pipe") // PIPELINE
     {
       double L = stod(nodeEdgeSpec.getChildNode("length").getText());
       double D = stod(nodeEdgeSpec.getChildNode("diameter").getText());
@@ -157,7 +155,6 @@ void IOxml::loadInitialValue(vector<Node *> &nodes, vector<Edge *> &edges) {
 
 //--------------------------------------------------------------------------------
 string IOxml::readSetting(string which) {
-  //XMLNode xmlMain = XMLNode::openFileHelper(xmlFileName, "staci");
 
   XMLNode nodeSetting = xmlMain.getChildNode("settings");
 

@@ -43,6 +43,7 @@ public:
 
 private:
   vector<double> charX, charY; // X-Y coordinate of characteristic curve, that is position-dzeta
+  double startHeight, endHeight; // Height of the starting and ending nodes
   double position, loss;
   double headLoss;
   void updateLoss();

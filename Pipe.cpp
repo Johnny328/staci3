@@ -10,7 +10,6 @@ Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_end
   length = a_length;
   diameter = a_diameter;
   roughness = a_roughness;
-  fluidVolume = diameter * diameter * M_PI / 4. * length;
   lambda = 0.02;
 }
 
@@ -52,32 +51,18 @@ string Pipe::info() {
 }
 
 //--------------------------------------------------------------
-double Pipe::function(vector<double> x) {
-  double result;
-  double startPressure = x[0] * density * gravity;
-  double endPressure = x[1] * density * gravity;
-  double startHeight = x[2];
-  double endHeight = x[3];
-
-  result = endPressure - startPressure + density*gravity*(endHeight-startHeight) + computeHeadloss();
-  lambda = getLambda();
-
-  return result / density / gravity;
+double Pipe::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
+  return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]) / density / gravity;
 }
 
 //--------------------------------------------------------------
 vector<double> Pipe::functionDerivative(vector<double> x) {
-  double startHeight = x[2];
-  double endHeight = x[3];
-  vector<double> result;
-  result.push_back(-density * gravity);
-  result.push_back(+density * gravity);
-  result.push_back(computeHeadlossDerivative());
-  result.push_back(-density * gravity * (endHeight - startHeight));
-
-  for(int i=0; i<result.size(); i++)
-    result.at(i) /= density * gravity;
-  return result;
+  vector<double> out;
+  out.push_back(-1.0);
+  out.push_back(1.0);
+  out.push_back(computeHeadlossDerivative(x[2]) / density / gravity);
+  
+  return out;
 }
 
 //--------------------------------------------------------------
@@ -86,6 +71,45 @@ void Pipe::initialization(int mode, double value) {
     setDoubleProperty("massFlowRate", 1.);
   else
     setDoubleProperty("massFlowRate", value);
+}
+
+//--------------------------------------------------------------
+double Pipe::functionParameterDerivative(string parameter) {
+  double out = 0.0;
+  if (parameter == "diameter"){
+    out = -5. * getLambda(massFlowRate) * length / pow(diameter, 6) * 8 / density / pow(M_PI, 2) * massFlowRate * abs(massFlowRate);  // Pa/m
+  }
+  else if (parameter == "friction_coeff")
+  {
+    double old = roughness;
+    double delta = roughness * 0.001;
+    roughness += delta;
+    double f1 = computeHeadloss(massFlowRate);
+    roughness = old;
+    double f0 = computeHeadloss(massFlowRate);
+    out = (f1 - f0) / delta;
+  }else{
+    cout << endl << "!!!ERROR!!! Pipe::functionParameterDerivative(parameter), unkown input: parameter=" << parameter << endl << "Available parameters: diameter | friction_coeff" << endl;
+    cout << endl << "Name of pipe: " << name << endl;
+    out = 0.0;
+  }
+  return out / density / gravity;
+}
+
+//--------------------------------------------------------------
+double Pipe::computeHeadloss(double mp){ // mp is massFlowRate
+  double velocity = mp / density / referenceCrossSection;
+  lambda = getLambda(mp);
+  double headloss = lambda * length / diameter * density / 2. * velocity * abs(velocity);
+
+  return headloss;
+}
+
+//--------------------------------------------------------------
+double Pipe::computeHeadlossDerivative(double mp) {
+  double out;
+  out = getLambda(mp) * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 * abs(mp);
+  return out;
 }
 
 //--------------------------------------------------------------
@@ -103,9 +127,9 @@ overwritten to 10.
 For any of these models, if parameter roughness is negative, it is assumed that
 lambda=-roughness
 */
-double Pipe::getLambda() {
+double Pipe::getLambda(double mp) { // mp is massFlowRate
   double v_min = 0.001;
-  double velocity = massFlowRate / density / (diameter * diameter * M_PI / 4);
+  double velocity = mp / density / (diameter * diameter * M_PI / 4);
   if(fabs(velocity) < v_min)
     velocity = v_min;
   double nu = 1e-6;
@@ -165,44 +189,6 @@ double Pipe::getLambda() {
 }
 
 //--------------------------------------------------------------
-double Pipe::functionParameterDerivative(string parameter) {
-  double out = 0.0;
-  if (parameter == "diameter")
-    out = -5. * getLambda() * length / pow(diameter, 6) * 8 / density / pow(M_PI, 2) * massFlowRate * abs(massFlowRate);  // Pa/m
-  else if (parameter == "friction_coeff") {
-    double old = roughness;
-    double delta = roughness * 0.001;
-    roughness += delta;
-    double f1 = computeHeadloss();
-    roughness = old;
-    double f0 = computeHeadloss();
-    out = (f1 - f0) / delta;
-  } else {
-    cout << endl << "!!!ERROR!!! Pipe::functionParameterDerivative(parameter), unkown input: parameter=" << parameter << endl << "Available parameters: diameter | friction_coeff" << endl;
-    cout << endl << "Name of pipe: " << name << endl;
-    out = 0.0;
-  }
-  return out / density / gravity;
-}
-
-//--------------------------------------------------------------
-double Pipe::computeHeadloss() {
-  double velocity = massFlowRate / density / referenceCrossSection;
-  double lambda = getLambda();
-  double headloss = lambda * length / diameter * density / 2. * velocity * abs(velocity);
-
-  return headloss;
-}
-
-//--------------------------------------------------------------
-double Pipe::computeHeadlossDerivative() {
-  double out;
-  out = getLambda() * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 *
-        abs(massFlowRate);  // Pa/(kg/s)
-  return out;
-}
-
-//--------------------------------------------------------------
 double Pipe::getDoubleProperty(string prop){
   double out = 0.;
   if(prop == "diameter")
@@ -218,14 +204,14 @@ double Pipe::getDoubleProperty(string prop){
   else if (prop == "roughness")
     out = roughness;
   else if (prop == "headLoss" || prop == "headloss")
-    out = abs(computeHeadloss() / density / gravity);
+    out = abs(computeHeadloss(massFlowRate) / density / gravity);
   else if (prop == "headLossPerUnitLength" || prop == "headloss_per_unit_length")
-    out = abs(computeHeadloss() / density / gravity / length);
+    out = abs(computeHeadloss(massFlowRate) / density / gravity / length);
   else if(prop == "massFlowRate" || prop == "mass_flow_rate")
     out = massFlowRate;
   else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
     out = massFlowRate / density;
-  else if(prop == "velicoty")
+  else if(prop == "velocity")
     out = massFlowRate / density / referenceCrossSection;
   else if(prop == "density")
     out = density;
@@ -235,10 +221,14 @@ double Pipe::getDoubleProperty(string prop){
     out = user1;
   else if(prop == "user2")
     out = user2;
+  else if(prop == "startHeight")
+    out = startHeight;
+  else if(prop == "endHeight")
+    out = endHeight;
   else
   {
     cout << endl << endl << "DOUBLE Pipe::getDoubleProperty() wrong argument:" << prop;
-    cout << ", right values: diamater | roughness | length | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: diamater | roughness | length | massFlowRate | velocity | density | referenceCrossSection | user1 | user2 | startHeight | endHeight" << endl << endl;
   }
   return out;
 }
@@ -274,10 +264,14 @@ void Pipe::setDoubleProperty(string prop, double value){
     user1 = value;
   else if(prop == "user2")
     user2 = value;
+  else if(prop == "startHeight")
+    startHeight = value;
+  else if(prop == "endHeight")
+    endHeight = value;
   else
   {  
     cout << endl << endl << "Pipe::setDoubleProperty( DOUBLE ) wrong argument:" << prop;
-    cout << ", right values: diameter | roughness | length | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: diameter | roughness | length | massFlowRate | velocity | density | referenceCrossSection | user1 | user2 | startHeight | endHeight" << endl << endl;
   }
 }
 

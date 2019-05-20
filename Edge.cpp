@@ -41,6 +41,11 @@ string Edge::info(){
   ostringstream strstrm;
   strstrm << "\n Edge name             : " << name;
   strstrm << "\n type                  : " << type;
+  strstrm << "\n open/closed           : ";
+  if(isClosed)
+    strstrm << "!CLOSED!";
+  else
+    strstrm << "open";
   strstrm << "\n density               : " << density << " [kg/m^3]";
   strstrm << "\n referenceCrossSection : " << referenceCrossSection << " [m^2]";
   strstrm << "\n mass flow rate        : " << massFlowRate / density * 3600 << " [m3/h]";
@@ -81,6 +86,8 @@ int Edge::getEdgeIntProperty(string prop){
     out = endNodeIndex;
   else if(prop == "numberNode")
     out = numberNode;
+  else if(prop == "segment")
+    out = segment;
   else
   {
     cout << endl << endl << "INT Edge::getEdgeIntProperty() wrong argument:" << prop;
@@ -135,6 +142,8 @@ void Edge::setEdgeIntProperty(string prop, int value){
     endNodeIndex = value;
   else if(prop == "numberNode")
     numberNode = value;
+  else if(prop == "segment")
+    segment = value;
   else
   {  
     cout << endl << endl << "Edge::setEdgeProperty( DOUBLE ) wrong argument:" << prop;

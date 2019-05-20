@@ -76,7 +76,7 @@ int SVDCalibration::calibrate(const vector<double> &fric_est, double tol){
     MatrixXd Sr_pinv = pinvSVD(U,S,V);
     dlambda = Sr_pinv*errorPressure;
 
-    // Checking the largest relativa change
+    // Checking the largest relative change
     double lth=0.;
     for(int k=0; k<numberEdges; k++)
       if(edges[k]->getEdgeStringProperty("type") == "Pipe")

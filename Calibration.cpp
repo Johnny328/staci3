@@ -57,7 +57,8 @@ void Calibration::generateMeasurement(const vector<double> &fric, vector<double>
   for(int k=0;k<numberEdges;k++)
     if(edges[k]->getEdgeStringProperty("type") == "Pipe")
       edges[k]->setDoubleProperty("roughness",fric[k]);
-  for(int j=0;j<numberOperationalPoint;j++){
+  for(int j=0;j<numberOperationalPoint;j++)
+  {
     double demandSumMeasuredReal=0.;
     for(int k=0;k<numberDemand;k++){
       nodes.at(measuredDemandIndex[k])->setProperty("demand",measuredDemand(j,k));

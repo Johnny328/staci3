@@ -1,72 +1,6 @@
-#include "SegmentsAndShutdown.h"
-#include <boost/tuple/tuple.hpp>
-#include </mnt/d/Linux/LinuxPrograms/Gnuplot/gnuplot-iostream/gnuplot-iostream.h>
-#include </usr/include/eigen3/Eigen/Eigen>
-#include </usr/include/eigen3/Eigen/Dense>
-#include <igraph.h>
+#include "Graph.h"
 
-Graph::Graph(int V)
-{
-    this->V = V;
-    adj = new list<int>[V];
-}
-
-void Graph::addEdge(int u, int v)
-{
-    adj[u].push_back(v); // Add v to u’s list.
-}
- 
-// Prints all paths from 's' to 'd'
-void Graph::printAllPaths(int s, int d)
-{
-    // Mark all the vertices as not visited
-    bool *visited = new bool[V];
- 
-    // Create an array to store paths
-    int *path = new int[V];
-    int path_index = 0; // Initialize path[] as empty
- 
-    // Initialize all vertices as not visited
-    for (int i = 0; i < V; i++)
-        visited[i] = false;
- 
-    // Call the recursive helper function to print all paths
-    printAllPathsUtil(s, d, visited, path, path_index);
-}
- 
-// A recursive function to print all paths from 'u' to 'd'.
-// visited[] keeps track of vertices in current path.
-// path[] stores actual vertices and path_index is current
-// index in path[]
-void Graph::printAllPathsUtil(int u, int d, bool visited[],
-                              int path[], int &path_index)
-{
-    // Mark the current node and store it in path[]
-    visited[u] = true;
-    path[path_index] = u;
-    path_index++;
- 
-    // If current vertex is same as destination, then print
-    // current path[]
-    if (u == d)
-    {
-        for (int i = 0; i<path_index; i++)
-            cout << path[i] << " ";
-        cout << endl;
-    }
-    else // If current vertex is not destination
-    {
-        // Recur for all the vertices adjacent to current vertex
-        list<int>::iterator i;
-        for (i = adj[u].begin(); i != adj[u].end(); ++i)
-            if (!visited[*i])
-                printAllPathsUtil(*i, d, visited, path, path_index);
-    }
- 
-    // Remove current vertex from path[] and mark it as unvisited
-    path_index--;
-    visited[u] = false;
-}
+using namespace std;
 
 double GlobalSegmentClustering(vector<int> segmentEdgeVector)
 {
@@ -118,10 +52,7 @@ double AvPathLength(vector<int> segmentEdgeVector)
     double AvPath = 0.;
     igraph_t graph; 
     igraph_vector_t v2;
-    igraph_vs_t vs;
     igraph_real_t edges[segmentEdgeVector.size()], res;
-    //igraph_vector_init(&res, 0);
-    igraph_integer_t size;
     for(int i = 0; i < segmentEdgeVector.size(); i++)
     {
     //    cout << i << " edge: " << segmentEdgeVector[i] << endl;
@@ -146,7 +77,6 @@ int GraphDiameter(vector<int> segmentEdgeVector)
     igraph_vector_init(&res, 0);
     igraph_integer_t result;
     igraph_integer_t size;
-    double AvPathLengthNum;
     for(int i = 0; i < segmentEdgeVector.size(); i++)
     {
     //    cout << i << " edge: " << segmentEdgeVector[i] << endl;
@@ -193,42 +123,12 @@ vector<double> DegreeDistribution(vector<int> segmentEdgeVector, bool selfloop)
     return DegreeDistribution;
 }
 
-vector<double> Atriculation_point(vector<int> segmentEdgeVector)
-{   
-    vector<double> ArtPoints;
-    igraph_t graph; 
-    igraph_vector_t v2, res;
-    igraph_vs_t vs;
-    igraph_real_t edges[segmentEdgeVector.size()];
-    igraph_vector_init(&res, 0);
-    igraph_integer_t size;
-    for(int i = 0; i < segmentEdgeVector.size(); i++)
-    {
-    //    cout << i << " edge: " << segmentEdgeVector[i] << endl;
-        edges[i] = segmentEdgeVector[i];
-    //    cout << "edges: " << edges[i] << " edgeVector: " << segmentEdgeVector[i] << " v: "<< VECTOR(v)[i] << endl;
-    }
-    igraph_vector_view(&v2, edges, sizeof(edges)/sizeof(double));
-    igraph_create(&graph, &v2, 0, IGRAPH_UNDIRECTED);
-    cout << "EDDIG MEGVAN" << endl;
-    igraph_vs_all(&vs);
-    igraph_articulation_points(&graph, &res); 
-    for (int i = 0; i < size; ++i)
-    {
-    //    cout << "Art points[" << i << "] helyen: "<< VECTOR(res)[i] << endl;
-        ArtPoints.push_back(VECTOR(res)[i]);
-    }
-    return ArtPoints;
-}
-
 vector< vector<int> > segmenter2(vector<int> SledgeVector)
 {
-    //tipp: A szukseges ciklusszam number of tolozarak+1
     vector<int> Segment;
     vector<int> edgeVector = SledgeVector;
     vector< vector<int> > Segments;
-    int counter = 0, numerator = 0, collector = 0, First_round = 1;
-    bool Goon = true, repeat = true, Last_round = false;
+    bool repeat = true;
     while(edgeVector.size() != 0)//22//1433villasori//445//923ferto445
     {
         repeat = true;
@@ -307,8 +207,8 @@ vector< vector<int> > segmenter(vector<int> SledgeVector)
     vector<int> Segment;
     vector<int> edgeVector = SledgeVector;
     vector< vector<int> > Segments;
-    int counter = 0, numerator = 0, collector = 0, First_round = 1;
-    bool Goon = true, ItWorks = true, Last_round = false;
+    int collector = 0, First_round = 1;
+    bool Goon = true, ItWorks = true;
     while(Goon == true)//22//1433villasori//445//923ferto445
     {
         ItWorks = false;
@@ -361,7 +261,7 @@ vector< vector<int> > segmenter(vector<int> SledgeVector)
                     }
                 }        
             }
-            if(collector = edgeVector.size()-1)
+            if(collector == edgeVector.size()-1)
             {
                 cout << " belep 85 " << endl;
                 cout << " Teljesul " << endl;
@@ -388,4 +288,37 @@ vector< vector<int> > segmenter(vector<int> SledgeVector)
     }
     cout << " exiting ";
     return Segments;
+}
+
+vector<vector<int> > segmenterWR(vector<int> edgeVector){
+  vector<vector<int> > everySegment;
+  vector<int> segment;
+
+  while(edgeVector.size() !=0)
+  {
+    segment.push_back(edgeVector[0]);
+    segment.push_back(edgeVector[1]);
+    edgeVector.erase(edgeVector.begin());
+    edgeVector.erase(edgeVector.begin());
+
+    for(int j=0; j<segment.size(); j+=2)
+    {
+      for(int i=0; i<edgeVector.size(); i+=2)
+      {
+        if(edgeVector[i] == segment[j] || edgeVector[i+1] == segment[j] || edgeVector[i] == segment[j+1] || edgeVector[i+1] == segment[j+1])
+        {
+          segment.push_back(edgeVector[i]);
+          segment.push_back(edgeVector[i+1]);
+          edgeVector.erase(edgeVector.begin() + i);
+          edgeVector.erase(edgeVector.begin() + i);
+          j=-2; // setting back j to the first item
+          break;
+        }
+      }
+    }
+    everySegment.push_back(segment);
+    segment.clear();
+  }
+
+  return everySegment;
 }

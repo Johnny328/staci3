@@ -43,6 +43,7 @@ public:
 
 private:
     double head;
+    double height; // Height of the connecting node (NOT equal to waterLevel)
 };
 
 #endif

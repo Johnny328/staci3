@@ -53,20 +53,20 @@ public:
 private:
     double length, diameter, lambda;
     double roughness; // Pipefal roughness (HW: C factor, DW: relative roughness)
-    double fluidVolume;
+    double startHeight, endHeight; // Height of the starting and ending nodes
     int frictionModel; // 0 - Darcy-Weisbach (DW), 1 - Hazen-Williams (HW)
 
     //! Computes the head loss in Pa
     /*! dp'=lambda*length/diameter*density/2*velocity*fabs(velocity)*/
-    double computeHeadloss();
+    double computeHeadloss(double mp);
 
     //! Computes the head loss derivative w.r.t. mass flow rate
     /*! dp'=lambda*length/diameter*density/2*velocity*fabs(velocity)
     diameter dp'/dmp=lambda*length/diameter*density/2*1/(density*A)^2*abs(velocity)*/
-    double computeHeadlossDerivative();
+    double computeHeadlossDerivative(double mp);
 
     /// Calculating lambda value from roughness based on friction model (DW / HW)
-    double getLambda();
+    double getLambda(double mp);
 
 };
 

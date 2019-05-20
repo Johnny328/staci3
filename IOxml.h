@@ -40,11 +40,10 @@ public:
   IOxml(const char *xmlFileName);
   void loadSystem(vector<Node *> &nodes, vector<Edge *> &edges);
   void loadInitialValue(vector<Node *> &nodes, vector<Edge *> &edges);
-  void saveResult(double fluidVolume, double sum_of_inflow, double sum_of_demand, vector<Node *> nodes, vector<Edge *> edges, bool conv_reached, int staci_debug_level);
   string readSetting(string which);
 
 private:
-  XMLNode xmlMain; // main XMLNode
+  XMLNode xmlMain;
   XMLNode nodeSetting;
   XMLNode nodeNodes;
   XMLNode nodesEdges;

@@ -3,7 +3,7 @@
 Node::Node(const string a_name, const double a_xPosition, const double a_yPosition, const double a_geodeticHeight, const double a_demand, const double a_head, const double a_density)
 {
   density = a_density;
-  demand = a_demand / 3600. * density;
+  demand = a_demand;
   geodeticHeight = a_geodeticHeight;
   xPosition = a_xPosition;
   yPosition = a_yPosition;
@@ -25,6 +25,19 @@ void Node::initialization(int mode, double value)
     head = 300. - geodeticHeight;
   else
     head = value - geodeticHeight;
+}
+
+//--------------------------------------------------------------
+double Node::function(double pressure, vector<double> parameters){
+  //TODO
+  //TODO
+  //TODO
+}
+
+//--------------------------------------------------------------
+double Node::functionDerivative(double pressure, vector<double> parameters){
+  // parameters = [exponent,pressureDes,pressureMin]
+  return demand*pow((pressure-parameters[2])/(parameters[1]-parameters[2]),1./parameters[0]-1)/(parameters[2]-parameters[1]);
 }
 
 //--------------------------------------------------------------
@@ -88,21 +101,26 @@ double Node::getProperty(string prop)
 string Node::info(bool check_if_lonely)
 {
   ostringstream strstrm;
-  strstrm << "\n       Node name: " << name;
-  strstrm << "\n          height: " << geodeticHeight << " m";
-  strstrm << "\n            head: " << head << " m (=p[Pa]/density/g)";
-  strstrm << "\n        pressure: " << head*density * 9.81 << " Pa";
-  strstrm << "\n         desnity: " << density << " kg/m3";
-  strstrm << "\n     consumption: " << demand << " kg/s = " << demand * 3600 / density << " m3/h";
-  strstrm << "\n  incoming edges: ";
+  strstrm << "\n Node name       : " << name;
+  strstrm << "\n open/closed     : ";
+  if(isClosed)
+    strstrm << "!CLOSED!";
+  else
+    strstrm << "open";
+  strstrm << "\n height          : " << geodeticHeight << " m";
+  strstrm << "\n head            : " << head << " m (=p[Pa]/density/g)";
+  strstrm << "\n pressure        : " << head*density * 9.81 << " Pa";
+  strstrm << "\n desnity         : " << density << " kg/m3";
+  strstrm << "\n consumption     : " << demand << " kg/s = " << demand * 3600 / density << " m3/h";
+  strstrm << "\n incoming edges  : ";
   for (vector<int>::iterator it = edgeIn.begin(); it != edgeIn.end(); it++)
       strstrm << *it << " ";
-  strstrm << "\n  outgoing edges: ";
+  strstrm << "\n outgoing edges  : ";
   for (vector<int>::iterator it = edgeOut.begin(); it != edgeOut.end(); it++)
       strstrm << *it << " ";
   strstrm << endl;
 
-  if (check_if_lonely && ((edgeIn.size() + edgeOut.size()) == 0))
+  if (check_if_lonely && ((edgeIn.size() + edgeOut.size()) == 0) && !isClosed)
   {
     strstrm << "\n!!! ERROR !!! Lonely node: " << name << " !!!\n";
     cout << strstrm.str();

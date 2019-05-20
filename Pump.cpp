@@ -18,9 +18,9 @@ Pump::Pump(const string a_name, const string a_startNodeName, const string a_end
     exit(0);
   }
 
-  // Converting the volume flow rate from m3/h to m3/s
+  // Converting the volume flow rate from m3/h to l/s
   for(int i=0; i<numberPoint; i++) 
-    volumeFlowRate.at(i) /= 3600.;
+    volumeFlowRate.at(i) /= 3.6;
 
   // Copying vector<double> to Eigen::VectorXd
   VectorXd Q(numberPoint), H(numberPoint);
@@ -64,40 +64,31 @@ string Pump::info(){
 }
 
 //--------------------------------------------------------------
-double Pump::function(vector<double> x){
-  double result;
-  double startPressure = x[0] * density * gravity;
-  double endPressure = x[1] * density * gravity;
-  double startHeight = x[2];
-  double endHeight = x[3];
-
-  result = (endPressure - startPressure) / density / gravity - characteristicCurve(massFlowRate / density) + (endHeight - startHeight);
-
-  return result;
+double Pump::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
+  return (x[1] - x[0]) - characteristicCurve(x[2]) + (endHeight - startHeight);
 }
 
 //--------------------------------------------------------------
 vector<double> Pump::functionDerivative(vector<double> x){
-  vector<double> result;
-  result.push_back(-1.0);
-  result.push_back(+1.0);
+  vector<double> out;
+  out.push_back(-1.0);
+  out.push_back(+1.0);
 
-  if(massFlowRate/density<min(volumeFlowRate))
-    cout << endl << "!!!WARNING!!! Pump (" << name << ") characteristic curve: volume flow rate (" << massFlowRate/density << ") is lower than curve minimum (" << min(volumeFlowRate) << ")" << endl << "Extrapolating..." << endl;
+  if(x[2]/density<min(volumeFlowRate))
+    cout << endl << "!!!WARNING!!! Pump (" << name << ") characteristic curve: volume flow rate (" << x[2]/density << ") is lower than curve minimum (" << min(volumeFlowRate) << ")" << endl << "Extrapolating..." << endl;
 
-  if(massFlowRate/density>max(volumeFlowRate))
-    cout << endl << "!!!WARNING!!! Pump (" << name << ") characteristic curve: volume flow rate (" << massFlowRate/density << ") is larger than curve minimum (" << max(volumeFlowRate) << ")" << endl << "Extrapolating..." << endl;
+  if(x[2]/density>max(volumeFlowRate))
+    cout << endl << "!!!WARNING!!! Pump (" << name << ") characteristic curve: volume flow rate (" << x[2]/density << ") is larger than curve minimum (" << max(volumeFlowRate) << ")" << endl << "Extrapolating..." << endl;
 
   // Calculating the derivative analytically from characteristic curve
   double derivative = 0.0;
   for (int i = 1; i < curveOrder; i++) 
-    derivative += coefficients[i] * i * pow(massFlowRate / density, i - 1);
+    derivative += coefficients[i] * i * pow(x[2] / density, i - 1);
   derivative /= -density;
 
-  result.push_back(derivative);
-  result.push_back(0.0);
+  out.push_back(derivative);
 
-  return result;
+  return out;
 }
 
 //--------------------------------------------------------------
@@ -109,9 +100,10 @@ void Pump::initialization(int mode, double value){
 }
 
 //--------------------------------------------------------------
-double Pump::characteristicCurve(double Q){
+double Pump::characteristicCurve(double mp){
 
   double H = 0.;
+  double Q = mp/density;
   
   if(Q<min(volumeFlowRate))
     cout << endl << "!!!WARNING!!! Pump (" << name << ") characteristic curve: volume flow rate (" << Q << ") is lower than curve minimum (" << min(volumeFlowRate) << ")" << endl << "Extrapolating..." << endl;
@@ -131,7 +123,7 @@ double Pump::getDoubleProperty(string prop){
   if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     out = referenceCrossSection;
   else if(prop == "head")
-    out = characteristicCurve(massFlowRate / density);
+    out = characteristicCurve(massFlowRate);
   else if(prop == "revolutionNumber")
     out = revolutionNumber;
   else if(prop == "massFlowRate" || prop == "mass_flow_rate")
@@ -141,7 +133,7 @@ double Pump::getDoubleProperty(string prop){
   else if(prop == "velocity")
     out = massFlowRate / density / referenceCrossSection;
   else if(prop == "headLoss" || prop == "headloss")
-    out = abs(characteristicCurve(massFlowRate / density));
+    out = abs(characteristicCurve(massFlowRate));
   else if(prop == "user1")
     out = user1;
   else if(prop == "user2")
@@ -168,6 +160,10 @@ void Pump::setDoubleProperty(string prop, double value){
     user1 = value;
   else if(prop == "user2")
     user2 = value;
+  else if(prop == "startHeight")
+    startHeight = value;
+  else if(prop == "endHeight")
+    endHeight = value;
   else
   {  
     cout << endl << endl << "Pump::setDoubleProperty( DOUBLE ) wrong argument:" << prop;
