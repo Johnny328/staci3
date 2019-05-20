@@ -23,6 +23,7 @@
 #include "Node.h"
 #include "PressurePoint.h"
 #include "Statistic.h"
+#include "Graph.h"
 
 #include "Eigen/Eigen/Eigen"
 
@@ -58,6 +59,14 @@ public:
 
     // Checking the IDs of the edges, if one has identical ones drops exit(-1)
     void checkSystem();
+
+    // Closing/opening edges (close: state = false | open: state = true)
+    void changeEdgeStatus(string ID, bool state);
+
+    /// Containing indicies of open edges and nodes for HydSolver
+    vector<int> openEdges, openNodes;
+
+    void addNewEdge(Edge* edge);
     
     /// ************************************************ ///
     /// GETSET GETSET GETSET GETSET GETSET GETSET GETSET ///
@@ -101,6 +110,10 @@ public:
     string getFrictionModel(){
         return frictionModel;
     }
+
+protected:
+    /// Finds the index of value in the v vector
+    int getVectorIndex(const vector<int> &v, int value);
 
 private:
     bool isInitialization;
