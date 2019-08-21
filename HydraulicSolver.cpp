@@ -2,22 +2,59 @@
 
 HydraulicSolver::HydraulicSolver(string spr_filename) : Staci(spr_filename){
 
-  IOxml IOxmlObj(getDefinitionFile().c_str());
-
-  maxIterationNumber = stoi(IOxmlObj.readSetting("iter_max"));
-  maxPressureError = stod(IOxmlObj.readSetting("e_p_max"));
-  maxMassFlowError = stod(IOxmlObj.readSetting("e_mp_max"));
-  //relaxationFactor = stod(IOxmlObj.readSetting("relax"));
-  relaxationFactor = 0.5;
-  relaxationFactorIncrement = stod(IOxmlObj.readSetting("relax_mul"));
-  massFlowInitial = stod(IOxmlObj.readSetting("mp_init"));
-  pressureInitial = stod(IOxmlObj.readSetting("p_init"));
-  frictionModel = IOxmlObj.readSetting("friction_model");
-
-  if (frictionModel != "DW" && frictionModel != "HW") {
-    cout << endl << endl << "******** WARNING! ********" << endl << " Friction model: " << frictionModel << " do NOT exist" << endl << " Options: DW | HW" << endl << " Changing to DW!" << endl;
-    frictionModel = "DW";
+  string fileFormat = getDefinitionFile().substr(getDefinitionFile().length()-3,3); // SPR or INP
+  
+  if(fileFormat == "spr")
+  {
+    IOxml IOxmlObj(getDefinitionFile().c_str());
+    maxIterationNumber = stoi(IOxmlObj.readSetting("iter_max"));
+    maxPressureError = stod(IOxmlObj.readSetting("e_p_max"));
+    maxMassFlowError = stod(IOxmlObj.readSetting("e_mp_max"));
+    //relaxationFactor = stod(IOxmlObj.readSetting("relax"));
+    relaxationFactor = 0.5;
+    relaxationFactorIncrement = stod(IOxmlObj.readSetting("relax_mul"));
+    massFlowInitial = stod(IOxmlObj.readSetting("mp_init"));
+    pressureInitial = stod(IOxmlObj.readSetting("p_init"));
+    //frictionModel = IOxmlObj.readSetting("friction_model");
   }
+  else if(fileFormat == "inp")
+  {
+    maxIterationNumber = 100;
+    maxPressureError = 0.00001;
+    maxMassFlowError = 0.001;
+    relaxationFactor = 1.0;
+    relaxationFactorIncrement = 1.2;
+    massFlowInitial = 100.;
+    pressureInitial = 5.0;
+  }
+  else
+  {
+    cout << endl << "Unkown file format: " << fileFormat << endl << "Available file formats are: inp | spr" << endl;
+    exit(-1);
+  }
+  // Setting the heights of the edges
+  for(int i=0; i<edges.size(); i++)
+  {
+    string type = edges[i]->getEdgeStringProperty("type");
+    if(type == "Pipe" || type == "Pump" || type == "Valve")
+    {
+      int startIndex = edges[i]->getEdgeIntProperty("startNodeIndex");
+      double startHeight = nodes[startIndex]->getProperty("height");
+      edges[i]->setDoubleProperty("startHeight",startHeight);
+
+      int endIndex = edges[i]->getEdgeIntProperty("endNodeIndex");
+      double endHeight = nodes[endIndex]->getProperty("height");
+      edges[i]->setDoubleProperty("endHeight",endHeight);
+
+    }
+    if(type == "Pool" || type == "PressurePoint")
+    {
+      int index = edges[i]->getEdgeIntProperty("startNodeIndex");
+      double height = nodes[index]->getProperty("height");
+      edges[i]->setDoubleProperty("height",height);
+    }
+  }
+  initialization();
 }
 
 HydraulicSolver::~HydraulicSolver(){}
@@ -25,29 +62,7 @@ HydraulicSolver::~HydraulicSolver(){}
 //--------------------------------------------------------------
 bool HydraulicSolver::solveSystem() {
 
-  // Refreshing the state of edges and nodes
-  //openEdges.clear();
-  //openNodes.clear();
-  //for(int i=0; i<edges.size(); i++)
-  //  if(!edges[i]->isClosed)
-  //    openEdges.push_back(i);
-  //for(int i=0; i<nodes.size(); i++)
-  //  if(!nodes[i]->isClosed)
-  //    openNodes.push_back(i);
-  /*cout << endl << "openEdges: ";
-  for(int i=0; i<openEdges.size(); i++)
-    cout << endl << openEdges[i] << ":  " << edges[openEdges[i]]->getEdgeIntProperty("startNodeIndex") << " - " << edges[openEdges[i]]->getEdgeIntProperty("endNodeIndex") << "  numberNode: " << edges[openEdges[i]]->getEdgeIntProperty("numberNode");
-  cout << endl << "openNodes: ";
-  for(int i=0; i<openNodes.size(); i++){
-    cout << endl << openNodes[i] << " IN: ";
-    for(int j=0; j<nodes[openNodes[i]]->edgeIn.size(); j++)
-      cout << nodes[openNodes[i]]->edgeIn[j] << ", ";
-    cout << "  OUT: ";
-    for(int j=0; j<nodes[openNodes[i]]->edgeOut.size(); j++)
-      cout << nodes[openNodes[i]]->edgeOut[j] << ", ";
-  }
-  cout << endl;*/
-
+  updateOpenElements();
   const int n = openEdges.size() + openNodes.size();
   VectorXd x(n), f(n);
   int iter = 0;
@@ -56,22 +71,20 @@ bool HydraulicSolver::solveSystem() {
 
   // Setting initial conditions to x vector
   for(int i=0; i<openEdges.size(); i++)
-    x(i) = edges[openEdges[i]]->getEdgeDoubleProperty("massFlowRate");
+    x(i) = edges[openEdges[i]]->getEdgeDoubleProperty("volumeFlowRate");
   for(int i=0; i<openNodes.size(); i++)
     x(openEdges.size() + i) = nodes[openNodes[i]]->getProperty("head");
 
   buildJacobian(x, f); // updating Jacobian matrix
-  computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
-  while((iter < maxIterationNumber + 1) && (!isConv)){
 
+  computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
+  while((iter < maxIterationNumber + 1) && (!isConv))
+  {
     linearSolver(x, f); // Solving Jac*dx = f
 
     computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
     if(isConv)
       break;
-
-    //cout << iterInfo(iter, e_mp, e_p);
-    //cout << iterInfoDetail(x, f);
 
     updateJacobian(x,f);
     updateRelaxationFactor(e_mp, e_p, e_mp_r, e_p_r);
@@ -85,11 +98,23 @@ bool HydraulicSolver::solveSystem() {
     cout << iterInfoDetail(x, f);
   }
   else
-  {
+  { 
     for(int i=0; i<openEdges.size(); i++)
-      edges[openEdges[i]]->setEdgeDoubleProperty("massFlowRate",x(i));
+      edges[openEdges[i]]->setEdgeDoubleProperty("volumeFlowRate",x(i));
     for(int i=0; i<openNodes.size(); i++)
+    { 
       nodes[openNodes[i]]->setProperty("head",x(openEdges.size() + i));
+      if(isPressureDemand)
+      {
+        vector<double> parameters{pdExponent,pdDesiredPressure,pdMinPressure};
+        double cons = -nodes[openNodes[i]]->function(x(openEdges.size() + i),parameters);
+        nodes[openNodes[i]]->setProperty("consumption",cons);
+      }
+      else
+      {
+        nodes[openNodes[i]]->setProperty("consumption",nodes[openNodes[i]]->getProperty("demand"));
+      }
+    }
   }
 
   return isConv;
@@ -149,7 +174,7 @@ void HydraulicSolver::buildJacobian(VectorXd &x, VectorXd &f) {
     
     if(isPressureDemand)// If the demands are depending on the pressure
     {
-      vector<double> parameters{exponent,pressureDes,pressureMin};
+      vector<double> parameters{pdExponent,pdDesiredPressure,pdMinPressure};
       jacobianMatrix.insert(openEdges.size() + i, openEdges.size() + i) = nodes[openNodes[i]]->functionDerivative(x(openEdges.size()+i), parameters);
       f(openEdges.size() + i) = nodes[openNodes[i]]->function(x(openEdges.size()+i), parameters);
     }
@@ -203,7 +228,7 @@ void HydraulicSolver::updateJacobian(VectorXd &x, VectorXd &f) {
   { 
     if(isPressureDemand)// If the demands are depending on the pressure
     {
-      vector<double> parameters{exponent,pressureDes,pressureMin};
+      vector<double> parameters{pdExponent,pdDesiredPressure,pdMinPressure};
       jacobianMatrix.coeffRef(openEdges.size() + i, openEdges.size() + i) = nodes[openNodes[i]]->functionDerivative(x(openEdges.size()+i), parameters);
       f(openEdges.size() + i) = nodes[openNodes[i]]->function(x(openEdges.size()+i), parameters);
     }
@@ -257,8 +282,8 @@ void HydraulicSolver::computeError(const VectorXd &f, double & e_mp, double & e_
   e_p_r = e_p;
 
   // Determining new errors
-  e_p = (f.head(edges.size())).norm();
-  e_mp = (f.tail(nodes.size())).norm();
+  e_p = (f.head(openEdges.size())).norm();
+  e_mp = (f.tail(openNodes.size())).norm();
 
   // Checking the convergence
   if ((e_p < maxPressureError) && (e_mp < maxMassFlowError)) 
@@ -269,10 +294,25 @@ void HydraulicSolver::computeError(const VectorXd &f, double & e_mp, double & e_
 void HydraulicSolver::initialization() {
   if(!getIsInitialization()) // Automatic initialization
   {
+    // Finding the geodetic height of the first pressure point
+    double baseGeodeticHeight = 0.;
+    int i=0;
+    while(baseGeodeticHeight == 0. && i<nodes.size()){
+      string type = edges[i]->getEdgeStringProperty("type");
+      if(type == "PressurePoint" || type == "Pool"){
+        int idx = edges[i]->getEdgeIntProperty("startNodeIndex");
+        baseGeodeticHeight = nodes[idx]->getProperty("height");
+      }
+      i++;
+    }
+
+    // Filling up the nodes
     for(int i = 0; i < nodes.size(); i++){
-      double head = 30.;
+      double head = 50. + baseGeodeticHeight;
       nodes[i]->initialization(1., head);
     }
+
+    // Filling up the edges
     for(int i = 0; i < edges.size(); i++){
       if(edges[i]->getEdgeStringProperty("type") == "Pipe"){
         double v = 0.3;
@@ -295,7 +335,7 @@ void HydraulicSolver::initialization(const Staci * inStaci) {
     nodes.at(i)->setProperty("head",inStaci->nodes.at(i)->getProperty("head"));
 
   for(int i = 0; i < edges.size(); i++)
-    edges.at(i)->setEdgeDoubleProperty("massFlowRate",inStaci->edges.at(i)->getEdgeDoubleProperty("massFlowRate"));
+    edges.at(i)->setEdgeDoubleProperty("volumeFlowRate",inStaci->edges.at(i)->getEdgeDoubleProperty("volumeFlowRate"));
 }
 
 //--------------------------------------------------------------
@@ -339,4 +379,16 @@ void HydraulicSolver::listResult() {
     cout << "  p = " << nodes[i]->getProperty("head") * 1000 * 9.81 / 1e5 << " bar" << "     H = " << nodes[i]->getProperty("head") << " m" << "      H+height=" << nodes[i]->getProperty("head") + nodes[i]->getProperty("height") << " m";
   }
   cout << endl << endl;
+}
+
+//--------------------------------------------------------------
+void HydraulicSolver::updateOpenElements(){
+  openEdges.clear();
+  openNodes.clear();
+  for(int i=0; i<edges.size(); i++)
+    if(!edges[i]->isClosed)
+      openEdges.push_back(i);
+  for(int i=0; i<nodes.size(); i++)
+    if(!nodes[i]->isClosed)
+      openNodes.push_back(i);
 }

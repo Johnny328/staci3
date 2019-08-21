@@ -12,6 +12,9 @@
     https://github.com/weberrichard/staci3
 \*==================================================================*/
 
+#ifndef SHUTDOWN_H
+#define SHUTDOWN_H
+
 #include "Staci.h"
 
 class Shutdown : public Staci
@@ -20,26 +23,34 @@ public:
 	Shutdown(string spr_filename);
 	~Shutdown();
 	void buildSegmentGraph();
-	void createShutdownPlan(string edgeID);
-
-	vector<int> getEdgeVector(vector<int> edgeVector)
+	vector<int> closeDisconnectedParts(); // gives back closed segments
+	vector<string> shutdownPlan(string pipeID);	// gives back id of closed valves i.e. shutdownplan
+	vector<string> closeSegment(int segmentToClose); // gives back id of closed valves i.e. shutdownplan
+	vector<int> getEdgeVector()
 	{
 		return edgeVector;
 	}
-	vector<int> getSegmentEdgeVector(vector<int> segmentEdgeVector)
+	vector<int> getSegmentEdgeVector()
 	{
 		return segmentEdgeVector;
 	}
-	vector<vector<int> > getSegmentVector(vector<int> segmentEdgeVector)
+	vector<vector<int> > getSegmentVector()
 	{
 		return segmentVector;
+	}
+	int getNumberSegment()
+	{
+		return numberSegment;
 	}
 
 private:
 	vector<int> edgeVector; // edge vector of the original network
 	vector<int> segmentEdgeVector; // edge vector of the segment graph
 	vector<vector<int> > segmentVector; // contains the original node indicies of pipes
+	int numberSegment;
 
+	void updateEdgeVector();
 	vector<int> findConnectionError(vector<int> connectingNodes);
-
 };
+
+#endif

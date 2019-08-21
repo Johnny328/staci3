@@ -13,6 +13,9 @@
     https://github.com/weberrichard/staci3
 \*==================================================================*/
 
+#ifndef BASICFILEIO_H
+#define BASICFILEIO_H
+
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -35,3 +38,5 @@ int countRows(string fileName);
 
 // Counting the rows and cols for Eigen Vectors
 vector<int> countRowsCols(string fileName, char separator);
+
+#endif

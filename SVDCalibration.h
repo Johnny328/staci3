@@ -13,6 +13,9 @@
     https://github.com/weberrichard/staci3
 \*==================================================================*/
 
+#ifndef SVDCALIBRATION_H
+#define SVDCALIBRATION_H
+
 #include "Calibration.h"
 
 using namespace Eigen;
@@ -72,3 +75,5 @@ private:
   /// Debugging the SVDCalibration class
   int debugLevelSVD;
 };
+
+#endif

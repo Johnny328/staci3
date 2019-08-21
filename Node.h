@@ -40,8 +40,8 @@ public:
   void initialization(int mode, double value);
 
   // In case of pressure dependent demands, df/dx i.e. dd/dp is not zero
-  double function(double pressure, vector<double> parameters);
-  double functionDerivative(double pressure, vector<double> parameters);
+  double function(double pressure, vector<double> par);
+  double functionDerivative(double pressure, vector<double> par);
 
   /// Setting a certain node double property
   /// demand|head|pressure|density|height|xPosition|yPosition|user1|user2
@@ -56,6 +56,14 @@ public:
 
   /// If every connecting edges are closed, then the node will be as well, basically closed if edgeIn.size() + edgeOut.size() is zero
   bool isClosed = false;
+
+  // [m] for series calculations
+  vector<double> vectorHead;
+  // [l/s] for series calculations
+  vector<double> vectorDemand;
+  // patterns for series calculations
+  vector<string> vectorPatternID;
+  vector<int> vectorPatternIndex;
 
   //========================
   //GETSETGETSETGETSETGETSET
@@ -83,9 +91,10 @@ private:
   double density;
   double xPosition, yPosition;
   double geodeticHeight;
-  double demand;
-  double user1, user2;
+  double demand; // independent from pressure, however it can be varying in time
+  double consumption = 0.0; // in case of presure dependent demands consumption can be smaller than demand
+  double consumptionPercent = 0.0; // consumption/demand*100 [%]
+  double userOutput;
   int segment=-1; // the node takes place in which segment
-
 };
 #endif

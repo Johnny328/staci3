@@ -38,14 +38,17 @@ public:
   //GETSETGETSETGETSETGETSET
   //========================
   void setDoubleProperty(string prop, double value);
+  void setIntProperty(string property, int value);
   double getDoubleProperty(string prop);
   string getStringProperty(string prop);
+  int getIntProperty(string property);
 
 private:
   vector<double> charX, charY; // X-Y coordinate of characteristic curve, that is position-dzeta
   double startHeight, endHeight; // Height of the starting and ending nodes
   double position, loss;
   double headLoss;
+  int startSegment, endSegment; // containing which segments are connected through this valve
   void updateLoss();
 };
 

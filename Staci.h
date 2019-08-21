@@ -35,6 +35,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <sys/stat.h> //mkdir
 
 using namespace Eigen;
 
@@ -48,9 +49,6 @@ public:
     vector<Node *> nodes;
     vector<Edge *> edges;
 
-    // Creates the indicies for the nodes of edges and edges of nodes i.e. indexing of the sparse Jacobian
-    void buildSystem();
-
     // Prints everything 
     void listSystem();
 
@@ -61,13 +59,20 @@ public:
     void checkSystem();
 
     // Closing/opening edges (close: state = false | open: state = true)
-    void changeEdgeStatus(string ID, bool state);
+    void changeEdgeStatus(string ID, bool state); // with ID (calls the idx version)
+    void changeEdgeStatus(int idx, bool state); // with index
 
     /// Containing indicies of open edges and nodes for HydSolver
     vector<int> openEdges, openNodes;
 
-    void addNewEdge(Edge* edge);
-    
+    /// Saving results to file
+    void saveResult(string property, string element);
+
+    /// Loading the system from INP | IOinp.cpp
+    void loadSystem();
+    /// Saving the system to INP | IOinp.cpp
+    void saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string frictionModel);
+
     /// ************************************************ ///
     /// GETSET GETSET GETSET GETSET GETSET GETSET GETSET ///
     /// ************************************************ ///
@@ -99,13 +104,13 @@ public:
     {
         return initializationFile;
     }
-    void setInitializationFile(string xml_fnev)
+    void setInitializationFile(string xml)
     {
-        initializationFile = xml_fnev;
+        initializationFile = xml;
     }
-    void setIsInitialization(const bool van_e)
+    void setIsInitialization(const bool var)
     {
-        isInitialization = van_e;
+        isInitialization = var;
     }
     string getFrictionModel(){
         return frictionModel;
@@ -114,11 +119,14 @@ public:
 protected:
     /// Finds the index of value in the v vector
     int getVectorIndex(const vector<int> &v, int value);
+    vector<string> line2sv(string line); // cutting string line to pieces
 
 private:
-    bool isInitialization;
-    string definitionFile, outputFile, initializationFile, resultFile;
+    bool isInitialization = false;
+    string definitionFile, outputFile, initializationFile, resultFile, caseName;
     string frictionModel;
+    // Creates the indicies for the nodes of edges and edges of nodes i.e. indexing of the sparse Jacobian
+    void buildSystem();
 };
 
 #endif //STACI_H

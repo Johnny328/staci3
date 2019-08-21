@@ -48,8 +48,7 @@ void IOxml::loadSystem(vector<Node *> &nodes, vector<Edge *> &edges) {
       demand = stod(nodeNodes.getChildNode("node", i).getChildNode("demand").getText());
       pressure = stod(nodeNodes.getChildNode("node", i).getChildNode("pressure").getText());
       density = stod(nodeNodes.getChildNode("node", i).getChildNode("density").getText());
-
-      demand = demand / 3.6; // stored in m^3/h, handeld in l/s in Staci
+      demand = demand / 3.6; // SPR stores in m^3/h, handeld in l/s in STACI
       nodes.push_back(new Node(id, xpos, ypos, height, demand, pressure, density));
 
       if(debug)
@@ -111,6 +110,9 @@ void IOxml::loadSystem(vector<Node *> &nodes, vector<Edge *> &edges) {
     {
       vector<double> Q, H;
       curveReader(id, nodeEdgeSpec.getChildNode("curve"), Q, H);
+      // Converting from m3/h to l/s
+      for(int j=0; j<Q.size(); j++)
+        Q[i] /= 3.6;
 
       edges.push_back(new Pump(id, node_from, node_to, density, aref, Q, H, mass_flow_rate));
     }

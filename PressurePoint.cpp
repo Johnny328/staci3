@@ -5,8 +5,8 @@
 #include "Edge.h"
 #include "PressurePoint.h"
 
-PressurePoint::PressurePoint(const string a_name, const double a_referenceCrossSection, const string a_startNodeName, const double a_density, const double a_head, const double a_massFlowRate) :
-    Edge(a_name, a_referenceCrossSection, a_massFlowRate, a_density){
+PressurePoint::PressurePoint(const string a_name, const double a_referenceCrossSection, const string a_startNodeName, const double a_density, const double a_head, const double a_volumeFlowRate) :
+    Edge(a_name, a_referenceCrossSection, a_volumeFlowRate, a_density){
     type = "PressurePoint";
     numberNode = 1;
 
@@ -46,9 +46,9 @@ vector<double> PressurePoint::functionDerivative(vector<double> x){
 //--------------------------------------------------------------
 void PressurePoint::initialization(int mode, double value){
   if (mode == 0)
-    massFlowRate = 0.01;
+    volumeFlowRate = 0.01;
   else
-    massFlowRate = value;
+    volumeFlowRate = value;
 }
 
 
@@ -59,26 +59,22 @@ double PressurePoint::getDoubleProperty(string prop){
     out = head;
   else if(prop == "pressure")
     out = head * gravity * density;
-  else if(prop == "massFlowRate" || prop == "mass_flow_rate")
-    out = massFlowRate;
-  else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
-    out = massFlowRate / density;
-  else if(prop == "velicoty")
-    out = massFlowRate / density / referenceCrossSection;
+  else if(prop == "massFlowRate")
+    out = volumeFlowRate * density/1000.;
+  else if(prop == "volumeFlowRate")
+    out = volumeFlowRate;
+  else if(prop == "velocity")
+    out = volumeFlowRate / 1000. / referenceCrossSection;
   else if(prop == "density")
     out = density;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section" || prop == "Aref")
     out = referenceCrossSection;
-  else if(prop == "user1")
-    out = user1;
-  else if(prop == "user2")
-    out = user2;
   else if(prop == "height")
     out = height;
   else
   {
     cout << endl << endl << "DOUBLE PressurePoint::getDoubleProperty() wrong argument:" << prop;
-    cout << ", right values: head | pressure | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: head | pressure | volumeFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
   }
   return out;
 }
@@ -89,21 +85,17 @@ void PressurePoint::setDoubleProperty(string prop, double value){
     head = value;
   else if(prop == "pressure")
     head = value / density / gravity;
-  else if(prop == "massFlowRate" || prop == "mass_flow_rate")
-    massFlowRate = value;
+  else if(prop == "volumeFlowRate")
+    volumeFlowRate = value;
   else if(prop == "density")
     density = value;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     referenceCrossSection = value;
-  else if(prop == "user1")
-    user1 = value;
-  else if(prop == "user2")
-    user2 = value;
   else if(prop == "height")
     height = value;
   else
   {  
     cout << endl << endl << "PressurePoint::setProperty( DOUBLE ) wrong argument:" << prop;
-    cout << ", right values: head | massFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: head | volumeFlowRate | velocity | density | referenceCrossSection | user1 | user2" << endl << endl;
   }
 }

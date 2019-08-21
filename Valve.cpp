@@ -1,7 +1,7 @@
 #include "Valve.h"
 
-Valve::Valve(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_charX, vector<double> a_charY, double a_position, const double a_massFlowRate) :
-        Edge(a_name, a_referenceCrossSection, a_massFlowRate, a_density) {
+Valve::Valve(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_charX, vector<double> a_charY, double a_position, const double a_volumeFlowRate) :
+        Edge(a_name, a_referenceCrossSection, a_volumeFlowRate, a_density) {
     type = "Valve";
     numberNode = 2;
     startNodeName = a_startNodeName;
@@ -19,22 +19,22 @@ Valve::~Valve() {
 
 //--------------------------------------------------------------
 string Valve::info() {
-  ostringstream strstrm;
-  strstrm << Edge::info();
-  strstrm << endl << "  connection : " << startNodeName << "(index:" << startNodeIndex << ") --> " << endNodeName << "(index:" << endNodeIndex << ")\n";
-  cout << setprecision(3);
+  ostringstream ss;
+  ss << Edge::info();
+  ss << "\n segment from          : " << startSegment;
+  ss << "\n segment to            : " << endSegment;
+  ss << "\n connection            : " << startNodeName << " (index:" << startNodeIndex << ") --> " << endNodeName << " (index:" << endNodeIndex << ")";
   vector<double>::iterator it;
-  strstrm << "       data : charX [%]      = ";
+  ss << "\n char curve X [%]      : ";
   for (it = charX.begin(); it != charX.end(); it++)
-    strstrm << *(it) << "  ";
-  strstrm << "\n";
-  strstrm << "                charY [-]   = ";
+    ss << *(it) << "  ";
+  ss << "\n char curve Y [-]      : ";
   for (it = charY.begin(); it != charY.end(); it++)
-    strstrm << *(it) << "  ";
-  strstrm << "\n";
-  strstrm << endl << "       The actual position: " << fixed << position << endl<< "The actual loss coefficient: " << loss << endl;
+    ss << *(it) << "  ";
+  ss << "\n position              : " << position;
+  ss << "\n loss coefficient      : " << loss << endl;
 
-  return strstrm.str();
+  return ss.str();
 }
 
 //--------------------------------------------------------------
@@ -55,9 +55,9 @@ vector<double> Valve::functionDerivative(vector<double> x) {
 //--------------------------------------------------------------
 void Valve::initialization(int mode, double value) {
   if (mode == 0)
-    massFlowRate = 1.;
+    volumeFlowRate = 1.;
   else
-    massFlowRate = value;
+    volumeFlowRate = value;
 }
 
 //--------------------------------------------------------------
@@ -65,9 +65,9 @@ void Valve::setDoubleProperty(string property, double value) {
   if (property == "position") {
     position = value;
     updateLoss();
-  }else if (property == "startHeight")
+  }else if(property == "startHeight")
       startHeight = value;
-  else if (property == "endHeight")
+  else if(property == "endHeight")
       endHeight = value;
   else {
     cout << endl << endl << "ERROR! Valve::setDoubleProperty(property), unkown property: property=" << property << endl << endl;
@@ -75,17 +75,26 @@ void Valve::setDoubleProperty(string property, double value) {
 }
 
 //--------------------------------------------------------------
-double Valve::getDoubleProperty(string property) {
+void Valve::setIntProperty(string property, int value) {
+  if(property == "startSegment")
+    startSegment = value;
+  else if(property == "endSegment")
+    endSegment = value;
+  else
+    cout << endl << "ERROR! Valve::setIntProperty(property), unkown property: property=" << property << endl << endl;
+}
 
+//--------------------------------------------------------------
+double Valve::getDoubleProperty(string property) {
   double out = 0.0;
   if (property == "position")
     out = position;
   else if (property == "loss")
     out = loss;
-  else if (property == "massFlowRate")
-    out = massFlowRate;
+  else if (property == "volumeFlowRate")
+    out = volumeFlowRate;
   else if (property == "headLoss")
-    out = loss * massFlowRate * abs(massFlowRate);
+    out = loss * volumeFlowRate * abs(volumeFlowRate);
   else if (property == "headLoss_per_unit_length")
     out = headLoss;
   else if ((property == "length") || (property == "L"))
@@ -104,12 +113,23 @@ double Valve::getDoubleProperty(string property) {
 
 //--------------------------------------------------------------
 string Valve::getStringProperty(string property) {
-
   string out = "";
   if (property == "type")
     out = type;
   else
-    cout << endl << "ERROR! Valve::getProperty(property), unkown property: property=" << property << endl << endl;
+    cout << endl << "ERROR! Valve::getStringProperty(property), unkown property: property=" << property << endl << endl;
+  return out;
+}
+
+//--------------------------------------------------------------
+int Valve::getIntProperty(string property) {
+  int out = 0;
+  if(property == "startSegment")
+    out = startSegment;
+  else if(property == "endSegment")
+    out = endSegment;
+  else
+    cout << endl << "ERROR! Valve::getIntProperty(property), unkown property: property=" << property << endl << endl;
   return out;
 }
 

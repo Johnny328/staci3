@@ -8,15 +8,16 @@
 #include <stdlib.h>
 #include "Edge.h"
 
-Edge::Edge(const string a_name, const double a_referenceCrossSection, const double a_massFlowRate, const double a_density){
-  massFlowRate = a_massFlowRate;
-  density = a_density;
+Edge::Edge(const string a_name, const double a_referenceCrossSection, const double a_volumeFlowRate, const double a_density){
+  volumeFlowRate = a_volumeFlowRate; // l/s
+  density = a_density; // kg/m3
   name = a_name;
   referenceCrossSection = a_referenceCrossSection;
   startNodeIndex = -1;
   endNodeIndex = -1;
   string startNodeName = "startNothingYet";
   endNodeName = "endNothingYet";
+  userOutput = 0.0;
 
   if(abs(a_density) < 1.0e-3){
     ostringstream strstrm;
@@ -29,8 +30,6 @@ Edge::Edge(const string a_name, const double a_referenceCrossSection, const doub
   exit(0);
   }
 
-  user1=0.;
-  user2=0.;
 }
 
 //--------------------------------------------------------------
@@ -46,33 +45,36 @@ string Edge::info(){
     strstrm << "!CLOSED!";
   else
     strstrm << "open";
-  strstrm << "\n density               : " << density << " [kg/m^3]";
+  strstrm << "\n density               : " << density << " [kg/m3]";
   strstrm << "\n referenceCrossSection : " << referenceCrossSection << " [m^2]";
-  strstrm << "\n mass flow rate        : " << massFlowRate / density * 3600 << " [m3/h]";
+  strstrm << "\n volume flow rate      : " << volumeFlowRate << " [l/s]";
+  strstrm << "\n segment               : " << segment;
   return strstrm.str();
 }
 
 //--------------------------------------------------------------
 double Edge::getEdgeDoubleProperty(string prop){
   double out = 0.;
-  if(prop == "massFlowRate" || prop == "mass_flow_rate")
-    out = massFlowRate;
-  else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
-    out = massFlowRate / density;
-  else if(prop == "velocity")
-    out = massFlowRate / density / referenceCrossSection;
-  else if(prop == "density")
+  if(prop == "volumeFlowRate") // l/s
+    out = volumeFlowRate;
+  else if(prop == "volumeFlowRateAbs")
+    out = abs(volumeFlowRate);
+  else if(prop == "segment")
+    out = (double)segment;
+  else if(prop == "massFlowRate") // kg/s
+    out = volumeFlowRate * density/1000.;
+  else if(prop == "velocity") // m/s
+    out = volumeFlowRate * 1000. / referenceCrossSection;
+  else if(prop == "density") // kg/m3
     out = density;
-  else if(prop == "referenceCrossSection" || prop == "reference_cross_section" || prop == "Aref")
+  else if(prop == "userOutput") // kg/m3
+    out = userOutput;
+  else if(prop == "referenceCrossSection" || prop == "Aref")
     out = referenceCrossSection;
-  else if(prop == "user1")
-    out = user1;
-  else if(prop == "user2")
-    out = user2;
   else
   {
     cout << endl << endl << "DOUBLE Edge::getEdgeDoubleProperty() wrong argument:" << prop;
-    cout << ", right values: massFlowRate | velocity | density | length | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: volumeFlowRate | velocity | density | referenceCrossSection | segment | userOutput" << endl << endl;
   }
   return out;
 }
@@ -117,20 +119,18 @@ string Edge::getEdgeStringProperty(string prop){
 
 //--------------------------------------------------------------
 void Edge::setEdgeDoubleProperty(string prop, double value){
-  if(prop == "massFlowRate" || prop == "mass_flow_rate")
-    massFlowRate = value;
+  if(prop == "volumeFlowRate")
+    volumeFlowRate = value;
   else if(prop == "density")
     density = value;
+  else if(prop == "userOutput")
+    userOutput = value;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     referenceCrossSection = value;
-  else if(prop == "user1")
-    user1 = value;
-  else if(prop == "user2")
-    user2 = value;
   else
   {  
     cout << endl << endl << "Edge::setEdgeProperty( DOUBLE ) wrong argument:" << prop;
-    cout << ", right values: massFlowRate | density | referenceCrossSection | user1 | user2" << endl << endl;
+    cout << ", right values: volumeFlowRate | density | referenceCrossSection | userOutput" << endl << endl;
   }
 }
 
@@ -146,7 +146,7 @@ void Edge::setEdgeIntProperty(string prop, int value){
     segment = value;
   else
   {  
-    cout << endl << endl << "Edge::setEdgeProperty( DOUBLE ) wrong argument:" << prop;
+    cout << endl << endl << "Edge::setEdgeProperty( INT ) wrong argument:" << prop;
     cout << ", right values: startNodeIndex | endNodeIndex | numberNode" << endl << endl;
   }
 }
@@ -163,7 +163,7 @@ void Edge::setEdgeStringProperty(string prop, string value){
     type = value;
   else
   {  
-    cout << endl << endl << "Edge::setEdgeProperty( DOUBLE ) wrong argument:" << prop;
+    cout << endl << endl << "Edge::setEdgeProperty( STRING ) wrong argument:" << prop;
     cout << ", right values: startNodeName | endNodeName | name | type" << endl << endl;
   }
 }

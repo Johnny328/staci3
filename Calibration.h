@@ -12,6 +12,10 @@
     Cs. Hos, R. Weber, T. Huzsvar
     https://github.com/weberrichard/staci3
 \*==================================================================*/
+
+#ifndef CALIBRATION_H
+#define CALIBRATION_H
+
 #include "Sensitivity.h"
 
 #include <stdio.h>
@@ -76,3 +80,5 @@ private:
 	string demandNoiseMode;
   string measurementFolder;
 };
+
+#endif

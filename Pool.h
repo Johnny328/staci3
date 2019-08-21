@@ -22,6 +22,8 @@ class Pool:public Edge{
 private:
   double bottomLevel;
   double waterLevel;
+  double minLevel;
+  double maxLevel;
   double height; // Height of the connecting node (NOT equal to waterLevel)
 
 public:

@@ -20,7 +20,7 @@
 class Pump: public Edge {
 
 public:
-	Pump(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_volumeFlowRate, vector<double> a_head, const double a_massFlowRate);
+	Pump(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_qCurve, vector<double> a_hCurve, const double a_volumeFlowRate);
 	~Pump();
 
   /// Provides basic informations
@@ -43,8 +43,8 @@ public:
   vector<double> getVectorProperty(string prop);
 
 private:
-	vector<double> volumeFlowRate, head; // Pump CURVE at nominal revolution speed
-	vector<double> coefficients; // coefficients of fitted polynomails
+	vector<double> qCurve, hCurve; // Pump CURVE at nominal revolution speed
+	vector<double> coeffCurve; // coefficients of fitted polynomails
   double startHeight, endHeight; // Height of the starting and ending nodes
 	int curveOrder;
   double revolutionNumber = 1.; // revolution of the pump, if equal one it is the nominal (that is also the default value)

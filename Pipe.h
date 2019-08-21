@@ -54,7 +54,7 @@ private:
     double length, diameter, lambda;
     double roughness; // Pipefal roughness (HW: C factor, DW: relative roughness)
     double startHeight, endHeight; // Height of the starting and ending nodes
-    int frictionModel; // 0 - Darcy-Weisbach (DW), 1 - Hazen-Williams (HW)
+    int frictionModel=-1; // 0 - Darcy-Weisbach (DW), 1 - Hazen-Williams (HW)
 
     //! Computes the head loss in Pa
     /*! dp'=lambda*length/diameter*density/2*velocity*fabs(velocity)*/

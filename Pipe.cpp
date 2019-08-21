@@ -2,7 +2,7 @@
 
 using namespace std;
 
-Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_roughness, const double a_massFlowRate) : Edge(a_name, a_diameter * a_diameter * M_PI / 4., a_massFlowRate, a_density) {
+Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_roughness, const double a_volumeFlowRate) : Edge(a_name, a_diameter * a_diameter * M_PI / 4., a_volumeFlowRate, a_density) {
   type = "Pipe";
   numberNode = 2;
   startNodeName = a_startNodeName;
@@ -22,13 +22,10 @@ HW (frictionModel = 1) -> Hazen-Williams
 void Pipe::setFrictionModel(string a_fric_type) {
   if (a_fric_type == "DW")
     frictionModel = 0;
-  else {
-    if (a_fric_type == "HW")
-      frictionModel = 1;
-    else {
-      cout << endl << "HIBA! Pipe::computeHeadloss, ismeretlen surlodasi modell (DW|HW) " ": " << a_fric_type << endl << endl;
-    }
-  }
+  else if (a_fric_type == "HW")
+    frictionModel = 1;
+  else
+    cout << endl << "!ERROR! Unknown friction model: " << a_fric_type << endl << "Available options: DW | HW " << endl << endl;
 }
 
 //--------------------------------------------------------------
@@ -45,14 +42,23 @@ string Pipe::info() {
   strstrm << "\n roughness             : " << roughness << " [mm]";
   strstrm << "\n lambda                : " << lambda << " [-]";
   strstrm << "\n headloss              : " << getDoubleProperty("headLoss") << " [m]";
-  strstrm << "\n velocity              : " << massFlowRate / density / referenceCrossSection << " [m/s]" << endl;
+  strstrm << "\n velocity              : " << getDoubleProperty("velocity") << " [m/s]";
+  strstrm << "\n friction model        : ";
+  if(frictionModel==0)
+    strstrm << "DW";
+  else if(frictionModel==1)
+    strstrm << "HW";
+  else
+    strstrm << "!ERROR!";
+  strstrm << endl;
 
   return strstrm.str();
 }
 
 //--------------------------------------------------------------
-double Pipe::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
-  return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]) / density / gravity;
+double Pipe::function(vector<double> x){ // x = [Pstart, Pend, VolumeFlowRate]
+  return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]);
+  //return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]) / density / gravity;
 }
 
 //--------------------------------------------------------------
@@ -60,7 +66,8 @@ vector<double> Pipe::functionDerivative(vector<double> x) {
   vector<double> out;
   out.push_back(-1.0);
   out.push_back(1.0);
-  out.push_back(computeHeadlossDerivative(x[2]) / density / gravity);
+  out.push_back(computeHeadlossDerivative(x[2]));
+  //out.push_back(computeHeadlossDerivative(x[2]) / density / gravity);
   
   return out;
 }
@@ -68,47 +75,50 @@ vector<double> Pipe::functionDerivative(vector<double> x) {
 //--------------------------------------------------------------
 void Pipe::initialization(int mode, double value) {
   if(mode == 0)
-    setDoubleProperty("massFlowRate", 1.);
+    setDoubleProperty("volumeFlowRate", 1.);
   else
-    setDoubleProperty("massFlowRate", value);
+    setDoubleProperty("volumeFlowRate", value);
 }
 
 //--------------------------------------------------------------
 double Pipe::functionParameterDerivative(string parameter) {
   double out = 0.0;
   if (parameter == "diameter"){
-    out = -5. * getLambda(massFlowRate) * length / pow(diameter, 6) * 8 / density / pow(M_PI, 2) * massFlowRate * abs(massFlowRate);  // Pa/m
+    out = -5. * getLambda(volumeFlowRate) * length / pow(diameter, 6) * 8 / density / pow(M_PI, 2) * volumeFlowRate * abs(volumeFlowRate);  // Pa/m
   }
   else if (parameter == "friction_coeff")
   {
     double old = roughness;
     double delta = roughness * 0.001;
     roughness += delta;
-    double f1 = computeHeadloss(massFlowRate);
+    double f1 = computeHeadloss(volumeFlowRate);
     roughness = old;
-    double f0 = computeHeadloss(massFlowRate);
+    double f0 = computeHeadloss(volumeFlowRate);
     out = (f1 - f0) / delta;
   }else{
     cout << endl << "!!!ERROR!!! Pipe::functionParameterDerivative(parameter), unkown input: parameter=" << parameter << endl << "Available parameters: diameter | friction_coeff" << endl;
     cout << endl << "Name of pipe: " << name << endl;
     out = 0.0;
   }
-  return out / density / gravity;
+  return out;
+  //return out / density / gravity;
 }
 
 //--------------------------------------------------------------
-double Pipe::computeHeadloss(double mp){ // mp is massFlowRate
-  double velocity = mp / density / referenceCrossSection;
-  lambda = getLambda(mp);
-  double headloss = lambda * length / diameter * density / 2. * velocity * abs(velocity);
+double Pipe::computeHeadloss(double q){ // q is volumeFlowRate
+  double velocity = q / 1000. / referenceCrossSection;
+  lambda = getLambda(q);
+  double headloss = lambda * length / diameter / gravity / 2. * velocity * abs(velocity);
+  //double headloss = lambda * length / diameter * density / 2. * velocity * abs(velocity);
 
   return headloss;
 }
 
 //--------------------------------------------------------------
-double Pipe::computeHeadlossDerivative(double mp) {
+double Pipe::computeHeadlossDerivative(double q) { // q is volumeFlowRate
   double out;
-  out = getLambda(mp) * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 * abs(mp);
+  out = 2.* getLambda(q) * length/diameter / gravity / 2. / (referenceCrossSection*referenceCrossSection) * abs(q/1000.) / density;
+  //out = getLambda(q) * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 * abs(q);
   return out;
 }
 
@@ -127,9 +137,9 @@ overwritten to 10.
 For any of these models, if parameter roughness is negative, it is assumed that
 lambda=-roughness
 */
-double Pipe::getLambda(double mp) { // mp is massFlowRate
+double Pipe::getLambda(double q) { // q is volumeFlowRate
   double v_min = 0.001;
-  double velocity = mp / density / (diameter * diameter * M_PI / 4);
+  double velocity = q / 1000. / referenceCrossSection;
   if(fabs(velocity) < v_min)
     velocity = v_min;
   double nu = 1e-6;
@@ -137,37 +147,36 @@ double Pipe::getLambda(double mp) { // mp is massFlowRate
   double lambda_max = 64./0.1;
   double dp;
 
-  if (frictionModel == 0)  // Darcy-Wiesenbach
+  if(roughness <= 0)
   {
-    if (roughness <= 0)
-      lambda = -roughness;
-    else {
-      double Re = fabs(velocity) * diameter / nu;
+    lambda = -roughness;
+  }
+  else if(frictionModel == 0)  // Darcy-Wiesenbach
+  {
+    double Re = fabs(velocity) * diameter / nu;
 
-      double hiba = 1.0e10, tmp = 0.0, lambda_uj = 0.0;
-      unsigned int i = 0;
-      while ((hiba > 1e-6) && (i < 20)) {
-        if (Re < 2300)
-          lambda_uj = 64. / Re;
-        else {
-          tmp = -2.0 * log10(roughness / 1000 / diameter / 3.71 + 2.51 / Re / sqrt(lambda));
-          lambda_uj = 1 / tmp / tmp;
-        }
-
-        if (lambda_uj < lambda_min)
-          lambda_uj = lambda_min;
-        if (lambda > lambda_max)
-          lambda_uj = lambda_max;
-
-        hiba = fabs((lambda - lambda_uj) / lambda);
-        lambda = lambda_uj;
-
-        i++;
+    double error = 1.0e10, tmp = 0.0, lambda_new = 0.0;
+    unsigned int i = 0;
+    while ((error > 1e-6) && (i < 20)) {
+      if (Re < 2300)
+        lambda_new = 64. / Re;
+      else {
+        tmp = -2.0 * log10(roughness / 1000 / diameter / 3.71 + 2.51 / Re / sqrt(lambda));
+        lambda_new = 1 / tmp / tmp;
       }
+
+      if (lambda_new < lambda_min)
+        lambda_new = lambda_min;
+      if (lambda > lambda_max)
+        lambda_new = lambda_max;
+
+      error = fabs((lambda - lambda_new) / lambda);
+      lambda = lambda_new;
+
+      i++;
     }
   }
-
-  if (frictionModel == 1)  // Hazen-Williams, C factor around 100
+  else if (frictionModel == 1)  // Hazen-Williams, C factor around 100
   {
     if (roughness <= 0)
       lambda = -roughness;
@@ -185,6 +194,11 @@ double Pipe::getLambda(double mp) { // mp is massFlowRate
       lambda = abs(dp / (length / diameter * density / 2 * velocity * fabs(velocity)));      
     }
   }
+  else
+  {
+    cout << endl << "!ERROR! Pipe name: " << name << ", friction model is not set, frictionModel: " << frictionModel << endl;
+    exit(-1);
+  }
   return lambda;
 }
 
@@ -199,36 +213,40 @@ double Pipe::getDoubleProperty(string prop){
     out = length;
   else if (prop == "lambda")
     out = lambda;
+  else if (prop == "segment")
+    out = (double)segment;
   else if (prop == "Rh")
     out = diameter / 2.;
   else if (prop == "roughness")
     out = roughness;
   else if (prop == "headLoss" || prop == "headloss")
-    out = abs(computeHeadloss(massFlowRate) / density / gravity);
+    out = abs(computeHeadloss(volumeFlowRate) / density / gravity);
   else if (prop == "headLossPerUnitLength" || prop == "headloss_per_unit_length")
-    out = abs(computeHeadloss(massFlowRate) / density / gravity / length);
+    out = abs(computeHeadloss(volumeFlowRate) / density / gravity / length);
   else if(prop == "massFlowRate" || prop == "mass_flow_rate")
-    out = massFlowRate;
+    out = volumeFlowRate * density/1000.;
   else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
-    out = massFlowRate / density;
+    out = volumeFlowRate;
+  else if(prop == "volumeFlowRateAbs")
+    out = abs(volumeFlowRate);
   else if(prop == "velocity")
-    out = massFlowRate / density / referenceCrossSection;
+    out = volumeFlowRate / 1000. / referenceCrossSection;
   else if(prop == "density")
     out = density;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section" || prop == "Aref")
     out = referenceCrossSection;
-  else if(prop == "user1")
-    out = user1;
-  else if(prop == "user2")
-    out = user2;
   else if(prop == "startHeight")
     out = startHeight;
   else if(prop == "endHeight")
     out = endHeight;
+  else if(prop == "volume")
+    out = referenceCrossSection*length;
+  else if(prop == "userOutput")
+    out = userOutput;
   else
   {
     cout << endl << endl << "DOUBLE Pipe::getDoubleProperty() wrong argument:" << prop;
-    cout << ", right values: diamater | roughness | length | massFlowRate | velocity | density | referenceCrossSection | user1 | user2 | startHeight | endHeight" << endl << endl;
+    cout << ", right values: diamater | roughness | length | massFlowRate | velocity | density | referenceCrossSection | user1 | user2 | startHeight | endHeight | volume" << endl << endl;
   }
   return out;
 }
@@ -254,24 +272,22 @@ void Pipe::setDoubleProperty(string prop, double value){
     roughness = value;
   else if(prop == "length")
     length = value;
-  else if(prop == "massFlowRate" || prop == "mass_flow_rate")
-    massFlowRate = value;
+  else if(prop == "volumeFlowRate")
+    volumeFlowRate = value;
   else if(prop == "density")
     density = value;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     referenceCrossSection = value;
-  else if(prop == "user1")
-    user1 = value;
-  else if(prop == "user2")
-    user2 = value;
   else if(prop == "startHeight")
     startHeight = value;
   else if(prop == "endHeight")
     endHeight = value;
+  else if(prop == "userOutput")
+    userOutput = value;
   else
   {  
     cout << endl << endl << "Pipe::setDoubleProperty( DOUBLE ) wrong argument:" << prop;
-    cout << ", right values: diameter | roughness | length | massFlowRate | velocity | density | referenceCrossSection | user1 | user2 | startHeight | endHeight" << endl << endl;
+    cout << ", right values: diameter | roughness | length | volumeFlowRate | velocity | density | referenceCrossSection | userOutput | startHeight | endHeight" << endl << endl;
   }
 }
 

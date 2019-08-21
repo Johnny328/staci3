@@ -12,6 +12,8 @@
     Cs. Hos, R. Weber, T. Huzsvar
     https://github.com/weberrichard/staci3
 \*==================================================================*/
+#ifndef SENSITIVITY_H
+#define SENSITIVITY_H
 
 #include "HydraulicSolver.h"
 
@@ -35,3 +37,5 @@ private:
   SparseVector<double> functionDerivative; // derivative of eqs. w.r.t. parameter
   VectorXd resultDerivative; // derivative of eqs. w.r.t. parameter
 };
+
+#endif

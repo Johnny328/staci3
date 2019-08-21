@@ -311,7 +311,7 @@ vector<vector<int> > segmenterWR(vector<int> edgeVector){
           segment.push_back(edgeVector[i+1]);
           edgeVector.erase(edgeVector.begin() + i);
           edgeVector.erase(edgeVector.begin() + i);
-          j=-2; // setting back j to the first item
+          j=-2; // setting back j to the first item that is 0th
           break;
         }
       }

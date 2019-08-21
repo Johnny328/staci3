@@ -7,7 +7,7 @@
   Pipe, Pool, PressurePoint, ... ).
 
   This calss involves general variables like startNodeName,
-  endNodeName, massFlowRate etc. that every Edge requires.
+  endNodeName, volumeFlowRate etc. that every Edge requires.
 
   staci3 is using Eigen, see http://eigen.tuxfamily.org
 
@@ -35,7 +35,7 @@ using namespace std;
 class Edge
 {
 public:
-  Edge(const string a_name, const double a_referenceCrossSection, const double a_massFlowRate, const double a_densitiy);
+  Edge(const string a_name, const double a_referenceCrossSection, const double a_volumeFlowRate, const double a_densitiy);
   virtual ~Edge();
 
   /// Get/set double/int/string property in general for EDGE
@@ -54,7 +54,7 @@ public:
   virtual void setIntProperty(string prop, int value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
   virtual void setStringProperty(string prop, string value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
 
-  /// A line of F(x) = equation, rearranged to 0 in w.c.m.
+  /// A line of F(x) = equation, rearranged to 0 in l/s.
   virtual double function(vector<double>) = 0;
 
   /// Jacobian: df/dhe, df/dhv, df/dmp
@@ -75,12 +75,15 @@ public:
   /// If this equals to true, it counts as closed, thus no equation will be solved, like it is not part of the system
   bool isClosed = false;
 
+  // [l/s] for series calculations
+  vector<double> vectorVolumeFlowRate;
+
 protected:
-  double massFlowRate; // [kg/s]
+  double volumeFlowRate; // [l/s]
   double density; // [kg/m3]
   double referenceCrossSection; // [m2], used for calculating velocity
-  double user1, user2;
   const double gravity = 9.81; // [m/s2]
+  double userOutput;
   int startNodeIndex, endNodeIndex;
   int numberNode;
   int segment=-1; // the edge takes place in which segment

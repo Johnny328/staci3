@@ -16,6 +16,9 @@
     https://github.com/weberrichard/staci3
 \*==================================================================*/
 
+#ifndef HYDRAULICSOLVER_H
+#define HYDRAULICSOLVER_H
+
 #include "Staci.h"
 
 class HydraulicSolver : public Staci
@@ -46,7 +49,7 @@ public:
 
   // Is the demands depending on pressure
   bool isPressureDemand = false;
-  double exponent = 2., pressureDes = 25., pressureMin = 10.;
+  double pdExponent = 2., pdDesiredPressure = 25., pdMinPressure = 10.;
 
 protected:
 	/// Jacobian matrix in a sparse Eigen type container
@@ -64,7 +67,7 @@ private:
   double relaxationFactor, relaxationFactorIncrement, minRelaxationFactor, maxRelaxationFactor;
   double pressureInitial, massFlowInitial;
   int maxIterationNumber;
-  string frictionModel; // Darcy-Weisbach or Hazen-Williams
+  string frictionModel; // Darcy-Weisbach (DW) or Hazen-Williams (HW)
 
 	/// Linear solver Jac*x = -f
   void linearSolver(VectorXd &x, VectorXd &f);
@@ -83,4 +86,10 @@ private:
 	string iterInfo(int iter, double e_mp, double e_p);
   /// Printing the detailed iteration informaition to console and log file
 	string iterInfoDetail(const VectorXd &x, const VectorXd &f);
+
+  /// Updating the openEdges, openNodes vectors
+  void updateOpenElements();
+
 };
+
+#endif

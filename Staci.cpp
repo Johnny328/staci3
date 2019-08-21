@@ -5,47 +5,36 @@ using namespace Eigen;
 Staci::Staci(string spr_filename) {
   definitionFile = spr_filename;
 
-  IOxml IOxmlObj(definitionFile.c_str());
-  IOxmlObj.loadSystem(nodes, edges);
+  // getting rid of global path
+  caseName = definitionFile.substr(definitionFile.rfind('/')+1);
+  // getting rid of extension
+  caseName = caseName.substr(0,caseName.length()-4);
 
-  frictionModel = IOxmlObj.readSetting("friction_model");
-  for(int i=0; i<edges.size(); i++)
+  string fileFormat = definitionFile.substr(definitionFile.length()-3,3); // SPR or INP
+  if(fileFormat == "inp") // Standard EPANET inp format
   {
-    if(edges[i]->getEdgeStringProperty("type") == "Pipe")
-      edges[i]->setFrictionModel(frictionModel);
+    loadSystem();
+  }
+  else if(fileFormat == "spr") // Old STACI spr format
+  {
+    IOxml IOxmlObj(definitionFile.c_str());
+    IOxmlObj.loadSystem(nodes, edges);
+
+    frictionModel = IOxmlObj.readSetting("friction_model");
+    for(int i=0; i<edges.size(); i++)
+    {
+      if(edges[i]->getEdgeStringProperty("type") == "Pipe")
+        edges[i]->setFrictionModel(frictionModel);
+    }
+  }
+  else
+  {
+    cout << endl << "Unkown file format: " << fileFormat << endl << "Available file formats are: inp | spr" << endl;
+    exit(-1);
   }
 
   // Finding the indicies of nodes for the edges and vica versa
   buildSystem();
-
-  for(int i=0; i<edges.size(); i++)
-  {
-    string type = edges[i]->getEdgeStringProperty("type");
-    if(type == "Pipe" || type == "Pump" || type == "Valve")
-    {
-      int startIndex = edges[i]->getEdgeIntProperty("startNodeIndex");
-      double startHeight = nodes[startIndex]->getProperty("height");
-      edges[i]->setDoubleProperty("startHeight",startHeight);
-
-      int endIndex = edges[i]->getEdgeIntProperty("endNodeIndex");
-      double endHeight = nodes[endIndex]->getProperty("height");
-      edges[i]->setDoubleProperty("endHeight",endHeight);
-    }
-    if(type == "Pool" || type == "PressurePoint"){
-      int index = edges[i]->getEdgeIntProperty("startNodeIndex");
-      double height = nodes[index]->getProperty("height");
-      edges[i]->setDoubleProperty("height",height);
-    }
-  }
-
-  openEdges.clear();
-  openNodes.clear();
-  for(int i=0; i<edges.size(); i++)
-    if(!edges[i]->isClosed)
-      openEdges.push_back(i);
-  for(int i=0; i<nodes.size(); i++)
-    if(!nodes[i]->isClosed)
-      openNodes.push_back(i);
 }
 
 //--------------------------------------------------------------
@@ -184,86 +173,173 @@ void Staci::checkSystem()
 }
 
 //--------------------------------------------------------------
-void Staci::changeEdgeStatus(string ID, bool state){
+void Staci::saveResult(string property, string element){
+
+  vector<string> allElement{"All","Node","Pipe","Pump","PressurePoint","Pool"};
+
+  bool elementExist = false;
+  int i=0;
+  while(i<allElement.size() && !elementExist){
+    if(element == allElement[i])
+      elementExist = true;
+    i++;
+  }
+
+  if(elementExist)
+  { 
+    mkdir(caseName.c_str(),0777);
+    if(element == "All")
+    {
+      remove((caseName + "/Node.txt").c_str());
+      remove((caseName + "/Pipe.txt").c_str());
+      remove((caseName + "/Pump.txt").c_str());
+      remove((caseName + "/Pool.txt").c_str());
+      remove((caseName + "/Pres.txt").c_str());
+    }
+
+    ofstream wfile;
+    if(element == "Node" || element == "All")
+    { 
+      remove((caseName + "/Node.txt").c_str());
+      wfile.open(caseName + "/Node.txt");
+      for(int i=0; i<nodes.size(); i++)
+        if(!nodes[i]->isClosed)
+          wfile << nodes[i]->getProperty(property) << endl;
+        else
+          wfile << "Nan" <<endl;
+      wfile.close();
+    }
+
+    if(element == "Pipe" || element == "All")
+    { 
+      remove((caseName + "/Pipe.txt").c_str());
+      wfile.open(caseName + "/Pipe.txt");
+      for(int i=0; i<edges.size(); i++){
+        if(edges[i]->getEdgeStringProperty("type") == "Pipe"){
+          if(!edges[i]->isClosed)
+            wfile << edges[i]->getDoubleProperty(property) << endl;
+          else
+            wfile << "Nan" << endl;
+        }
+      }
+      wfile.close();
+    }
+
+    if(element == "Pump" || element == "All")
+    {
+      remove((caseName + "/Pump.txt").c_str());
+      wfile.open(caseName + "/Pump.txt");
+      for(int i=0; i<edges.size(); i++){
+        if(edges[i]->getEdgeStringProperty("type") == "Pump"){
+          if(!edges[i]->isClosed)
+            wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
+          else
+            wfile << "Nan" << endl;
+        }
+      }  wfile.close();
+    }
+
+    if(element == "PressurePoint" || element == "All")
+    {
+      remove((caseName + "/Pres.txt").c_str());
+      wfile.open(caseName + "/Pres.txt");
+      for(int i=0; i<edges.size(); i++){
+        if(edges[i]->getEdgeStringProperty("type") == "PressurePoint"){
+          if(!edges[i]->isClosed)
+            wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
+          else
+            wfile << "Nan" << endl;
+        }
+      }
+      wfile.close();
+    }
+
+    if(element == "Pool" || element == "All")
+    { 
+      remove((caseName + "/Pool.txt").c_str());
+      wfile.open(caseName + "/Pool.txt");
+      for(int i=0; i<edges.size(); i++){
+        if(edges[i]->getEdgeStringProperty("type") == "Pool"){
+          if(!edges[i]->isClosed)
+            wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
+          else
+            wfile << "Nan" << endl;
+        }
+      }
+      wfile.close();
+    }
+  }
+  else
+  {
+    cout << endl << "Elemenet: " << element << " does not exist in Staci::saveResult() function" << endl << "Possible elements: ";
+    for(int i=0; i<allElement.size(); i++)
+      cout << allElement[i] << ", ";
+    cout << endl;
+  }
+}
+
+//--------------------------------------------------------------
+void Staci::changeEdgeStatus(int idx, bool state){
 
   if(state == false) // Closing an edge
   {
-    int i=0, idx=-1;
-    bool gotIt=false;
-    while(i<edges.size() && !gotIt){
-      if(ID.compare(edges[i]->getEdgeStringProperty("name")) == 0){
-        edges[i]->isClosed = true;
-        gotIt = true;
-        idx = i;
-      }
-      i++;
-    }
-    if(idx == -1)
-      cout << "\n!!!WARNING!!!\nStaci:changeEdgeStatus function\nEdge is not existing, id: " << ID << endl<< "\nContinouing...";
-    else
-    {
-      int nodeFrom = edges[idx]->getEdgeIntProperty("startNodeIndex");
-      int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
+    int nodeFrom = edges[idx]->getEdgeIntProperty("startNodeIndex");
+    int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
 
-      for(int i=0; i<nodes[nodeFrom]->edgeOut.size(); i++)
-        if(nodes[nodeFrom]->edgeOut[i] == idx)
-          nodes[nodeFrom]->edgeOut.erase(nodes[nodeFrom]->edgeOut.begin() + i);
+    for(int i=0; i<nodes[nodeFrom]->edgeOut.size(); i++)
+      if(nodes[nodeFrom]->edgeOut[i] == idx)
+        nodes[nodeFrom]->edgeOut.erase(nodes[nodeFrom]->edgeOut.begin() + i);
 
-      if(nodes[nodeFrom]->edgeOut.size() + nodes[nodeFrom]->edgeIn.size() == 0){
-        nodes[nodeFrom]->isClosed = true;
-        int i=getVectorIndex(openNodes,nodeFrom);
-        openNodes.erase(openNodes.begin() + i);
-      }
+    if(nodes[nodeFrom]->edgeOut.size() + nodes[nodeFrom]->edgeIn.size() == 0)
+      nodes[nodeFrom]->isClosed = true;
 
-      for(int i=0; i<nodes[nodeTo]->edgeIn.size(); i++)
-        if(nodes[nodeTo]->edgeIn[i] == idx)
-          nodes[nodeTo]->edgeIn.erase(nodes[nodeTo]->edgeIn.begin() + i);
+    for(int i=0; i<nodes[nodeTo]->edgeIn.size(); i++)
+      if(nodes[nodeTo]->edgeIn[i] == idx)
+        nodes[nodeTo]->edgeIn.erase(nodes[nodeTo]->edgeIn.begin() + i);
 
-      if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 0){
-        nodes[nodeTo]->isClosed = true;
-        int i=getVectorIndex(openNodes,nodeTo);
-        openNodes.erase(openNodes.begin() + i);
-      }
+    if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 0)
+      nodes[nodeTo]->isClosed = true;
 
-      int i=getVectorIndex(openEdges,idx);
-      openEdges.erase(openEdges.begin() + i);
-    }
   }
   else // Opening an edge
   {
-    int i=0, idx=-1;
-    bool gotIt=false;
-    while(i<edges.size() && !gotIt){
-      if(ID.compare(edges[i]->getEdgeStringProperty("name")) == 0){
-        edges[i]->isClosed = false;
-        gotIt = true;
-        idx = i;
-      }
-      i++;
-    }
-    if(idx == -1)
-      cout << "\n!!!WARNING!!!\nStaci:changeEdgeStatus function\nEdge is not existing, id: " << ID << endl<< "\nContinouing...";
-    else
+    int nodeFrom = edges[idx]->getEdgeIntProperty("startNodeIndex");
+    int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
+
+    nodes[nodeFrom]->edgeOut.push_back(idx);
+
+    if(nodes[nodeFrom]->edgeOut.size() + nodes[nodeFrom]->edgeIn.size() == 1)
+      nodes[nodeFrom]->isClosed = false;
+
+    nodes[nodeTo]->edgeIn.push_back(idx);
+
+    if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 1)
+      nodes[nodeTo]->isClosed = false;
+  }
+}
+
+//--------------------------------------------------------------
+void Staci::changeEdgeStatus(string ID, bool state){
+
+  int i=0, idx=-1;
+  bool gotIt=false;
+  while(i<edges.size() && !gotIt)
+  {
+    if(ID.compare(edges[i]->getEdgeStringProperty("name")) == 0)
     {
-      int nodeFrom = edges[idx]->getEdgeIntProperty("startNodeIndex");
-      int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
-
-      nodes[nodeFrom]->edgeOut.push_back(idx);
-
-      if(nodes[nodeFrom]->edgeOut.size() + nodes[nodeFrom]->edgeIn.size() == 1){
-        nodes[nodeFrom]->isClosed = false;
-        openNodes.push_back(nodeFrom);
-      }
-
-      nodes[nodeTo]->edgeIn.push_back(idx);
-
-      if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 1){
-        nodes[nodeTo]->isClosed = false;
-        openNodes.push_back(nodeTo);
-      }
-
-      openEdges.push_back(idx);
+      edges[i]->isClosed = true;
+      gotIt = true;
+      idx = i;
     }
+    i++;
+  }
+  if(idx == -1)
+  {
+    cout << "\n!!!WARNING!!!\nStaci:changeEdgeStatus function\nEdge is not existing, id: " << ID << endl<< "\nContinouing...";
+  }
+  else
+  {
+    changeEdgeStatus(idx,state);
   }
 }
 

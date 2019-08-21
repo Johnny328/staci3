@@ -12,6 +12,9 @@
     https://github.com/weberrichard/staci3
 \*==================================================================*/
 
+#ifndef IOXML_H
+#define IOXML_H
+
 #include <string>
 #include <fstream>
 #include <vector>
@@ -53,3 +56,5 @@ private:
   void curveReader(const string id, const XMLNode elem, vector<double> &px, vector<double> &py);
   void writingTagValue(XMLNode node, string tag_name, double tag_value);
 };
+
+#endif

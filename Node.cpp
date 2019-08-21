@@ -9,8 +9,7 @@ Node::Node(const string a_name, const double a_xPosition, const double a_yPositi
   yPosition = a_yPosition;
   name = a_name;
   head = a_head;
-  user1 = 0.;
-  user2 = 0.;
+  userOutput = 0.0;
 }
 
 //--------------------------------------------------------------
@@ -22,22 +21,37 @@ Node::~Node()
 void Node::initialization(int mode, double value)
 {
   if (mode == 0)
-    head = 300. - geodeticHeight;
+    head = 50.;
   else
     head = value - geodeticHeight;
 }
 
 //--------------------------------------------------------------
-double Node::function(double pressure, vector<double> parameters){
-  //TODO
-  //TODO
-  //TODO
+double Node::function(double pressure, vector<double> par){ // for pressure dependent demnads
+  // par = [pdExponent, pdDesiredPressure, pdMinPressure]
+  double out;
+  if(pressure<par[2])
+    out = 0.0;
+  else if(pressure<par[1] && pressure>par[2])
+    out = -demand*pow((pressure-par[2])/(par[1]-par[2]),1./par[0]);
+  else
+    out = -demand;
+
+  return out;
 }
 
 //--------------------------------------------------------------
-double Node::functionDerivative(double pressure, vector<double> parameters){
-  // parameters = [exponent,pressureDes,pressureMin]
-  return demand*pow((pressure-parameters[2])/(parameters[1]-parameters[2]),1./parameters[0]-1)/(parameters[2]-parameters[1]);
+double Node::functionDerivative(double pressure, vector<double> par){ // for pressure dependent demnads
+  // par = [pdExponent, pdDesiredPressure, pdMinPressure]
+  double out;
+  if(pressure<par[2])
+    out = 0.0;
+  else if(pressure<par[1] && pressure>par[2])
+    out = -demand*pow((pressure-par[2])/(par[1]-par[2]),1./par[0]-1)/(par[1]-par[2]);
+  else
+    out = 0.0;
+
+  return out;
 }
 
 //--------------------------------------------------------------
@@ -45,6 +59,17 @@ void Node::setProperty(string prop, double value)
 {
   if(prop == "demand")
     demand = value;
+  else if(prop == "consumption"){
+    consumption = value;
+    if(demand == 0.0)
+      consumptionPercent = 0.0;
+    else
+      consumptionPercent = 100.*consumption/demand;
+  }
+  else if(prop == "consumptionPercent"){
+    consumptionPercent = value;
+    consumption = consumptionPercent/100.*demand;
+  }
   else if(prop == "head")
     head = value;
   else if(prop == "density")
@@ -55,14 +80,12 @@ void Node::setProperty(string prop, double value)
     xPosition = value;
   else if(prop == "yPosition")
     yPosition = value;
-  else if(prop == "user1")
-    user1 = value;
-  else if(prop == "user2")
-    user2 = value;
+  else if(prop == "userOutput")
+    userOutput = value;
   else
   {
     cout << endl << endl << "Node::getProperty() wrong argument:" << prop;
-    cout << ", right values: demand|head|pressure|density|height|xPosition|yPosition|user1|user2" << endl << endl;
+    cout << ", right values: demand|head|pressure|density|height|xPosition|yPosition|userOutput" << endl << endl;
   }
 }
 
@@ -73,8 +96,12 @@ double Node::getProperty(string prop)
 
   if(prop == "demand")
     out = demand;
+  else if(prop == "consumption")
+    out = consumption;
+  else if(prop == "consumptionPercent")
+    out = consumptionPercent;
   else if(prop == "pressure")
-    out = head / density / 9.81;
+    out = head * density * 9.81;
   else if(prop == "head")
     out = head;
   else if(prop == "density")
@@ -85,14 +112,14 @@ double Node::getProperty(string prop)
     out = xPosition;
   else if(prop == "yPosition")
     out = yPosition;
-  else if(prop == "user1")
-    out = user1;
-  else if(prop == "user2")
-    out = user2;
+  else if(prop == "userOutput")
+    out = userOutput;
+  else if(prop == "segment")
+    out = (double)segment;
   else
   {
     cout << endl << endl << "Node::getProperty() wrong argument:" << prop;
-    cout << ", right values: demand|head|pressure|density|height|xPosition|yPosition|user1|user2" << endl << endl;
+    cout << ", right values: demand|head|pressure|density|height|xPosition|yPosition|userOutput" << endl << endl;
   }
   return out;
 }
@@ -108,15 +135,17 @@ string Node::info(bool check_if_lonely)
   else
     strstrm << "open";
   strstrm << "\n height          : " << geodeticHeight << " m";
-  strstrm << "\n head            : " << head << " m (=p[Pa]/density/g)";
+  strstrm << "\n head            : " << head << " m";
   strstrm << "\n pressure        : " << head*density * 9.81 << " Pa";
   strstrm << "\n desnity         : " << density << " kg/m3";
-  strstrm << "\n consumption     : " << demand << " kg/s = " << demand * 3600 / density << " m3/h";
+  strstrm << "\n demand          : " << demand << " kg/s = " << demand * 3600 / density << " m3/h";
+  strstrm << "\n consumption     : " << consumption << " kg/s = " << consumption * 3600 / density << " m3/h";
+  strstrm << "\n segment         : " << segment;
   strstrm << "\n incoming edges  : ";
-  for (vector<int>::iterator it = edgeIn.begin(); it != edgeIn.end(); it++)
+  for(vector<int>::iterator it = edgeIn.begin(); it != edgeIn.end(); it++)
       strstrm << *it << " ";
   strstrm << "\n outgoing edges  : ";
-  for (vector<int>::iterator it = edgeOut.begin(); it != edgeOut.end(); it++)
+  for(vector<int>::iterator it = edgeOut.begin(); it != edgeOut.end(); it++)
       strstrm << *it << " ";
   strstrm << endl;
 
