@@ -27,7 +27,7 @@ public:
     string info();
 
     /// A line of F(x) = equation, rearranged to 0 in w.c.m.
-    double function(vector<double>);
+    double function(vector<double> x);
 
     /// Jacobian: df/dhe, df/dhv, df/dmp
     vector<double> functionDerivative(vector<double>);
@@ -41,9 +41,8 @@ public:
     double getDoubleProperty(string prop);
     void setDoubleProperty(string prop, double value);
 
-private:
+//private:
     double head;
-    double height; // Height of the connecting node (NOT equal to waterLevel)
 };
 
 #endif

@@ -19,12 +19,11 @@
 
 class Pool:public Edge{
 
-private:
+//private:
   double bottomLevel;
   double waterLevel;
   double minLevel;
   double maxLevel;
-  double height; // Height of the connecting node (NOT equal to waterLevel)
 
 public:
   Pool(const string a_name, const string a_startNodeName, const double a_density, const double a_referenceCrossSection, const double a_bottomLevel, const double a_waterLevel, const double a_massFlowRate);
@@ -34,7 +33,7 @@ public:
   string info();
 
   /// A line of F(x) = equation, rearranged to 0 in w.c.m.
-  double function(vector<double>);
+  double function(vector<double> x);
 
   /// Jacobian: df/dhe, df/dhv, df/dmp
   vector<double> functionDerivative(vector<double>);

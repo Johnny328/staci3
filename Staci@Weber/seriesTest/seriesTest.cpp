@@ -34,12 +34,17 @@ int main(int argc, char* argv[]){
 
   SeriesHydraulics *wds;
   wds = new SeriesHydraulics(caseFolder + caseName);
-  wds->listSystem();
-  cin.get();
-  //wds->seriesSolve();
-  wds->solveSystem();
-  wds->saveResult("head","Node");
-  wds->saveResult("volumeFlowRate","Pipe");
+  //for(int i=0; i<wds->edges.size(); i++)
+  //  if(wds->edges[i]->getEdgeStringProperty("type") == "Pump")
+  //    wds->edges[i]->setStringProperty("curveType", "linear");
+  //wds->solveSystem();
+  wds->seriesSolve();
+  //for(int i=0; i<wds->edges.size(); i++)
+    //if(wds->edges[i]->getEdgeStringProperty("type") == "PressurePoint" || wds->edges[i]->getEdgeStringProperty("type") == "Pool")
+      //cout << wds->edges[i]->getEdgeStringProperty("name") << "  " << wds->edges[i]->getDoubleProperty("volumeFlowRate") << endl;
+  //wds->listSystem();
+  //wds->saveResult("head","Node");
+  //wds->saveResult("volumeFlowRate","Pipe");
 
   //cout << endl << "NODES" << endl;
   //for(int i=0; i<3; i++){

@@ -21,7 +21,6 @@ int main(int argc, char* argv[]){
   // Creating the case
   wds = new SVDCalibration(case_name + ".spr");
   wds->setDebugLevelSVD(1);
-  wds->buildSystem();
   wds->initialization();
   int numberEdges = wds->edges.size();
 

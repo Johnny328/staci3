@@ -40,8 +40,8 @@ public:
   void initialization(int mode, double value);
 
   // In case of pressure dependent demands, df/dx i.e. dd/dp is not zero
-  double function(double pressure, vector<double> par);
-  double functionDerivative(double pressure, vector<double> par);
+  double function(double head);
+  double functionDerivative(double head);
 
   /// Setting a certain node double property
   /// demand|head|pressure|density|height|xPosition|yPosition|user1|user2
@@ -55,11 +55,14 @@ public:
   string info(bool check_if_lonely);
 
   /// If every connecting edges are closed, then the node will be as well, basically closed if edgeIn.size() + edgeOut.size() is zero
-  bool isClosed = false;
+  //bool isClosed = false;
 
   // [m] for series calculations
   vector<double> vectorHead;
-  // [l/s] for series calculations
+  // [l/s] actual served water in time
+  vector<double> vectorConsumption;
+
+  // [l/s] for series calculations, node can have multiple demand with different pattern
   vector<double> vectorDemand;
   // patterns for series calculations
   vector<string> vectorPatternID;
@@ -85,16 +88,16 @@ public:
     segment = a;
   }
 
-private:
   string name;
   double head;
   double density;
   double xPosition, yPosition;
   double geodeticHeight;
   double demand; // independent from pressure, however it can be varying in time
+  //double valveFlow = 0.0; // Storing the active inflow from controlled valves;
   double consumption = 0.0; // in case of presure dependent demands consumption can be smaller than demand
   double consumptionPercent = 0.0; // consumption/demand*100 [%]
-  double userOutput;
   int segment=-1; // the node takes place in which segment
+  double pdExponent = 2., pdDesiredPressure = 25., pdMinPressure = 10.; // in case of pressure dependent consumptions
 };
 #endif

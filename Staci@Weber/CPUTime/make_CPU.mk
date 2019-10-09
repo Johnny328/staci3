@@ -3,13 +3,15 @@ STACI_DIR=../bin/
 FUNC=CPU
 
 CXX=clang++
-CXXFLAGS=-g -std=c++11 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/include/igraph
+CXXFLAGS=-g -std=c++17 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/include/igraph -ligraph
 
 OBJS += \
 $(STACI_DIR)BasicFileIO.o \
 $(STACI_DIR)Calibration.o \
 $(STACI_DIR)Edge.o \
+$(STACI_DIR)Graph.o \
 $(STACI_DIR)HydraulicSolver.o \
+$(STACI_DIR)IOinp.o \
 $(STACI_DIR)IOxml.o \
 $(STACI_DIR)Node.o \
 $(STACI_DIR)Pipe.o \

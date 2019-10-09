@@ -1,6 +1,8 @@
-../bin/Pump.d: ../bin/../../Pump.cpp ../bin/../../Edge.h \
-  ../bin/../../Pump.h
+../bin/Pump.d: ../bin/../../Pump.cpp ../bin/../../Pump.h \
+  ../bin/../../Edge.h ../bin/../../Statistic.h
+
+../bin/../../Pump.h:
 
 ../bin/../../Edge.h:
 
-../bin/../../Pump.h:
+../bin/../../Statistic.h:

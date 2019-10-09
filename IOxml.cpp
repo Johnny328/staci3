@@ -28,31 +28,28 @@ void IOxml::loadSystem(vector<Node *> &nodes, vector<Edge *> &edges) {
   edgeNumber = nodesEdges.nChildNode("edge");
   if(debug)
     cout << endl << "FileName: " << xmlFileName << endl << "\n Number of nodes: " << nodeNumber << endl << "\tNumber of edges: " << edgeNumber;
-
   // Reading the nodes in detail
   if(debug)
     cout << endl << endl << "Reading the NODES in detail: " << endl << "-----------------------------------------" << endl;
 
   string id, is_endnode;
-  double height, demand, pressure, density, xpos, ypos;
+  double height, demand, pressure, density, xcoord, ycoord;
 
   for(int i = 0; i < nodeNumber; i++){
     is_endnode = nodeNodes.getChildNode("node", i).getChildNode("endnode").getText();
-
     if(is_endnode == "false"){
-
       id = nodeNodes.getChildNode("node", i).getChildNode("id").getText();
-      xpos = stod(nodeNodes.getChildNode("node", i).getChildNode("xpos").getText());
-      ypos = stod(nodeNodes.getChildNode("node", i).getChildNode("ypos").getText());
+      xcoord = stod(nodeNodes.getChildNode("node", i).getChildNode("xcoord").getText());
+      ycoord = stod(nodeNodes.getChildNode("node", i).getChildNode("ycoord").getText());
       height = stod(nodeNodes.getChildNode("node", i).getChildNode("height").getText());
       demand = stod(nodeNodes.getChildNode("node", i).getChildNode("demand").getText());
       pressure = stod(nodeNodes.getChildNode("node", i).getChildNode("pressure").getText());
       density = stod(nodeNodes.getChildNode("node", i).getChildNode("density").getText());
       demand = demand / 3.6; // SPR stores in m^3/h, handeld in l/s in STACI
-      nodes.push_back(new Node(id, xpos, ypos, height, demand, pressure, density));
+      nodes.push_back(new Node(id, xcoord, ycoord, height, demand, pressure, density));
 
       if(debug)
-        cout << nodes.at(i)->info(false);
+        cout << nodes.size() << ". node, " << id << ", " << xcoord << ", " << ycoord << ", " << height << ", " << demand << endl;
     }
   }
 
@@ -114,14 +111,12 @@ void IOxml::loadSystem(vector<Node *> &nodes, vector<Edge *> &edges) {
       for(int j=0; j<Q.size(); j++)
         Q[i] /= 3.6;
 
-      edges.push_back(new Pump(id, node_from, node_to, density, aref, Q, H, mass_flow_rate));
+      edges.push_back(new Pump(id, node_from, node_to, density, aref, Q, H, mass_flow_rate, "parabolic"));
     }
     else
     {
       cout << endl << " !!!WARNING!!! " << endl << " Reading from XML file, unknown edge type: " << edgeType << "  ID: " << id << endl << " Continouing..." << endl;
     }
-    if(debug)
-      cout << edges.at(i)->info();
   }
 }
 

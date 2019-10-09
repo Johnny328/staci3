@@ -26,15 +26,18 @@ using namespace std;
 class Rule
 {
 public:
-  Rule(string id);
+  Rule(string id){
+    ID = id;
+  }
   ~Rule();
 
   string ID; // ID of the rule
 
   vector<string> conditionType; // SYSTEM, NODE, LINK etc.
   vector<string> conditionID;
-  vector<double> conditionValue; // simple double number
+  vector<int> conditionIndex;
   vector<string> conditionRelation; // BELOW, ABOVE, <, >, =, <=, >=
+  vector<double> conditionValue; // simple double number
 
   vector<string> actionType; // LINK, PUMP, PIPE, VALVE
   vector<string> actionID;
@@ -42,5 +45,11 @@ public:
   vector<double> actionValue;
   vector<bool>   actionCounter; // if THEN ... false, if ELSE ... true
 };
+
+//Rule(string id){
+//  ID = id;
+//}
+//
+//~Rule(){}
 
 #endif

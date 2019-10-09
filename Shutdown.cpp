@@ -42,7 +42,7 @@ void Shutdown::buildSegmentGraph()
   segmentEdgeVector.clear();
   for(int i=0; i<edges.size(); i++)
   {
-    if(edges[i]->getEdgeStringProperty("type") == "Valve")
+    if(edges[i]->getEdgeStringProperty("type") == "ValveISO")
     {
       int idx_from, idx_to;
       idx_from = edges[i]->getEdgeIntProperty("startNodeIndex");
@@ -88,7 +88,7 @@ vector<string> Shutdown::closeSegment(int segmentToClose){
   {
     if(edges[i]->getEdgeIntProperty("segment") == segmentToClose)
       changeEdgeStatus(edges[i]->getEdgeStringProperty("name"),false);
-    if(edges[i]->getEdgeStringProperty("type") == "Valve"){
+    if(edges[i]->getEdgeStringProperty("type") == "ValveISO"){
       if(edges[i]->getIntProperty("startSegment") == segmentToClose || edges[i]->getIntProperty("startSegment") == segmentToClose){
         changeEdgeStatus(edges[i]->getEdgeStringProperty("name"),false);
         closedValves.push_back(edges[i]->getEdgeStringProperty("name"));
@@ -103,7 +103,7 @@ vector<string> Shutdown::closeSegment(int segmentToClose){
   {
     for(int j=0; j<edges.size(); j++)
     {
-      if(edges[j]->getEdgeStringProperty("type") == "Valve")
+      if(edges[j]->getEdgeStringProperty("type") == "ValveISO")
       {
         if(edges[j]->getEdgeStringProperty("name") == closedValves[i])
         { 
@@ -136,7 +136,7 @@ vector<int> Shutdown::closeDisconnectedParts(){
     if(!edges[i]->isClosed)
     {
       string type = edges[i]->getEdgeStringProperty("type");
-      if(type == "Pipe" || type == "Pump" || type == "Valve")
+      if(type == "Pipe" || type == "Pump" || type == "ValveISO")
       {
         edgeVectorWithValves.push_back(edges[i]->getEdgeIntProperty("startNodeIndex"));
         edgeVectorWithValves.push_back(edges[i]->getEdgeIntProperty("endNodeIndex"));

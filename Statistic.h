@@ -58,6 +58,9 @@ double correlCoefficient(const vector<double> &x, const vector<double> &y);
 // Simple Grubbs test, returns a vector without the element under x_mean-3*x_dev and abov x_mean+3*x_dev
 vector<double> grubbsTest(const vector<double> &x);
 
+/// Linear interpolation using x-y points between the two closest points	
+double linearInterpolation(const vector<double> &x, const vector<double> &y, double xp);
+
 // Interpolation using x-y points, with two points linear, with three or above parabole with the closest (in x) points
 double interpolate(vector<double> x, vector<double> y, double xp);
 
@@ -84,7 +87,7 @@ double max(vector<double> x); // without index tracing
 	
 // Fitting polynomial function on points with X-Y coordinates
 // returns the coefficients of the polynomail in a0 + a1*x^1 + a2*x^2 + ... order
-VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int order);
+VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int &order);
 
 // Powering Eigen VectorXd by elements to order
 VectorXd eigenVectorXdPow(const VectorXd &x, int order);

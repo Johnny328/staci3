@@ -47,14 +47,14 @@ public:
   /// density of the fluid
   double density = 1000.0;
 
-  // Is the demands depending on pressure
+  /// Is the demands depending on pressure
   bool isPressureDemand = false;
-  double pdExponent = 2., pdDesiredPressure = 25., pdMinPressure = 10.;
 
 protected:
 	/// Jacobian matrix in a sparse Eigen type container
 	/// Used in f(x) = 0, and also in Sensitivity class
   SparseMatrix<double, ColMajor> jacobianMatrix;
+  int maxRank; // max rank of jacobian
   
   // Eigen Sparse LU decomposition solver
   SparseLU<SparseMatrix<double, ColMajor> > solver;
@@ -63,8 +63,12 @@ protected:
   /// in case of hydraulic solver (2* in case of SVD calibration)
   double maxMassFlowError, maxPressureError;
 
+  /// Storing the number of edges and nodes, and their sum as numberEquations
+  int numberEquations;
+
 private:
-  double relaxationFactor, relaxationFactorIncrement, minRelaxationFactor, maxRelaxationFactor;
+  double relaxationFactor, relaxationFactorIncrement;
+  double minRelaxationFactor = 0.1, maxRelaxationFactor = 1.0;
   double pressureInitial, massFlowInitial;
   int maxIterationNumber;
   string frictionModel; // Darcy-Weisbach (DW) or Hazen-Williams (HW)
@@ -75,6 +79,9 @@ private:
   /// Building up the Jacobian matrix (also calculating the function f(x)) before the Newtonian iteration
 	void buildJacobian(VectorXd &x, VectorXd &f);
 	void updateJacobian(VectorXd &x, VectorXd &f);
+
+  // Eigen vectors for the solver
+  VectorXd x, f;
 
   /// Updating relaxation factor for the Newtonian iteration
 	void updateRelaxationFactor(double e_mp, double e_p, double & e_mp_r, double & e_p_r);
@@ -87,8 +94,11 @@ private:
   /// Printing the detailed iteration informaition to console and log file
 	string iterInfoDetail(const VectorXd &x, const VectorXd &f);
 
-  /// Updating the openEdges, openNodes vectors
-  void updateOpenElements();
+  /// Checking the pump operational points, whether they are on the curve
+  void checkPumpOperatingPoint();
+  
+  // Updating the status of edges (pipe with CV, flow control valves, etc.)
+  bool edgeStatusUpdate(); // Calls all the below functions
 
 };
 

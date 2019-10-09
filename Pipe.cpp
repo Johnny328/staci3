@@ -2,7 +2,8 @@
 
 using namespace std;
 
-Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_roughness, const double a_volumeFlowRate) : Edge(a_name, a_diameter * a_diameter * M_PI / 4., a_volumeFlowRate, a_density) {
+Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_roughness, const double a_volumeFlowRate, bool a_isCheckValve) : Edge(a_name, a_diameter * a_diameter * M_PI / 4., a_volumeFlowRate, a_density)
+{
   type = "Pipe";
   numberNode = 2;
   startNodeName = a_startNodeName;
@@ -11,6 +12,8 @@ Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_end
   diameter = a_diameter;
   roughness = a_roughness;
   lambda = 0.02;
+  isCheckValve = a_isCheckValve;
+  status = 1;
 }
 
 //--------------------------------------------------------------
@@ -32,7 +35,8 @@ void Pipe::setFrictionModel(string a_fric_type) {
 Pipe::~Pipe() {}
 
 //--------------------------------------------------------------
-string Pipe::info() {
+string Pipe::info()
+{
   ostringstream strstrm;
   strstrm << Edge::info();
   strstrm << "\n type                  : " << type;
@@ -56,24 +60,36 @@ string Pipe::info() {
 }
 
 //--------------------------------------------------------------
-double Pipe::function(vector<double> x){ // x = [Pstart, Pend, VolumeFlowRate]
-  return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]);
-  //return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]) / density / gravity;
+double Pipe::function(vector<double> x)// x = [Pstart, Pend, VolumeFlowRate]
+{ 
+  if(status == 1) // OPEN
+    return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]);
+  else // CLOSED
+    return x[2];
 }
 
 //--------------------------------------------------------------
-vector<double> Pipe::functionDerivative(vector<double> x) {
+vector<double> Pipe::functionDerivative(vector<double> x)
+{ 
   vector<double> out;
-  out.push_back(-1.0);
-  out.push_back(1.0);
-  out.push_back(computeHeadlossDerivative(x[2]));
-  //out.push_back(computeHeadlossDerivative(x[2]) / density / gravity);
-  
+  if(status == 1) // OPEN
+  { 
+    out.push_back(-1.0);
+    out.push_back(1.0);
+    out.push_back(computeHeadlossDerivative(x[2]));
+  }
+  else // CLOSED
+  {
+    out.push_back(0.0);
+    out.push_back(0.0);
+    out.push_back(1.0);
+  }
   return out;
 }
 
 //--------------------------------------------------------------
-void Pipe::initialization(int mode, double value) {
+void Pipe::initialization(int mode, double value)
+{
   if(mode == 0)
     setDoubleProperty("volumeFlowRate", 1.);
   else
@@ -81,7 +97,8 @@ void Pipe::initialization(int mode, double value) {
 }
 
 //--------------------------------------------------------------
-double Pipe::functionParameterDerivative(string parameter) {
+double Pipe::functionParameterDerivative(string parameter)
+{
   double out = 0.0;
   if (parameter == "diameter"){
     out = -5. * getLambda(volumeFlowRate) * length / pow(diameter, 6) * 8 / density / pow(M_PI, 2) * volumeFlowRate * abs(volumeFlowRate);  // Pa/m
@@ -105,7 +122,8 @@ double Pipe::functionParameterDerivative(string parameter) {
 }
 
 //--------------------------------------------------------------
-double Pipe::computeHeadloss(double q){ // q is volumeFlowRate
+double Pipe::computeHeadloss(double q)
+{ // q is volumeFlowRate
   double velocity = q / 1000. / referenceCrossSection;
   lambda = getLambda(q);
   double headloss = lambda * length / diameter / gravity / 2. * velocity * abs(velocity);
@@ -115,7 +133,8 @@ double Pipe::computeHeadloss(double q){ // q is volumeFlowRate
 }
 
 //--------------------------------------------------------------
-double Pipe::computeHeadlossDerivative(double q) { // q is volumeFlowRate
+double Pipe::computeHeadlossDerivative(double q)
+{ // q is volumeFlowRate
   double out;
   out = 2.* getLambda(q) * length/diameter / gravity / 2. / (referenceCrossSection*referenceCrossSection) * abs(q/1000.) / density;
   //out = getLambda(q) * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 * abs(q);
@@ -176,7 +195,7 @@ double Pipe::getLambda(double q) { // q is volumeFlowRate
       i++;
     }
   }
-  else if (frictionModel == 1)  // Hazen-Williams, C factor around 100
+  else if (frictionModel == 1)  // Hazen-Williams, C factor around 100 // TODO: REDUCE THE MATH OPERATIONS
   {
     if (roughness <= 0)
       lambda = -roughness;
@@ -189,7 +208,7 @@ double Pipe::getLambda(double q) { // q is volumeFlowRate
         roughness = C_MIN;
       }
 
-      dp = length / pow(C_factor, 1.85) / pow(diameter, 4.87) * 7.88 / pow(0.85, 1.85) * pow(abs(velocity*referenceCrossSection), 0.85) * (velocity * referenceCrossSection) * density * gravity;
+      dp = length / pow(C_factor, 1.852) / pow(diameter, 4.871) * 7.88 / pow(0.85, 1.85) * pow(abs(velocity*referenceCrossSection), 0.852) * (velocity * referenceCrossSection) * density * gravity;
 
       lambda = abs(dp / (length / diameter * density / 2 * velocity * fabs(velocity)));      
     }
@@ -203,12 +222,11 @@ double Pipe::getLambda(double q) { // q is volumeFlowRate
 }
 
 //--------------------------------------------------------------
-double Pipe::getDoubleProperty(string prop){
+double Pipe::getDoubleProperty(string prop)
+{
   double out = 0.;
   if(prop == "diameter")
     out = diameter;
-  else if(prop == "roughness")
-    out = roughness;
   else if(prop == "length")
     out = length;
   else if (prop == "lambda")
@@ -241,8 +259,6 @@ double Pipe::getDoubleProperty(string prop){
     out = endHeight;
   else if(prop == "volume")
     out = referenceCrossSection*length;
-  else if(prop == "userOutput")
-    out = userOutput;
   else
   {
     cout << endl << endl << "DOUBLE Pipe::getDoubleProperty() wrong argument:" << prop;
@@ -252,7 +268,8 @@ double Pipe::getDoubleProperty(string prop){
 }
 
 //--------------------------------------------------------------
-int Pipe::getIntProperty(string prop){
+int Pipe::getIntProperty(string prop)
+{
   int out = 0;
   if(prop == "frictionModel" || prop == "friction_model")
     out = frictionModel;
@@ -265,7 +282,8 @@ int Pipe::getIntProperty(string prop){
 }
 
 //--------------------------------------------------------------
-void Pipe::setDoubleProperty(string prop, double value){
+void Pipe::setDoubleProperty(string prop, double value)
+{
   if(prop == "diameter")
     diameter = value;
   else if(prop == "roughness")
@@ -282,8 +300,6 @@ void Pipe::setDoubleProperty(string prop, double value){
     startHeight = value;
   else if(prop == "endHeight")
     endHeight = value;
-  else if(prop == "userOutput")
-    userOutput = value;
   else
   {  
     cout << endl << endl << "Pipe::setDoubleProperty( DOUBLE ) wrong argument:" << prop;
@@ -292,7 +308,8 @@ void Pipe::setDoubleProperty(string prop, double value){
 }
 
 //--------------------------------------------------------------
-void Pipe::setIntProperty(string prop, int value){
+void Pipe::setIntProperty(string prop, int value)
+{
   if(prop == "frictionModel" || prop == "friction_model")
     frictionModel = value;
   else

@@ -9,20 +9,21 @@ clear;
 % caseName = 'balf';
 % caseName = 'becsidomb';
 % caseName = 'villasor';
-caseName = 'Anytown';
+caseName = 'und';
 
 % plot settings
-pumpRadius = 0.01;
-presRadius = 0.01;
-tankSize = 0.02;
+pumpRadius = 0.013;
+presRadius = 0.012;
+presAngle = 270;
+tankSize = 0.025;
+tankAngle = 45;
 valveSize = 0.0005;
-lineWidth = 1.5;
-nodeMarkerSize = 20;
-backgroundColor = [0.9,0.9,0.9];
+lineWidth = 1.3;
+nodeMarkerSize = 5;
+backgroundColor = [1.0,1.0,1.0];
 closedColor = [1.0,0.0,0.0];
 
 % colorbar settings
-
 %blackBody, blackBodyExt, cividis, coolWarmBent, coolWarmSmooth, inferno, jet, kindlmann, kindlmannExt, magma, plasma, viridis
 %discrete: lines, prism
 colorMapName = 'inferno'; 
@@ -31,7 +32,8 @@ margin = 0.03; % margins around plot
 colorDelta = 0.15; %space for colorbar
 colorPos = "east"; %position of colorbar (east or south)
 colorBarFontSize = 12;
-colorElement = "Node"; % "Node" or "Pipe" or "All"
+colorElement = "None"; % "Node" or "Pipe" or "All"
+colorBarOn = 0;
 
 caseFolder = '../../Networks/';
 addpath('../../Plot');
@@ -76,15 +78,16 @@ set(gcf, 'Position',  [xPos, yPos, xSize, ySize]);
 axis off; 
 set(gcf,'InvertHardCopy','off','Color',backgroundColor);
 %colorbar
-cb = colorbar;
-colorMap = importdata(['../../Plot/ColorMaps/',colorMapName,'.txt']);
-%adjusting to discrete colormaps
-if(colorMapName == "lines" || colorMapName == "prism")
-    colorMap = repmat(colorMap,ceil(colorMapNumber/size(colorMap,1)),1);
-    colorMap = colorMap(1:colorMapNumber,:);
-    colorMap(:,1) = linspace(0,1,size(colorMap,1));
-end
-    % else
+if(colorBarOn)
+    cb = colorbar;
+    colorMap = importdata(['../../Plot/ColorMaps/',colorMapName,'.txt']);
+    %adjusting to discrete colormaps
+    if(colorMapName == "lines" || colorMapName == "prism")
+        colorMap = repmat(colorMap,ceil(colorMapNumber/size(colorMap,1)),1);
+        colorMap = colorMap(1:colorMapNumber,:);
+        colorMap(:,1) = linspace(0,1,size(colorMap,1));
+    end
+
     colormap(colorMap(:,2:4));
     cb.FontSize = colorBarFontSize;
     cb.Label.String=colorBarText;
@@ -99,8 +102,7 @@ end
     else
         disp('!!! WARNING !!! available colorPos: south | east'); 
     end
-% end
-
+end
 if(colorElement == "Node")
    pipeData = zeros(size(pipe));
 elseif(colorElement == "Pipe")
@@ -119,6 +121,10 @@ for i=1:pipeCounter
             g = closedColor(2);
             b = closedColor(3);
         end
+    elseif(colorElement == "None")
+        r = 0.4;
+        g = 0.4;
+        b = 0.4;
     else
         r = 0.2;
         g = 0.2;
@@ -126,10 +132,14 @@ for i=1:pipeCounter
     end
     x = [node(pipe(i).nodeFromIdx).coordX,node(pipe(i).nodeToIdx).coordX];
     y = [node(pipe(i).nodeFromIdx).coordY,node(pipe(i).nodeToIdx).coordY];
-    if(isnan(pipeData(i)))
-        text = "OFF";
+    if(colorElement == "None")
+        text = "";
     else
-        text = pipeData(i);
+        if(isnan(pipeData(i)))
+            text = "OFF";
+        else
+            text = pipeData(i);
+        end
     end
     plot([x(1),(x(1)+x(2))/2,x(2)],[y(1),(y(1)+y(2))/2,y(2)],'k','linewidth',lineWidth,'color',[r,g,b],'tag',join([strrep(pipe(i).ID,'_','\_'),'  ',text]));
 end
@@ -144,6 +154,10 @@ for i=1:pumpCounter
             g = closedColor(2);
             b = closedColor(3);
         end
+    elseif(colorElement == "None")
+        r = 0.0;
+        g = 0.75;
+        b = 0.0;
     else
         r = 0.5;
         g = 0.5;
@@ -154,7 +168,7 @@ for i=1:pumpCounter
     else
         text = pumpData(i);
     end
-    PlotPump([node(pump(i).nodeFromIdx).coordX,node(pump(i).nodeToIdx).coordX],[node(pump(i).nodeFromIdx).coordY,node(pump(i).nodeToIdx).coordY],pumpRadius,1,[r,g,b],join([strrep(pump(i).ID,'_','\_'),'  ',text]));
+    PlotPump([node(pump(i).nodeFromIdx).coordX,node(pump(i).nodeToIdx).coordX],[node(pump(i).nodeFromIdx).coordY,node(pump(i).nodeToIdx).coordY],pumpRadius,1.5,[r,g,b],join([strrep(pump(i).ID,'_','\_'),'  ',text]));
 end
 for i=1:presCounter
     if(colorElement == "All")
@@ -167,6 +181,10 @@ for i=1:presCounter
             g = closedColor(2);
             b = closedColor(3);
         end
+    elseif(colorElement == "None")
+        r = 0.0;
+        g = 0.0;
+        b = 1.0;
     else
         r = 0.5;
         g = 0.5;
@@ -177,7 +195,7 @@ for i=1:presCounter
     else
         text = presData(i);
     end
-    PlotPres(pres(i).coordX,pres(i).coordY,presRadius,1,90,[r,g,b],join([strrep(pres(i).ID,'_','\_'),'  ',text]));
+    PlotPres(pres(i).coordX,pres(i).coordY,presRadius,lineWidth,presAngle,[r,g,b],join([strrep(pres(i).ID,'_','\_'),'  ',text]));
 end
 for i=1:poolCounter
     if(colorElement == "All")
@@ -195,12 +213,16 @@ for i=1:poolCounter
         else
             text = poolData(i);
         end
+    elseif(colorElement == "None")
+        r = 0.0;
+        g = 0.0;
+        b = 1.0;
     else
         r = 0.5;
         g = 0.5;
         b = 0.5;
     end
-    PlotPool(pool(i).coordX,pool(i).coordY,tankSize,1,0,[r,g,b],join([strrep(pool(i).ID,'_','\_'),'  ',text]));
+    PlotPool(pool(i).coordX,pool(i).coordY,tankSize,1.5,tankAngle,[r,g,b],join([strrep(pool(i).ID,'_','\_'),'  ',text]));
 end
 for i=1:valveCounter
     PlotValve([node(valve(i).nodeFromIdx).coordX,node(valve(i).nodeToIdx).coordX],[node(valve(i).nodeFromIdx).coordY,node(valve(i).nodeToIdx).coordY],valveSize,1,join([strrep(valve(i).ID,'_','\_'),'  ']));
@@ -216,17 +238,25 @@ for i=1:nodeCounter
             g = closedColor(2);
             b = closedColor(3);
         end
+    elseif(colorElement == "None")
+        r = 1.0;
+        g = 1.0;
+        b = 1.0;
     else
         r = 0.2;
         g = 0.2;
         b = 0.2;
     end
-    if(isnan(nodeData(i)))
-        text = "OFF";
+    if(colorElement == "None")
+        text = "";
     else
-        text = nodeData(i);
+        if(isnan(nodeData(i)))
+            text = "OFF";
+        else
+            text = nodeData(i);
+        end
     end
-    plot(node(i).coordX,node(i).coordY,'ko','linewidth',1,'markersize',nodeMarkerSize,'markerfacecolor',[r,g,b],'color',[0,0,0],'tag',join([strrep(node(i).ID,'_','\_'),'  ',text]));
+    plot(node(i).coordX,node(i).coordY,'ko','linewidth',1.5,'markersize',nodeMarkerSize,'markerfacecolor',[r,g,b],'color',[0,0,0],'tag',join([strrep(node(i).ID,'_','\_'),'  ',text]));
 end
 
 datacursormode on

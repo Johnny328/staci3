@@ -2,7 +2,8 @@
                                   Valve
                             ---------------
 
-  Valve class derived from Edge class. Basic valve with loss curve.
+  Valve class derived from Edge class. Virtual class for every Valve
+  type: TCV, PRV, PSV, ISO, FCV
  
   staci3 is using Eigen, see http://eigen.tuxfamily.org
 
@@ -19,37 +20,20 @@
 class Valve : public Edge
 {
 public:
-  Valve(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_charX, vector<double> a_charY, double a_position, const double a_massFlowRate);
+  Valve(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, const double a_massFlowRate);
   ~Valve();
 
   /// Provides basic informations
-  string info();
+  virtual string info();
   
   /// A line of F(x) = equation, rearranged to 0 in w.c.m.
-  double function(vector<double>);
+  virtual double function(vector<double> x)=0;
   
   /// Jacobian: df/dhe, df/dhv, df/dmp
-  vector<double> functionDerivative(vector<double>);
+  virtual vector<double> functionDerivative(vector<double>)=0;
 
   /// Initialization, mode: 0->automatic | 1-> using value
-  void initialization(int mode, double value);
-
-  //========================
-  //GETSETGETSETGETSETGETSET
-  //========================
-  void setDoubleProperty(string prop, double value);
-  void setIntProperty(string property, int value);
-  double getDoubleProperty(string prop);
-  string getStringProperty(string prop);
-  int getIntProperty(string property);
-
-private:
-  vector<double> charX, charY; // X-Y coordinate of characteristic curve, that is position-dzeta
-  double startHeight, endHeight; // Height of the starting and ending nodes
-  double position, loss;
-  double headLoss;
-  int startSegment, endSegment; // containing which segments are connected through this valve
-  void updateLoss();
+  virtual void initialization(int mode, double value)=0;
 };
 
 #endif

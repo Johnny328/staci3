@@ -311,7 +311,7 @@ int main(int argc, char* argv[]){
 							if(sv[0] == "Units"){
 								flow_unit = sv[1];
 							}
-							if(sv[0] == "Headloss"){ //TODO D-w, C-W
+							if(sv[0] == "Headloss"){ //TODO D-W, C-W
 								if(sv[1] == "H-W")
 									friction_model =  "HW";
 							}

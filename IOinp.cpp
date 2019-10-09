@@ -3,7 +3,6 @@
 //--------------------------------------------------------------------------------
 void Staci::loadSystem(){
 	
-	double dem_pat_scal = 1.0; // scaling the demands 
 	int warning_counter=0;
 	double density = 1000.;
 
@@ -12,7 +11,7 @@ void Staci::loadSystem(){
 	vector<double> elev, demand, xcoord, ycoord;
 
 	// FOR PIPES
-	vector<string> pipe_name, node_from, node_to;
+	vector<string> pipe_name, node_from, node_to, pipe_status;
 	vector<double> l, D, roughness;
 
 	// FOR PRES
@@ -29,7 +28,10 @@ void Staci::loadSystem(){
 
 	// FOR VALVES
 	vector<string> valve_name, valve_node_from, valve_node_to, valve_type;
-	vector<double> valve_d, valve_set;
+	vector<double> valve_d, valve_set, valve_minor;
+
+	// FOR STATUS
+	vector<string> status_id, status_setting;
 
 	// FOR CURVES
 	vector<string> curve;
@@ -45,9 +47,12 @@ void Staci::loadSystem(){
 	ifstream file_in;
   file_in.open(definitionFile);
   string line;
-  if(file_in.is_open()){
-	  while(getline(file_in,line)){
-			if(line.substr(0,11) == "[JUNCTIONS]"){
+  if(file_in.is_open())
+  {
+	  while(getline(file_in,line))
+	  {
+			if(line.substr(0,11) == "[JUNCTIONS]")
+			{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -64,7 +69,8 @@ void Staci::loadSystem(){
 					}
 				}
 			}
-			if(line.substr(0,12) == "[RESERVOIRS]"){
+			if(line.substr(0,12) == "[RESERVOIRS]")
+			{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -84,7 +90,8 @@ void Staci::loadSystem(){
 				}
 			}
 
-			if(line.substr(0,7) == "[TANKS]"){
+			if(line.substr(0,7) == "[TANKS]")
+			{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -109,7 +116,8 @@ void Staci::loadSystem(){
 				}
 			}
 
-			if(line.substr(0,7) == "[PIPES]"){
+			if(line.substr(0,7) == "[PIPES]")
+			{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -122,11 +130,16 @@ void Staci::loadSystem(){
 						l.push_back(stod(sv[3],0));
 						D.push_back(stod(sv[4],0));
 						roughness.push_back(stod(sv[5],0));
+						if(sv.size() > 7)
+							pipe_status.push_back(sv[7]);
+						else
+							pipe_status.push_back("Open");
 					}
 				}
 			}
 
-			if(line.substr(0,7) == "[PUMPS]"){
+			if(line.substr(0,7) == "[PUMPS]")
+			{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -153,7 +166,8 @@ void Staci::loadSystem(){
 
 			// LOADING THE DEMANDS FOR THE NODES
 			// Here only the sum is considered, the patterns are dealt in SeriesHydraulics
-	  	if(line.substr(0,9) == "[DEMANDS]"){
+	  	if(line.substr(0,9) == "[DEMANDS]")
+	  	{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -178,7 +192,22 @@ void Staci::loadSystem(){
 				}
 			}
 
-			if(line.substr(0,8) == "[VALVES]"){
+			if(line.substr(0,8) == "[STATUS]")
+			{
+				while(true){
+					getline(file_in,line);
+					if(line.length()<=1 || line.substr(0,5) == "[END]")
+						break;
+					if(line[0] != ';'){
+						vector<string> sv=line2sv(line);
+						status_id.push_back(sv[0]);
+						status_setting.push_back(sv[1]);
+					}
+				}
+			}
+
+			if(line.substr(0,8) == "[VALVES]")
+			{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -191,12 +220,14 @@ void Staci::loadSystem(){
 						valve_d.push_back(stod(sv[3],0));
 						valve_type.push_back(sv[4]);
 						valve_set.push_back(stod(sv[5],0));
+						valve_minor.push_back(stod(sv[6],0));
 					}
 				}
 			}
 
 			// pump_name CURVES
-			if(line.substr(0,8) == "[CURVES]"){
+			if(line.substr(0,8) == "[CURVES]")
+			{
 				vector<double> x,y;
 				while(true){
 					getline(file_in,line);
@@ -229,7 +260,8 @@ void Staci::loadSystem(){
 			}
 
 			// BASIC SETTINGS
-			if(line.substr(0,9) == "[OPTIONS]"){
+			if(line.substr(0,9) == "[OPTIONS]")
+			{
 			//TODO There are more options that might be intresting later
 				while(true){
 					getline(file_in,line);
@@ -252,7 +284,8 @@ void Staci::loadSystem(){
 				}
 			}
 
-			if(line.substr(0,13) == "[COORDINATES]"){
+			if(line.substr(0,13) == "[COORDINATES]")
+			{
 				while(true){
 					getline(file_in,line);
 					if(line.length()<=1 || line.substr(0,5) == "[END]")
@@ -379,59 +412,61 @@ void Staci::loadSystem(){
   // Modifying pump_name curves, STACI must have at least 3 points
   for(int i=0; i<pump_name.size(); i++)
   	if(pump_cv_x[i].size()<=2){
-  		cout << "\n !WARNING! pump_name " << pump_name[i] << "does not have enough points. STACI needs at least 3 points\n";
+  		cout << "\n!WARNING! Pump " << pump_name[i] << " only has " << pump_cv_x[i].size() << " point(s)" << endl;
   		warning_counter++;
   	}
 
-
   // Converting units from EPANET to STACI (litre/sec)
-  double dem_unit;
-  string unit;
   // US units
   if(flow_unit == "CFS"){ // cubic feet seconds
-  	dem_unit = 28.316846592;
+  	demandUnit = 28.316846592;
   	unit = "US";
   }
-  if(flow_unit == "GPM"){ // gallon(US) per minute
-  	dem_unit = 0.06309;
+  else if(flow_unit == "GPM"){ // gallon(US) per minute
+  	demandUnit = 0.06309;
   	unit = "US";
   }
-  if(flow_unit == "MGD"){ // million gallon(US) per day
-  	dem_unit = 43.8126364;
+  else if(flow_unit == "MGD"){ // million gallon(US) per day
+  	demandUnit = 43.8126364;
   	unit = "US";
   }
-  if(flow_unit == "IMGD"){ // imperial million gallon per day
-  	dem_unit = 52.6168042;
+  else if(flow_unit == "IMGD"){ // imperial million gallon per day
+  	demandUnit = 52.6168042;
   	unit = "US";
   }
-  if(flow_unit == "AFD"){ // acre-feet / day
-  	dem_unit = 14.2764102;
+  else if(flow_unit == "AFD"){ // acre-feet / day
+  	demandUnit = 14.2764102;
   	unit = "US";
   }
   // NORMAL units
-  if(flow_unit == "LPS"){ // litre per sec
-  	dem_unit = 1.0;
+  else if(flow_unit == "LPS"){ // litre per sec
+  	demandUnit = 1.0;
   	unit = "SI";
   }
-  if(flow_unit == "LPM"){ // litre per minute
-  	dem_unit = 1./60.;
+  else if(flow_unit == "LPM"){ // litre per minute
+  	demandUnit = 1./60.;
   	unit = "SI";
   }
-  if(flow_unit == "MLD"){ // million litre per day
-  	dem_unit = 11.5740741;
+  else if(flow_unit == "MLD"){ // million litre per day
+  	demandUnit = 11.5740741;
   	unit = "SI";
   }
-  if(flow_unit == "CMH"){ // cubic meter per hour
-  	dem_unit = 1./3.6;
+  else if(flow_unit == "CMH"){ // cubic meter per hour
+  	demandUnit = 1./3.6;
   	unit = "SI";
   }
-  if(flow_unit == "CMD"){ // cubic meter per day
-  	dem_unit = 0.0115740741;
+  else if(flow_unit == "CMD"){ // cubic meter per day
+  	demandUnit = 0.0115740741;
   	unit = "SI";
+  }
+  else{
+  	cout << "\n !ERROR! Flow unit unkown: " << flow_unit << endl;
+  	cout << "Exiting..." << endl;
+  	exit(-1);
   }
 
   for(int i=0; i<node_name.size(); i++)
-  	demand[i] = demand[i]*dem_unit*dem_pat_scal;
+  	demand[i] = demand[i]*demandUnit;
   if(unit=="US"){
 		for(int i=0; i<node_name.size(); i++)
 	  		elev[i] = elev[i]*0.3048; // feet to meter
@@ -453,7 +488,7 @@ void Staci::loadSystem(){
   		valve_d[i] = valve_d[i]*0.0254; // inches to meter
 	  for(int i=0; i<pump_name.size(); i++){
   		for(int j=0; j<pump_cv_x[i].size(); j++){
-  			pump_cv_x[i][j] = pump_cv_x[i][j]*dem_unit; // feet to meter
+  			pump_cv_x[i][j] = pump_cv_x[i][j]*demandUnit; // * to lps
   			pump_cv_y[i][j] = pump_cv_y[i][j]*0.3048; // feet to meter
   		}
 	  }
@@ -491,19 +526,89 @@ void Staci::loadSystem(){
 	}
 	for(int i=0; i<pipe_name.size(); i++)
 	{
-    	edges.push_back(new Pipe(pipe_name[i], node_from[i], node_to[i], density, l[i], D[i], roughness[i], 0.0));
-    	edges[edges.size()-1]->setFrictionModel(friction_model);
+		bool isCheckValve;
+		if(pipe_status[i] == "cv")
+			isCheckValve = true;
+		else
+			isCheckValve = false;
+
+  	edges.push_back(new Pipe(pipe_name[i], node_from[i], node_to[i], density, l[i], D[i], roughness[i], 0.0, isCheckValve));
+   	edges[edges.size()-1]->setFrictionModel(friction_model);
+
+   	if(pipe_status[i] == "Open")
+   		edges[edges.size()-1]->status = 1;
+   	else if(pipe_status[i] == "Closed")
+   		edges[edges.size()-1]->status = 0;
+   	else if(pipe_status[i] == "cv")
+   		edges[edges.size()-1]->status = 1;
+   	else
+   		edges[edges.size()-1]->status = 1;
 	}
 	for(int i=0; i<pump_name.size(); i++)
 	{
-    	edges.push_back(new Pump(pump_name[i], pump_node_from[i], pump_node_to[i], density, 1.0, pump_cv_x[i], pump_cv_y[i], 0.0));
+    	edges.push_back(new Pump(pump_name[i], pump_node_from[i], pump_node_to[i], density, 1.0, pump_cv_x[i], pump_cv_y[i], 0.0, "parabolic"));
 	}
 	for(int i=0; i<valve_name.size(); i++)
 	{
-		vector<double> valve_cv_x,valve_cv_y;
-		valve_cv_x.push_back(0); valve_cv_y.push_back(0);
-		valve_cv_x.push_back(100); valve_cv_y.push_back(1e10);
-    	edges.push_back(new Valve(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., valve_cv_x, valve_cv_y, 0.0, 0.0));
+		if(valve_type[i] == "ISO") // ISOLATION VALVE
+		{
+			edges.push_back(new ValveISO(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., 0.0));
+		}
+		else if(valve_type[i] == "TCV") // THROTTLE VALVE WITH CURVE
+		{
+			vector<double> valve_cv_x,valve_cv_y;
+			valve_cv_x.push_back(0); valve_cv_y.push_back(0);
+			valve_cv_x.push_back(100); valve_cv_y.push_back(1e10);
+			edges.push_back(new ValveTCV(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., valve_cv_x, valve_cv_y, 0.0, 0.0));
+		}
+		else if(valve_type[i] == "FCV") // FLOW CONTROL VALVE
+		{
+			edges.push_back(new ValveFCV(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., demandUnit*valve_set[i], 0.0));
+		}
+		else if(valve_type[i] == "PRV") // PRESSURE REDUCTION VALVE
+		{	
+			double setting;
+			if(unit == "US")
+				setting = 0.7032*valve_set[i];
+			else
+				setting = valve_set[i];
+
+			edges.push_back(new ValvePRV(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., setting, valve_minor[i], 0.0));
+		}
+		else if(valve_type[i] == "PSV") // PRESSURE SUSTAINING VALVE
+		{	
+			double setting;
+			if(unit == "US")
+				setting = 0.7032*valve_set[i];
+			else
+				setting = valve_set[i];
+
+			edges.push_back(new ValvePSV(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., setting, valve_minor[i], 0.0));
+		}
+		else
+		{
+			cout << "\n!WARNING! Unkown valve type: " << valve_type[i] << ", name: " << valve_name[i] << "\nContinouing..." << endl;
+		}
+	}
+
+	// ###########################
+	// POSTPOSTPROC OF EDGES/NODES
+	// ###########################
+	// Initial status of edges from [STATUS]
+	for(int i=0; i<status_id.size(); i++)
+	{
+		cout << i << "  " << status_id[i] << "  " << status_setting[i] << endl;
+		for(int j=0; j<edges.size(); j++)
+		{
+			if(edges[j]->name == status_id[i])
+			{
+				if(status_setting[i] == "CLOSED") // there might be more options
+					edges[j]->status = 0;
+				break;
+			}
+			if(j==edges.size()-1)
+				cout << endl << "!WARNING! status ID: " << status_id[j] << " was not found in edges vector." << endl;
+		}
 	}
 }
 

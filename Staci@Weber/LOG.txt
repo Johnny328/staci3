@@ -1,0 +1,22 @@
+*** 2019.08.02. ***
+pressure dependent simulations: OK
+segmentation:										OK
+since demands are in litre/sec, massFlowRate -> volumeFlowRate 
+then calculate alfa, beta etc.
+
+*** 2019.08.03. ***
+massFlowRate variables have been changed to volumeFlowRate, tested in hermes
+test is required with Anytown, especially considering the pump!
+
+*** 2019.08.05. ***
+tested with hermes, Anytown, villasor etc., it matches with staci viewer
+expectedShutdownEffect: topological and one-simulation quantities looks okay, checking required
+also local Alfa should be downscaled to 0...1 range by diveding with sum inflow
+multiple-simulations quantities are next to write
+
+*** 2019.08.06. ***
+TODO: getDoubleProperty() function should call getEdgeDoubleProperty function
+TODO: alfa probably not right, nagycenk seems a proper network for testing
+
+*** 2019.08.08. ***
+alfa seems right, however major differences are compared to Tamás's results, need consultation (ese.cpp)

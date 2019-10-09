@@ -8,6 +8,7 @@ Pool::Pool(const string a_name, const string a_startNodeName, const double a_den
     endNodeName = "endNothingYet";
     bottomLevel = a_bottomLevel;
     waterLevel = a_waterLevel;
+    status = 1;
 }
 
 //--------------------------------------------------------------
@@ -27,16 +28,29 @@ string Pool::info() {
 
 //--------------------------------------------------------------
 double Pool::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
-  return x[0] + height - (bottomLevel + waterLevel);
+  if(status == 1) // open
+    return x[0] + startHeight - (bottomLevel + waterLevel);
+  else // closed
+    return x[2];
 }
 
 //--------------------------------------------------------------
 vector<double> Pool::functionDerivative(vector<double> x){
-    vector<double> result;
-    result.push_back(1.0);
-    result.push_back(0.0);
-    result.push_back(0.0);
-    return result;
+  vector<double> out;
+  if(status == 1) // open
+  {
+    out.push_back(1.0);
+    out.push_back(0.0);
+    out.push_back(0.0);
+  }
+  else // closed
+  {
+    out.push_back(0.0);
+    out.push_back(0.0);
+    out.push_back(1.0);
+  }
+
+  return out;
 }
 
 //--------------------------------------------------------------
@@ -96,8 +110,8 @@ void Pool::setDoubleProperty(string prop, double value){
     density = value;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     referenceCrossSection = value;
-  else if(prop == "height")
-    height = value;
+  else if(prop == "startHeight")
+    startHeight = value;
   else
   {  
     cout << endl << endl << "Pool::setProperty( DOUBLE ) wrong argument:" << prop;

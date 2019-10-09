@@ -9,13 +9,10 @@ Node::Node(const string a_name, const double a_xPosition, const double a_yPositi
   yPosition = a_yPosition;
   name = a_name;
   head = a_head;
-  userOutput = 0.0;
 }
 
 //--------------------------------------------------------------
-Node::~Node()
-{
-}
+Node::~Node(){}
 
 //--------------------------------------------------------------
 void Node::initialization(int mode, double value)
@@ -27,13 +24,12 @@ void Node::initialization(int mode, double value)
 }
 
 //--------------------------------------------------------------
-double Node::function(double pressure, vector<double> par){ // for pressure dependent demnads
-  // par = [pdExponent, pdDesiredPressure, pdMinPressure]
+double Node::function(double head){ // for head dependent demnads
   double out;
-  if(pressure<par[2])
+  if(head<pdMinPressure)
     out = 0.0;
-  else if(pressure<par[1] && pressure>par[2])
-    out = -demand*pow((pressure-par[2])/(par[1]-par[2]),1./par[0]);
+  else if(head<pdDesiredPressure && head>pdMinPressure)
+    out = -demand*pow((head-pdMinPressure)/(pdDesiredPressure-pdMinPressure),1./pdExponent);
   else
     out = -demand;
 
@@ -41,13 +37,12 @@ double Node::function(double pressure, vector<double> par){ // for pressure depe
 }
 
 //--------------------------------------------------------------
-double Node::functionDerivative(double pressure, vector<double> par){ // for pressure dependent demnads
-  // par = [pdExponent, pdDesiredPressure, pdMinPressure]
+double Node::functionDerivative(double head){ // for head dependent demnads
   double out;
-  if(pressure<par[2])
+  if(head<pdMinPressure)
     out = 0.0;
-  else if(pressure<par[1] && pressure>par[2])
-    out = -demand*pow((pressure-par[2])/(par[1]-par[2]),1./par[0]-1)/(par[1]-par[2]);
+  else if(head<pdDesiredPressure && head>pdMinPressure)
+    out = -demand*pow((head-pdMinPressure)/(pdDesiredPressure-pdMinPressure),1./pdExponent-1)/(pdDesiredPressure-pdMinPressure);
   else
     out = 0.0;
 
@@ -80,12 +75,10 @@ void Node::setProperty(string prop, double value)
     xPosition = value;
   else if(prop == "yPosition")
     yPosition = value;
-  else if(prop == "userOutput")
-    userOutput = value;
   else
   {
     cout << endl << endl << "Node::getProperty() wrong argument:" << prop;
-    cout << ", right values: demand|head|pressure|density|height|xPosition|yPosition|userOutput" << endl << endl;
+    cout << ", right values: demand|head|pressure|density|height|xPosition|yPosition" << endl << endl;
   }
 }
 
@@ -112,8 +105,6 @@ double Node::getProperty(string prop)
     out = xPosition;
   else if(prop == "yPosition")
     out = yPosition;
-  else if(prop == "userOutput")
-    out = userOutput;
   else if(prop == "segment")
     out = (double)segment;
   else
@@ -130,16 +121,12 @@ string Node::info(bool check_if_lonely)
   ostringstream strstrm;
   strstrm << "\n Node name       : " << name;
   strstrm << "\n open/closed     : ";
-  if(isClosed)
-    strstrm << "!CLOSED!";
-  else
-    strstrm << "open";
   strstrm << "\n height          : " << geodeticHeight << " m";
   strstrm << "\n head            : " << head << " m";
   strstrm << "\n pressure        : " << head*density * 9.81 << " Pa";
   strstrm << "\n desnity         : " << density << " kg/m3";
-  strstrm << "\n demand          : " << demand << " kg/s = " << demand * 3600 / density << " m3/h";
-  strstrm << "\n consumption     : " << consumption << " kg/s = " << consumption * 3600 / density << " m3/h";
+  strstrm << "\n demand          : " << demand << " l/s = " << demand * 3.6 << " m3/h";
+  strstrm << "\n consumption     : " << consumption << " l/s = " << consumption * 3.6 << " m3/h";
   strstrm << "\n segment         : " << segment;
   strstrm << "\n incoming edges  : ";
   for(vector<int>::iterator it = edgeIn.begin(); it != edgeIn.end(); it++)
@@ -149,7 +136,7 @@ string Node::info(bool check_if_lonely)
       strstrm << *it << " ";
   strstrm << endl;
 
-  if (check_if_lonely && ((edgeIn.size() + edgeOut.size()) == 0) && !isClosed)
+  if (check_if_lonely && ((edgeIn.size() + edgeOut.size()) == 0))
   {
     strstrm << "\n!!! ERROR !!! Lonely node: " << name << " !!!\n";
     cout << strstrm.str();

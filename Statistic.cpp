@@ -191,6 +191,63 @@ vector<double> grubbsTest(const vector<double> &x){
 }
 
 //--------------------------------------------------------------
+double linearInterpolation(const vector<double> &x, const vector<double> &y, double xp)
+{
+  double yp = 0.0;
+  int nx=x.size(), ny=y.size();
+  if(nx == 0 || ny == 0 || nx == 1 || ny == 1)
+  {
+    cout << endl << " !!!ERROR!!! interpolate: Number of x/y coordinates (" << nx << "/" << ny << " is equal to 0 or 1!" << endl << " Exiting..." << endl;
+    exit(0);
+  }
+  else if(nx!=ny)
+  {
+    cout << endl << " !!!ERROR!!! Number of x coordinates (" << nx << ") NOT equal to number of y coordinates(" << ny << ") !" << endl;
+    exit(-1);
+  }
+  else
+  {
+    int idx;
+    if(xp<min(x,idx)){
+      //cout << endl << " !!!WARNING!! interpolate: xp = " << xp << " is smaller than min(x) = " << min(x,idx) << endl << " Overriding xp = min(x), then Continouing..." << endl;
+      xp = min(x,idx);
+      yp = y[idx];
+    }
+    else if(xp>max(x,idx))
+    {
+      //cout << endl << " !!!WARNING!! xp = " << xp << " is larger than max(x) = " << max(x,idx) << endl << " Overriding xp = max(x), then Continouing..." << endl;
+      xp = max(x,idx);
+      yp = y[idx];
+    }
+    else
+    {
+      // Finding the closest points
+      int idx;
+      double x1=min(x,idx);
+      double y1=y[idx];
+      double x2=max(x,idx);
+      double y2=y[idx];
+      for(int i=0; i<nx; i++)
+      {
+        if(x[i]<xp && x[i]>x1){
+          x1 = x[i];
+          y1 = y[i];
+        }
+        if(x[i]>xp && x[i]<x2){
+          x2 = x[i];
+          y2 = y[i];
+        }
+      }
+      double a = (y2-y1)/(x2-x1);
+      double b = y2 - a*x2;
+      yp = a*xp + b;
+    }
+  }
+
+  return yp;
+}
+
+//--------------------------------------------------------------
 double interpolate(vector<double> x, vector<double> y, double xp){
 
   double yp = 0.0;
@@ -350,14 +407,14 @@ double max(vector<double> x){
 }
 
 //--------------------------------------------------------------
-VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int order){
+VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int &order){
 
   if(x.rows() != y.rows()){
     cout << endl << "!!!ERROR!!! Statistic::leastSquaresPolynomial(): size of X is not equal to size of Y" << endl << "Exiting..." << endl;
     exit(0);
   }
   if(order>x.rows()-1){
-    cout << endl << "!!!WARNING!!! Statistic::leastSquaresPolynomial(): order(" << order << ") is larger or equal than number of points(" << x.rows() << ")!" << endl << "order is decreased to x.rows()-1 (" << x.rows()-1 << "), then continouing..." << endl;
+    cout << endl << "!WARNING! Statistic::leastSquaresPolynomial(): order(" << order << ") is larger or equal than number of points(" << x.rows() << ")!" << endl << "order is decreased to x.rows()-1 (" << x.rows()-1 << "), then continouing..." << endl;
     order = x.rows()-1;
   }
 

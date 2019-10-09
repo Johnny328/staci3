@@ -26,7 +26,6 @@ int main(int argc, char* argv[]){
   string sens_par_name = "friction_coeff";
   // Creating the case
   wds = new SVDCalibration(case_folder + case_name + ".spr");
-  wds->buildSystem();
   wds->initialization();
   int n_nodes = wds->nodes.size();
   int n_edges = wds->edges.size();

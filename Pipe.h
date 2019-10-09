@@ -22,14 +22,14 @@ class Pipe : public Edge
 {
 
 public:
-    Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_rougness, const double a_massFlowRate);
+    Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_rougness, const double a_massFlowRate, bool a_isCheckValve);
     ~Pipe();
 
     /// Provides basic informations
     string info();
 
     /// A line of F(x) = equation, rearranged to 0 in w.c.m.
-    double function(vector<double>);
+    double function(vector<double> x);
 
     /// Function ferivative w.r.t. variable (head / mass flow rate)
     vector<double> functionDerivative(vector<double>);
@@ -50,12 +50,12 @@ public:
     
     void setFrictionModel(string friction_model);
 
-private:
+//private:
     double length, diameter, lambda;
     double roughness; // Pipefal roughness (HW: C factor, DW: relative roughness)
-    double startHeight, endHeight; // Height of the starting and ending nodes
     int frictionModel=-1; // 0 - Darcy-Weisbach (DW), 1 - Hazen-Williams (HW)
 
+private:
     //! Computes the head loss in Pa
     /*! dp'=lambda*length/diameter*density/2*velocity*fabs(velocity)*/
     double computeHeadloss(double mp);

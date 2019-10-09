@@ -13,6 +13,7 @@ PressurePoint::PressurePoint(const string a_name, const double a_referenceCrossS
     endNodeName = "<nincs>";
     startNodeName = a_startNodeName;
     head = a_head / density / gravity;
+    status = 1;
 }
 
 //--------------------------------------------------------------
@@ -31,16 +32,28 @@ string PressurePoint::info(){
 
 //--------------------------------------------------------------
 double PressurePoint::function(vector<double> x){
+  if(status == 1) // OPEN
     return x[0] - head;
+  else // CLOSED
+    return x[2];
 }
 
 //--------------------------------------------------------------
 vector<double> PressurePoint::functionDerivative(vector<double> x){
-    vector<double> result;
-    result.push_back(1.);
-    result.push_back(0.);
-    result.push_back(0.);
-    return result;
+  vector<double> out;
+  if(status == 1) // OPEN
+  {
+    out.push_back(1.0);
+    out.push_back(0.0);
+    out.push_back(0.0);
+  }
+  else // CLOSED
+  {
+    out.push_back(0.0);
+    out.push_back(0.0);
+    out.push_back(1.0);
+  }
+  return out;
 }
 
 //--------------------------------------------------------------
@@ -69,8 +82,8 @@ double PressurePoint::getDoubleProperty(string prop){
     out = density;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section" || prop == "Aref")
     out = referenceCrossSection;
-  else if(prop == "height")
-    out = height;
+  else if(prop == "startHeight")
+    out = startHeight;
   else
   {
     cout << endl << endl << "DOUBLE PressurePoint::getDoubleProperty() wrong argument:" << prop;
@@ -91,8 +104,8 @@ void PressurePoint::setDoubleProperty(string prop, double value){
     density = value;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     referenceCrossSection = value;
-  else if(prop == "height")
-    height = value;
+  else if(prop == "startHeight")
+    startHeight = value;
   else
   {  
     cout << endl << endl << "PressurePoint::setProperty( DOUBLE ) wrong argument:" << prop;

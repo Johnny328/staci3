@@ -2,8 +2,8 @@
 
 using namespace Eigen;
 
-Staci::Staci(string spr_filename) {
-  definitionFile = spr_filename;
+Staci::Staci(string fileName) {
+  definitionFile = fileName;
 
   // getting rid of global path
   caseName = definitionFile.substr(definitionFile.rfind('/')+1);
@@ -15,24 +15,16 @@ Staci::Staci(string spr_filename) {
   {
     loadSystem();
   }
-  else if(fileFormat == "spr") // Old STACI spr format
-  {
-    IOxml IOxmlObj(definitionFile.c_str());
-    IOxmlObj.loadSystem(nodes, edges);
-
-    frictionModel = IOxmlObj.readSetting("friction_model");
-    for(int i=0; i<edges.size(); i++)
-    {
-      if(edges[i]->getEdgeStringProperty("type") == "Pipe")
-        edges[i]->setFrictionModel(frictionModel);
-    }
-  }
   else
   {
-    cout << endl << "Unkown file format: " << fileFormat << endl << "Available file formats are: inp | spr" << endl;
+    cout << endl << "Unkown file format: " << fileFormat << endl << "Available file formats are: inp" << endl;
     exit(-1);
   }
 
+  // calculating the number of nodes and edges
+  numberEdges = edges.size();
+  numberNodes = nodes.size();
+  
   // Finding the indicies of nodes for the edges and vica versa
   buildSystem();
 }
@@ -48,16 +40,16 @@ void Staci::buildSystem(){
   int startNode = -1, endNode = -1;
 
   // Clearing the in/out going edges from nodes
-  for(int i=0; i<nodes.size(); i++){
+  for(int i=0; i<numberNodes; i++){
     nodes[i]->edgeIn.clear();
     nodes[i]->edgeOut.clear();
   }
 
-  for(int i=0; i<edges.size(); i++)
+  for(int i=0; i<numberEdges; i++)
   {
     startGotIt = false;
     j = 0;
-    while((j < nodes.size()) && (!startGotIt)){
+    while((j < numberNodes) && (!startGotIt)){
       if((edges[i]->getEdgeStringProperty("startNodeName")).compare(nodes[j]->getName()) == 0){
         startGotIt = true;
         startNode = j;
@@ -74,7 +66,7 @@ void Staci::buildSystem(){
     if(edges[i]->getEdgeIntProperty("numberNode") == 2){
       endGotIt = false;
       j = 0;
-      while ((j < nodes.size()) && (!endGotIt)) {
+      while ((j < numberNodes) && (!endGotIt)) {
         if ((edges[i]->getEdgeStringProperty("endNodeName")).compare(nodes[j]->getName()) == 0) {
           endGotIt = true;
           endNode = j;
@@ -103,10 +95,10 @@ void Staci::buildSystem(){
 //--------------------------------------------------------------
 void Staci::listSystem() {
   cout << "\n\n Nodes:\n--------------------------";
-  for (int i = 0; i < nodes.size(); i++)
+  for (int i = 0; i < numberNodes; i++)
     cout << nodes[i]->info(true);
   cout << "\n\n Edges:\n--------------------------";
-  for (int i = 0; i < edges.size(); i++)
+  for (int i = 0; i < numberEdges; i++)
     cout << edges[i]->info();
 }
 
@@ -120,7 +112,7 @@ vector<int> Staci::ID2Index(const vector<string> &id){
   for(int j=0;j<n_id;j++){
     int i=0;
     gotIt = false;
-    while(!gotIt && i<nodes.size()){
+    while(!gotIt && i<numberNodes){
       if(id[j] == nodes[i]->getName()){
         idx[j] = i;
         gotIt = true;
@@ -143,9 +135,9 @@ void Staci::checkSystem()
 
   cout << "\n [*] Looking for identical IDs  ";
   string name1, name2;
-  for(int i = 0; i < edges.size(); i++){
+  for(int i = 0; i < numberEdges; i++){
     name1 = edges.at(i)->getEdgeStringProperty("name");
-    for(int j = 0; j < edges.size(); j++){
+    for(int j = 0; j < numberEdges; j++){
       name2 = edges.at(j)->getEdgeStringProperty("name");
       if(i != j){
         if(name1 == name2){
@@ -155,7 +147,7 @@ void Staci::checkSystem()
       }
     }
 
-    for(int j = 0; j < nodes.size(); j++){
+    for(int j = 0; j < numberNodes; j++){
       name2 = nodes.at(j)->getName();
       if(i != j){
         if(name1 == name2){
@@ -202,11 +194,8 @@ void Staci::saveResult(string property, string element){
     { 
       remove((caseName + "/Node.txt").c_str());
       wfile.open(caseName + "/Node.txt");
-      for(int i=0; i<nodes.size(); i++)
-        if(!nodes[i]->isClosed)
-          wfile << nodes[i]->getProperty(property) << endl;
-        else
-          wfile << "Nan" <<endl;
+      for(int i=0; i<numberNodes; i++)
+        wfile << nodes[i]->getProperty(property) << endl;
       wfile.close();
     }
 
@@ -214,12 +203,9 @@ void Staci::saveResult(string property, string element){
     { 
       remove((caseName + "/Pipe.txt").c_str());
       wfile.open(caseName + "/Pipe.txt");
-      for(int i=0; i<edges.size(); i++){
-        if(edges[i]->getEdgeStringProperty("type") == "Pipe"){
-          if(!edges[i]->isClosed)
-            wfile << edges[i]->getDoubleProperty(property) << endl;
-          else
-            wfile << "Nan" << endl;
+      for(int i=0; i<numberEdges; i++){
+        if(edges[i]->type == "Pipe"){
+          wfile << edges[i]->getDoubleProperty(property) << endl;
         }
       }
       wfile.close();
@@ -229,12 +215,9 @@ void Staci::saveResult(string property, string element){
     {
       remove((caseName + "/Pump.txt").c_str());
       wfile.open(caseName + "/Pump.txt");
-      for(int i=0; i<edges.size(); i++){
-        if(edges[i]->getEdgeStringProperty("type") == "Pump"){
-          if(!edges[i]->isClosed)
-            wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
-          else
-            wfile << "Nan" << endl;
+      for(int i=0; i<numberEdges; i++){
+        if(edges[i]->type == "Pump"){
+          wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
         }
       }  wfile.close();
     }
@@ -243,12 +226,9 @@ void Staci::saveResult(string property, string element){
     {
       remove((caseName + "/Pres.txt").c_str());
       wfile.open(caseName + "/Pres.txt");
-      for(int i=0; i<edges.size(); i++){
-        if(edges[i]->getEdgeStringProperty("type") == "PressurePoint"){
-          if(!edges[i]->isClosed)
-            wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
-          else
-            wfile << "Nan" << endl;
+      for(int i=0; i<numberEdges; i++){
+        if(edges[i]->type == "PressurePoint"){
+          wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
         }
       }
       wfile.close();
@@ -258,12 +238,9 @@ void Staci::saveResult(string property, string element){
     { 
       remove((caseName + "/Pool.txt").c_str());
       wfile.open(caseName + "/Pool.txt");
-      for(int i=0; i<edges.size(); i++){
-        if(edges[i]->getEdgeStringProperty("type") == "Pool"){
-          if(!edges[i]->isClosed)
-            wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
-          else
-            wfile << "Nan" << endl;
+      for(int i=0; i<numberEdges; i++){
+        if(edges[i]->type == "Pool"){
+          wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
         }
       }
       wfile.close();
@@ -279,13 +256,12 @@ void Staci::saveResult(string property, string element){
 }
 
 //--------------------------------------------------------------
-void Staci::changeEdgeStatus(int idx, bool state){
+/*void Staci::changeEdgeStatus(int idx, bool state){
 
-  if(state == false) // Closing an edge
+  if(state == false && !edges[idx]->isClosed) // Closing an edge
   {
+    edges[idx]->isClosed = true;
     int nodeFrom = edges[idx]->getEdgeIntProperty("startNodeIndex");
-    int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
-
     for(int i=0; i<nodes[nodeFrom]->edgeOut.size(); i++)
       if(nodes[nodeFrom]->edgeOut[i] == idx)
         nodes[nodeFrom]->edgeOut.erase(nodes[nodeFrom]->edgeOut.begin() + i);
@@ -293,41 +269,42 @@ void Staci::changeEdgeStatus(int idx, bool state){
     if(nodes[nodeFrom]->edgeOut.size() + nodes[nodeFrom]->edgeIn.size() == 0)
       nodes[nodeFrom]->isClosed = true;
 
-    for(int i=0; i<nodes[nodeTo]->edgeIn.size(); i++)
-      if(nodes[nodeTo]->edgeIn[i] == idx)
-        nodes[nodeTo]->edgeIn.erase(nodes[nodeTo]->edgeIn.begin() + i);
+    if(edges[idx]->getEdgeIntProperty("numberNode") == 2){
+      int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
+      for(int i=0; i<nodes[nodeTo]->edgeIn.size(); i++)
+        if(nodes[nodeTo]->edgeIn[i] == idx)
+          nodes[nodeTo]->edgeIn.erase(nodes[nodeTo]->edgeIn.begin() + i);
 
-    if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 0)
-      nodes[nodeTo]->isClosed = true;
-
+      if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 0)
+        nodes[nodeTo]->isClosed = true;
+    }
   }
-  else // Opening an edge
+  else if(state == true && edges[idx]->isClosed)
   {
+    edges[idx]->isClosed = false;
     int nodeFrom = edges[idx]->getEdgeIntProperty("startNodeIndex");
-    int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
-
     nodes[nodeFrom]->edgeOut.push_back(idx);
-
     if(nodes[nodeFrom]->edgeOut.size() + nodes[nodeFrom]->edgeIn.size() == 1)
       nodes[nodeFrom]->isClosed = false;
 
-    nodes[nodeTo]->edgeIn.push_back(idx);
-
-    if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 1)
-      nodes[nodeTo]->isClosed = false;
+    if(edges[idx]->getEdgeIntProperty("numberNode") == 2){
+      int nodeTo = edges[idx]->getEdgeIntProperty("endNodeIndex");
+      nodes[nodeTo]->edgeIn.push_back(idx);
+      if(nodes[nodeTo]->edgeOut.size() + nodes[nodeTo]->edgeIn.size() == 1)
+        nodes[nodeTo]->isClosed = false;
+    }
   }
-}
+}*/
 
 //--------------------------------------------------------------
-void Staci::changeEdgeStatus(string ID, bool state){
+/*void Staci::changeEdgeStatus(string ID, bool state){
 
   int i=0, idx=-1;
   bool gotIt=false;
-  while(i<edges.size() && !gotIt)
+  while(i<numberEdges && !gotIt)
   {
     if(ID.compare(edges[i]->getEdgeStringProperty("name")) == 0)
     {
-      edges[i]->isClosed = true;
       gotIt = true;
       idx = i;
     }
@@ -341,10 +318,10 @@ void Staci::changeEdgeStatus(string ID, bool state){
   {
     changeEdgeStatus(idx,state);
   }
-}
+}*/
 
 //--------------------------------------------------------------
-int Staci::getVectorIndex(const vector<int> &v, int value){
+/*int Staci::getVectorIndex(const vector<int> &v, int value){
   int idx = -1;
   for(int i=0; i<v.size(); i++)
     if(v[i] == value){
@@ -355,5 +332,44 @@ int Staci::getVectorIndex(const vector<int> &v, int value){
     cout << endl << "!!! WARNING !!! Staci::getVectorIndex did not found value " << value << endl;
 
   return idx;
+}*/
+
+//--------------------------------------------------------------
+int Staci::nodeIDtoIndex(string ID){
+  int i=0, idx=-1;
+  bool gotIt=false;
+  while(i<numberNodes && !gotIt)
+  {
+    if(ID.compare(nodes[i]->getName()) == 0)
+    {
+      gotIt = true;
+      idx = i;
+    }
+    i++;
+  }
+  if(idx == -1)
+  {
+    cout << "\n!!!WARNING!!!\nStaci:nodeIDtoIndex function\nNode is not existing, ID: " << ID << endl<< "\nContinouing...";
+  }
+  return idx;
 }
 
+//--------------------------------------------------------------
+int Staci::edgeIDtoIndex(string ID){
+  int i=0, idx=-1;
+  bool gotIt=false;
+  while(i<numberEdges && !gotIt)
+  {
+    if(ID.compare(edges[i]->getEdgeStringProperty("name")) == 0)
+    {
+      gotIt = true;
+      idx = i;
+    }
+    i++;
+  }
+  if(idx == -1)
+  {
+    cout << "\n!!!WARNING!!!\nStaci:edgeIDtoIndex function\nNode is not existing, ID: " << ID << endl<< "\nContinouing...";
+  }
+  return idx;
+}

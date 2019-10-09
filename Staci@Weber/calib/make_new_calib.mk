@@ -3,7 +3,7 @@ STACI_DIR=../bin/
 FUNC=new_calib
 
 CXX=clang++
-CXXFLAGS=-g -std=c++11 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/include/igraph
+CXXFLAGS=-g -std=c++17 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/include/igraph
 
 OBJS += \
 $(STACI_DIR)BasicFileIO.o \
