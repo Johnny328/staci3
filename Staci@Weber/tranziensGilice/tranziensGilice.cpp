@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 
 #include "../../SeriesHydraulics.h"
+#include "../../Shutdown.h"
 
 using namespace std;
 using namespace Eigen;
@@ -15,8 +16,7 @@ using namespace Eigen;
 int main(int argc, char* argv[]){
 
   // Name of containing folder of staci file
-  string caseFolder = "../../Networks/";
-  //string caseFolder = "/home/rweber/0_PhD/Halozatok/sopron_halozatok/";
+  string caseFolder = "../../../../Tranziens Gilice/";
 
   string caseName;
   if(argc == 1){
@@ -34,7 +34,13 @@ int main(int argc, char* argv[]){
 
   SeriesHydraulics *wds;
   wds = new SeriesHydraulics(caseFolder + caseName);
-  cout << "OK" << endl;
+  cout << "LOADING OK" << endl;
+
+  Shutdown *wdsShutdown;
+  wdsShutdown = new Shutdown(caseFolder + caseName);
+  int nSegments = wdsShutdown->getNumberSegment();
+  cout << "Number of segments: " << nSegments << endl;
+  wdsShutdown->saveResult("segment","Node");
   //for(int i=0; i<wds->edges.size(); i++)
   //  if(wds->edges[i]->getEdgeStringProperty("type") == "Pump")
   //    wds->edges[i]->setStringProperty("curveType", "linear");

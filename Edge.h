@@ -90,6 +90,8 @@ public:
 
   // [l/s] for series calculations
   vector<double> vectorVolumeFlowRate;
+  // 0: closed, 1: open, 2: active (in case of active elements)
+  vector<int> vectorStatus;
 
   double volumeFlowRate; // [l/s]
   double density; // [kg/m3]

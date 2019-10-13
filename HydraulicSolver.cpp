@@ -43,8 +43,6 @@ HydraulicSolver::HydraulicSolver(string spr_filename) : Staci(spr_filename)
 
   // resiying Eigen vectors
   x.resize(numberEquations); f.resize(numberEquations);
-
-  cout << endl << "numberEquations: " << numberEquations << "  numberEdges: " << numberEdges << "  numberNodes: " << numberNodes << endl;
 }
 
 HydraulicSolver::~HydraulicSolver(){}
@@ -58,7 +56,7 @@ bool HydraulicSolver::solveSystem()
   
   for(int i=0; i<numberEdges; i++){
     if(edges[i]->type == "ValveFCV")
-      edges[i]->status = 2;
+      edges[i]->status = 1;
   }
 
   e_mp = 1e10, e_p = 1e10, e_mp_r = 1e10, e_p_r = 1e10;
@@ -91,7 +89,7 @@ bool HydraulicSolver::solveSystem()
     bool changed = edgeStatusUpdate();
 
     computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
-    cout << iterInfo(iter, e_mp, e_p);
+    //cout << iterInfo(iter, e_mp, e_p);
     if(isConv && !changed)
       break;
 
@@ -489,7 +487,6 @@ bool HydraulicSolver::edgeStatusUpdate()
         double vf = x[i];
         int status = edges[i]->status;
         double setting = edges[i]->setting;
-        cout << "pi: " << pi+hi << "  pj: " << pj+hj << "  vf:" << vf << "  st: " << status << endl;
         if(edges[i]->status == 2) // ACTIVE
         {
           if(vf<-volumeFlowRateTolerance){

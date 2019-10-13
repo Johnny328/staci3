@@ -12,8 +12,10 @@ coordCounter = 0;
 
 while(ischar(line))
    if(line == "[JUNCTIONS]")
-      line = fgetl(fileID); %skipping over header
       line = fgetl(fileID);
+      while(~isempty(line) && line(1) == ";")%skipping over header
+          line = fgetl(fileID);
+      end
       while(line ~= "")
           nodeCounter = nodeCounter + 1;
           data = strsplit(line);
@@ -30,8 +32,10 @@ while(ischar(line))
       end
    end
    if(line == "[RESERVOIRS]")
-      line = fgetl(fileID); %skipping over header
       line = fgetl(fileID);
+      while(~isempty(line) && line(1) == ";")%skipping over header
+          line = fgetl(fileID);
+      end
       while(line ~= "")
           presCounter = presCounter + 1;
           data = strsplit(line);
@@ -54,8 +58,10 @@ while(ischar(line))
       end
    end
    if(line == "[TANKS]")
-      line = fgetl(fileID); %skipping over header
       line = fgetl(fileID);
+      while(~isempty(line) && line(1) == ";")%skipping over header
+          line = fgetl(fileID);
+      end
       while(line ~= "")
           poolCounter = poolCounter + 1;
           data = strsplit(line);
@@ -66,7 +72,11 @@ while(ischar(line))
           pool(poolCounter).minLevel = str2double(data(4));
           pool(poolCounter).maxLevel = str2double(data(5));
           pool(poolCounter).diameter = str2double(data(6));
-          pool(poolCounter).minVol = str2double(data(7));
+          if(length(data)>7)
+              pool(poolCounter).minVol = string(data(7));
+          else
+              pool(poolCounter).minVol = "";
+          end
           if(length(data)>8)
               pool(poolCounter).pattern = string(data(8));
           else
@@ -83,8 +93,10 @@ while(ischar(line))
       end
    end
    if(line == "[PIPES]")
-      line = fgetl(fileID); %skipping over header
       line = fgetl(fileID);
+      while(~isempty(line) && line(1) == ";")%skipping over header
+          line = fgetl(fileID);
+      end
       while(line ~= "")
           pipeCounter = pipeCounter + 1;
           data = strsplit(line);
@@ -95,15 +107,25 @@ while(ischar(line))
           pipe(pipeCounter).length = str2double(data(4));
           pipe(pipeCounter).diameter = str2double(data(5));
           pipe(pipeCounter).roughness = str2double(data(6));
-          pipe(pipeCounter).minorLoss = str2double(data(7));
-          pipe(pipeCounter).status = string(data(8));
+          if(length(data)>7)
+              pipe(pipeCounter).minorLoss = str2double(data(7));
+          else
+              pipe(pipeCounter).minorLoss = "";
+          end
+          if(length(data)>8)
+              pipe(pipeCounter).status = str2double(data(8));
+          else
+              pipe(pipeCounter).minorLoss = "";
+          end
           pipe(pipeCounter).type = "Pipe";
           line = fgetl(fileID);
       end
    end
    if(line == "[PUMPS]")
-      line = fgetl(fileID); %skipping over header
       line = fgetl(fileID);
+      while(~isempty(line) && line(1) == ";")%skipping over header
+          line = fgetl(fileID);
+      end
       while(line ~= "")
           pumpCounter = pumpCounter + 1;
           data = strsplit(line);
@@ -118,8 +140,10 @@ while(ischar(line))
       end
    end
    if(line == "[VALVES]")
-      line = fgetl(fileID); %skipping over header
       line = fgetl(fileID);
+      while(~isempty(line) && line(1) == ";")%skipping over header
+          line = fgetl(fileID);
+      end
       while(line ~= "")
           valveCounter = valveCounter + 1;
           data = strsplit(line);
@@ -136,8 +160,10 @@ while(ischar(line))
       end
    end
    if(line == "[COORDINATES]")
-      line = fgetl(fileID); %skipping over header
       line = fgetl(fileID);
+      while(~isempty(line) && line(1) == ";")%skipping over header
+          line = fgetl(fileID);
+      end
       while(line ~= "")
           coordCounter = coordCounter + 1;
           data = strsplit(line);
@@ -148,8 +174,6 @@ while(ischar(line))
           line = fgetl(fileID);
       end
    end
-   
-   
    line = fgetl(fileID);
 end
 
@@ -180,7 +204,7 @@ end
 % normalizing x-y coordinates to [0,1] without distortion
 delta = max([max(coordX)-min(coordX),max(coordY)-min(coordY)]);
 coordX = abs(coordX - min(coordX))/delta;
-coordY = abs(coordY - min(coordY))/delta;
+coordY = abs(max(coordY) - coordY)/delta; % Flipping the plot
 
 % finding node x-y coordinates
 for i=1:nodeCounter

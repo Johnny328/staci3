@@ -39,6 +39,17 @@ int main(int argc, char* argv[]){
   //    wds->edges[i]->setStringProperty("curveType", "linear");
   //wds->solveSystem();
   wds->seriesSolve();
+
+  vector<string> tableEdge;
+  tableEdge.push_back("valve");
+  tableEdge.push_back("112");
+  wds->timeTableEdge(tableEdge,15.85037);
+
+  vector<string> talbeNode;
+  talbeNode.push_back("32");
+  talbeNode.push_back("22");
+  wds->timeTableNode(talbeNode,1.42197);
+
   //for(int i=0; i<wds->edges.size(); i++)
     //if(wds->edges[i]->getEdgeStringProperty("type") == "PressurePoint" || wds->edges[i]->getEdgeStringProperty("type") == "Pool")
       //cout << wds->edges[i]->getEdgeStringProperty("name") << "  " << wds->edges[i]->getDoubleProperty("volumeFlowRate") << endl;

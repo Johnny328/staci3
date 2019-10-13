@@ -31,6 +31,12 @@ public:
   // calculating the hydraulics in time
   void seriesSolve();
 
+  // Printing results to console
+  void timeTableNode(vector<string> ID, double convertUnit);
+  void timeTableNode(vector<int> idx, double convertUnit);
+  void timeTableEdge(vector<string> ID, double convertUnit);
+  void timeTableEdge(vector<int> idx, double convertUnit);
+
 private:
   // loading the series settings from INP file
   void loadTimeSettings();
@@ -59,6 +65,7 @@ private:
   // time stuff
   double duration, startClock=0., time, clockTime;
   double patternTimeStep, hydraulicTimeStep, hydraulicTimeStepOriginal;
+  vector<double> vectorTime;
 
   // demand patterns
   vector<string> patternID;

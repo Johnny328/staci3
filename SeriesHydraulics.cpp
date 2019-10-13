@@ -16,6 +16,7 @@ void SeriesHydraulics::seriesSolve()
 
 	bool convOk = true;
 	time = startClock;
+	vectorTime.push_back(time);
 	clockTime = startClock;
 	while(time<=duration && convOk)
 	{
@@ -23,11 +24,13 @@ void SeriesHydraulics::seriesSolve()
 		convOk = solveSystem();
 
 		// printing basic info to consol
-		seriesInfo();	
+		//seriesInfo();	
+
 		//cout << endl << edges[1]->name << "  wl: " << edges[1]->getDoubleProperty("waterLevel")/0.3048 << "  st: " << edges[1]->status << endl;
 		//cout << edges[15]->name << "  vf: " << edges[15]->volumeFlowRate*15.8504 << " v: " << edges[15]->getEdgeDoubleProperty("velocity")/0.3048 << "  st: " << edges[15]->setting/0.7032 << "  status: " << edges[15]->status << endl;
-		//cout << nodes[4]->name << "  p: " << nodes[4]->head/0.7032 << endl;
 		//cout << nodes[4]->name << "  p: " << (nodes[4]->head+nodes[4]->geodeticHeight)/0.3048 << endl;
+		//cout << nodes[5]->name << "  p: " << (nodes[5]->head+nodes[5]->geodeticHeight)/0.3048 << endl;
+		//cout << nodes[7]->name << "  p: " << (nodes[7]->head+nodes[7]->geodeticHeight)/0.3048 << endl;
 		//cout << nodes[8]->name << "  p: " << (nodes[8]->head+nodes[8]->geodeticHeight)/0.3048 << endl;
 		//cout << edges[15]->name << "  vf:" << edges[15]->volumeFlowRate*15.8504 << "  st: " << edges[15]->status << endl;
 		//cin.get();
@@ -37,6 +40,7 @@ void SeriesHydraulics::seriesSolve()
 
 		hydraulicTimeStep = newHydraulicTimeStep();
 		time += hydraulicTimeStep;
+		vectorTime.push_back(time);
 
 		// updateing the settings, pools etc.
 		updatePool();
@@ -63,6 +67,7 @@ void SeriesHydraulics::saveOutput()
 	for(int i=0; i<numberEdges; i++)
 	{
 		edges[i]->vectorVolumeFlowRate.push_back(edges[i]->getDoubleProperty("volumeFlowRate"));
+		edges[i]->vectorStatus.push_back(edges[i]->status);
 	}
 }
 
@@ -285,7 +290,6 @@ bool SeriesHydraulics::booleanWithString(string op, double left, double right)
 //-------------------------------------------------------------------
 void SeriesHydraulics::seriesInfo()
 {
-	cout << endl << endl;
 	int hour = time/3600.;
 	int minute = (time - hour*3600.)/60.;
 	if(minute < 10)
@@ -555,6 +559,116 @@ void SeriesHydraulics::loadTimeSettings()
 		}//end of while(getline)
 	}//end of if(fileIn.is_open())
 } 
+
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableNode(vector<string> ID, double convertUnit)
+{
+	vector<int> idx;
+	for(int i=0; i<ID.size(); i++)
+	{	
+		int k = nodeIDtoIndex(ID[i]);
+		if(k!=-1)
+	  	idx.push_back(k);
+	}
+	timeTableNode(idx,convertUnit);
+}
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableNode(vector<int> idx, double convertUnit)
+{
+	cout << endl;
+	printf(" |   ID   |");
+	for(int i=0; i<idx.size(); i++)
+		printf(" %/10s |",nodes[idx[i]]->name.c_str());
+
+	printf("\n |  time  |");
+	for(int i=0; i<idx.size(); i++)
+		printf("  head  [m] |");// | status |");
+
+	printf("\n |--------");
+	for(int i=0; i<idx.size(); i++)
+		printf("+------------");
+	printf("|");
+
+	for(int i=0; i<vectorTime.size()-1; i++)
+	{
+		printf("\n");
+		int hour = vectorTime[i]/3600.;
+		int minute = (vectorTime[i] - hour*3600.)/60.;
+		if(minute < 10)
+			printf(" | %3i:0%1i |", hour, minute);
+		else
+			printf(" | %3i:%2i |", hour, minute);
+
+		for(int j=0; j<idx.size(); j++)
+		{
+			printf(" %10.3f |", nodes[idx[j]]->vectorHead[i]*convertUnit);
+			//if(edges[idx[j]]->vectorStatus[i] == 2)
+			//	printf(" active |");
+			//else if(edges[idx[j]]->vectorStatus[i] == 1)
+			//	printf("  open  |");
+			//else if(edges[idx[j]]->vectorStatus[i] == 0)
+			//	printf(" closed |");
+			//else
+			//	printf(" lofasz |");
+		}
+	}
+	cout << endl;
+}
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableEdge(vector<string> ID, double convertUnit)
+{
+	vector<int> idx;
+	for(int i=0; i<ID.size(); i++)
+	{	
+		int k = edgeIDtoIndex(ID[i]);
+		if(k!=-1)
+	  	idx.push_back(k);
+	}
+	timeTableEdge(idx, convertUnit);
+}
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableEdge(vector<int> idx, double convertUnit)
+{
+	cout << endl;
+	printf(" |   ID   |");
+	for(int i=0; i<idx.size(); i++)
+		printf(" %-19s |",edges[idx[i]]->name.c_str());
+
+	printf("\n |  time  |");
+	for(int i=0; i<idx.size(); i++)
+		printf(" flow [l/s] | status |");
+
+	printf("\n |--------");
+	for(int i=0; i<idx.size(); i++)
+		printf("+---------------------");
+	printf("|");
+
+	for(int i=0; i<vectorTime.size()-1; i++)
+	{
+		printf("\n");
+		int hour = vectorTime[i]/3600.;
+		int minute = (vectorTime[i] - hour*3600.)/60.;
+		if(minute < 10)
+			printf(" | %3i:0%1i |", hour, minute);
+		else
+			printf(" | %3i:%2i |", hour, minute);
+
+		for(int j=0; j<idx.size(); j++)
+		{
+			printf(" %10.3f |", edges[idx[j]]->vectorVolumeFlowRate[i]*convertUnit);
+			if(edges[idx[j]]->vectorStatus[i] == 2)
+				printf(" active |");
+			else if(edges[idx[j]]->vectorStatus[i] == 1)
+				printf("  open  |");
+			else if(edges[idx[j]]->vectorStatus[i] == 0)
+				printf(" closed |");
+			else
+				printf(" lofasz |");
+		}
+	}
+	cout << endl;
+}
+
 
 //-------------------------------------------------------------------
 double SeriesHydraulics::timeToSeconds(string s1, string s2)

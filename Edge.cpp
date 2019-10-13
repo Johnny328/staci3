@@ -20,7 +20,6 @@ Edge::Edge(const string a_name, const double a_referenceCrossSection, const doub
     cout << strstrm.str();
   exit(0);
   }
-
 }
 
 //--------------------------------------------------------------

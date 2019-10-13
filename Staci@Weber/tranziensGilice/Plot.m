@@ -9,7 +9,7 @@ clear;
 % caseName = 'balf';
 % caseName = 'becsidomb';
 % caseName = 'villasor';
-caseName = 'und';
+caseName = 'gilice';
 
 % plot settings
 pumpRadius = 0.013;
@@ -26,16 +26,16 @@ closedColor = [1.0,0.0,0.0];
 % colorbar settings
 %blackBody, blackBodyExt, cividis, coolWarmBent, coolWarmSmooth, inferno, jet, kindlmann, kindlmannExt, magma, plasma, viridis
 %discrete: lines, prism
-colorMapName = 'inferno'; 
+colorMapName = 'lines'; 
 colorBarText = 'Head [m]';
 margin = 0.03; % margins around plot
 colorDelta = 0.15; %space for colorbar
 colorPos = "east"; %position of colorbar (east or south)
 colorBarFontSize = 12;
-colorElement = "None"; % "Node" or "Pipe" or "All"
-colorBarOn = 0;
+colorElement = "Node"; % "Node" or "Pipe" or "All"
+colorBarOn = 1;
 
-caseFolder = '../../Networks/';
+caseFolder = '../../../../Tranziens Gilice/';
 addpath('../../Plot');
 projectFolder = pwd;
 

@@ -56,6 +56,7 @@ public:
 
   /// If every connecting edges are closed, then the node will be as well, basically closed if edgeIn.size() + edgeOut.size() is zero
   //bool isClosed = false;
+  int status = 1;
 
   // [m] for series calculations
   vector<double> vectorHead;
