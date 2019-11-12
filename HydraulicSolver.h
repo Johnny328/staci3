@@ -66,22 +66,27 @@ protected:
   /// Storing the number of edges and nodes, and their sum as numberEquations
   int numberEquations;
 
+  /// numeric tolerance for status updates
+  double volumeFlowRateTolerance, headTolerance;
+
+  /// Building up the Jacobian matrix (also calculating the function f(x)) before the Newtonian iteration
+  void buildJacobian();
+  // Eigen vectors for the solver
+  VectorXd x, f;
+  
 private:
-  double relaxationFactor, relaxationFactorIncrement;
+  double relaxationFactor, relaxationFactorIncrement, relaxationFactorDecrement;
   double minRelaxationFactor = 0.1, maxRelaxationFactor = 1.0;
-  double pressureInitial, massFlowInitial;
   int maxIterationNumber;
   string frictionModel; // Darcy-Weisbach (DW) or Hazen-Williams (HW)
 
 	/// Linear solver Jac*x = -f
-  void linearSolver(VectorXd &x, VectorXd &f);
+  void linearSolver();
 
-  /// Building up the Jacobian matrix (also calculating the function f(x)) before the Newtonian iteration
-	void buildJacobian(VectorXd &x, VectorXd &f);
-	void updateJacobian(VectorXd &x, VectorXd &f);
-
-  // Eigen vectors for the solver
-  VectorXd x, f;
+  /// Updateing up the Jacobian matrix (also calculating the function f(x)) before the Newtonian iteration
+	void updateJacobian();
+  VectorXd getEdgeFunction(int i);
+  VectorXd getNodeFunction(int i);
 
   /// Updating relaxation factor for the Newtonian iteration
 	void updateRelaxationFactor(double e_mp, double e_p, double & e_mp_r, double & e_p_r);
@@ -90,16 +95,21 @@ private:
 	void computeError(const VectorXd &f, double & e_mp, double & e_p, double & e_mp_r, double & e_p_r, bool & konv_ok);
 
 	/// Printing the basic iteration informaition to console and log file
-	string iterInfo(int iter, double e_mp, double e_p);
+	void iterInfo(int iter, double e_mp, double e_p, vector<int> idx);
   /// Printing the detailed iteration informaition to console and log file
-	string iterInfoDetail(const VectorXd &x, const VectorXd &f);
+  void iterInfoDetail(const VectorXd &f);
 
   /// Checking the pump operational points, whether they are on the curve
   void checkPumpOperatingPoint();
   
   // Updating the status of edges (pipe with CV, flow control valves, etc.)
-  bool edgeStatusUpdate(); // Calls all the below functions
+  vector<int> edgeStatusUpdate(); // Calls all the below functions
+  // If node is only connected with closed edges, the node will be closed as well
+  void closeIsolatedNode(int idx);
 
+  // Checking whether there are a zero norm column in the jacobianMatrix
+  // Can be used for debugging of the Eigen errors
+  void checkJacobianMatrix();
 };
 
 #endif

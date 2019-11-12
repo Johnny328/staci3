@@ -22,7 +22,11 @@ while(ischar(line))
           data = data(data~=""); % clearing empty cells
           node(nodeCounter).ID = string(data(1));
           node(nodeCounter).elev = str2double(data(2));
-          node(nodeCounter).demand = str2double(data(3));
+          if(length(data)>3)
+              node(nodeCounter).demand = str2double(data(3));
+          else
+              node(nodeCounter).demand = "";
+          end
           if(length(data)>4)
               node(nodeCounter).pattern = string(data(4));
           else

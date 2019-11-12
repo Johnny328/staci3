@@ -32,6 +32,14 @@ string Edge::info(){
   strstrm << "\n status                : " << status;
   strstrm << "\n type                  : " << type;
   strstrm << "\n open/closed           : ";
+  if(status == 0)
+    strstrm << "Closed";
+  else if(status == 1)
+    strstrm << "Open";
+  else if(status == 2)
+    strstrm << "Active";
+  else
+    strstrm << "Status: " << status;
   strstrm << "\n density               : " << density << " [kg/m3]";
   strstrm << "\n referenceCrossSection : " << referenceCrossSection << " [m^2]";
   strstrm << "\n volume flow rate      : " << volumeFlowRate << " [l/s]";

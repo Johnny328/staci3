@@ -27,10 +27,10 @@ public:
   virtual string info();
   
   /// A line of F(x) = equation, rearranged to 0 in w.c.m.
-  virtual double function(vector<double> x)=0;
+  virtual double function(const VectorXd &ppq, VectorXd &fDer)=0;
   
   /// Jacobian: df/dhe, df/dhv, df/dmp
-  virtual vector<double> functionDerivative(vector<double>)=0;
+  //virtual vector<double> functionDerivative(vector<double>)=0;
 
   /// Initialization, mode: 0->automatic | 1-> using value
   virtual void initialization(int mode, double value)=0;

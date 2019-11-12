@@ -20,7 +20,6 @@
 #define EDGE_H
 
 #include "Statistic.h"
-
 #include "Eigen/Eigen/Eigen"
 
 #include <sstream>
@@ -41,27 +40,11 @@ public:
   Edge(const string a_name, const double a_referenceCrossSection, const double a_volumeFlowRate, const double a_densitiy);
   virtual ~Edge();
 
-  /// Get/set double/int/string property in general for EDGE
-  double getEdgeDoubleProperty(string prop);
-  int getEdgeIntProperty(string prop);
-  string getEdgeStringProperty(string prop);
-  void setEdgeDoubleProperty(string prop, double value);
-  void setEdgeIntProperty(string prop, int value);
-  void setEdgeStringProperty(string prop, string value);
-
-  virtual double getDoubleProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0); return 0.; }
-  virtual vector<double> getVectorProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0); vector<double> x; return x; }
-  virtual int getIntProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0);  return 0; }
-  virtual string getStringProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0);  return ""; };
-  virtual void setDoubleProperty(string prop, double value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
-  virtual void setIntProperty(string prop, int value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
-  virtual void setStringProperty(string prop, string value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
-
   /// A line of F(x) = equation, rearranged to 0 in l/s.
-  virtual double function(vector<double> x) = 0;
+  virtual double function(const VectorXd &ppq, VectorXd &fDer) = 0;
 
   /// Jacobian: df/dhe, df/dhv, df/dmp
-  virtual vector<double> functionDerivative(vector<double>) = 0;
+  //virtual vector<double> functionDerivative(vector<double>) = 0;
 
   /// Initialization, mode: 0->automatic | 1-> using value
   virtual void initialization(int mode, double value) = 0;
@@ -70,7 +53,7 @@ public:
   virtual string info();
 
   /// Get equation derivative w.r.t. parameter
-  virtual double functionParameterDerivative(string prop) { return 0.0; }
+  virtual double functionParameterDerivative(int prop) { return 0.0; }
 
   /// Checking the pump whether the operating point is still between the min and max of the characteristic curve
   virtual void checkPump(){}
@@ -78,9 +61,8 @@ public:
   /// Setting the fricition model: DW (Darcy-Weisbach) | HW (Hazen-Williams)
   virtual void setFrictionModel(string friction_model){};
 
-  /// If this equals to true, it counts as closed, thus no equation will be solved, like it is not part of the system
-  //bool isClosed = false;
-  int status; // used in Valve classes
+  /// Containing the status of the edge, 0: closed, 1: open, 2: active (in case of active edges)
+  int status;
 
   // Used only mainly in active Valves(PRV,FCV...)
   double setting;
@@ -104,5 +86,25 @@ public:
   string startNodeName, endNodeName;
   string name;
   string type; // Pipe, pool, pump, etc.
+
+  // similarly to EPANET2.0, 0: pipe with cv, 1: pipe, 2: pump, 3: prv, 4: psv, 5: pbv, 6: fcv, 7: tcv, 8: gpv, 9: iso, -1: pool, -2: pressurepoint
+  int typeCode;
+
+  /// Get/set double/int/string property in general for EDGE
+  double getEdgeDoubleProperty(string prop);
+  int getEdgeIntProperty(string prop);
+  string getEdgeStringProperty(string prop);
+  void setEdgeDoubleProperty(string prop, double value);
+  void setEdgeIntProperty(string prop, int value);
+  void setEdgeStringProperty(string prop, string value);
+
+  virtual double getDoubleProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0); return 0.; }
+  virtual vector<double> getVectorProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0); vector<double> x; return x; }
+  virtual int getIntProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0);  return 0; }
+  virtual string getStringProperty(string prop) {cout << "\nERROR, prop: " << prop << endl; exit(0);  return ""; };
+  virtual void setDoubleProperty(string prop, double value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
+  virtual void setIntProperty(string prop, int value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
+  virtual void setStringProperty(string prop, string value) {cout << "\nERROR, prop: " << prop << endl; exit(0); };
+
 };
 #endif

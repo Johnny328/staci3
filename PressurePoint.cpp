@@ -10,10 +10,11 @@ PressurePoint::PressurePoint(const string a_name, const double a_referenceCrossS
     type = "PressurePoint";
     numberNode = 1;
 
-    endNodeName = "<nincs>";
+    endNodeName = "<none>";
     startNodeName = a_startNodeName;
     head = a_head / density / gravity;
     status = 1;
+    typeCode = -2;
 }
 
 //--------------------------------------------------------------
@@ -31,27 +32,18 @@ string PressurePoint::info(){
 }
 
 //--------------------------------------------------------------
-double PressurePoint::function(vector<double> x){
-  if(status == 1) // OPEN
-    return x[0] - head;
-  else // CLOSED
-    return x[2];
-}
-
-//--------------------------------------------------------------
-vector<double> PressurePoint::functionDerivative(vector<double> x){
-  vector<double> out;
+double PressurePoint::function(const VectorXd &ppq, VectorXd &fDer)
+{ 
+  double out;
   if(status == 1) // OPEN
   {
-    out.push_back(1.0);
-    out.push_back(0.0);
-    out.push_back(0.0);
+    out = -ppq(0) + head;
+    fDer(0) = -1.0;
   }
-  else // CLOSED
+  else // CLOSED, status is 0 or -1
   {
-    out.push_back(0.0);
-    out.push_back(0.0);
-    out.push_back(1.0);
+    out = ppq(2);
+    fDer(2) = 1.0;
   }
   return out;
 }

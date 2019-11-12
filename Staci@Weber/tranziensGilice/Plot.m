@@ -32,7 +32,7 @@ margin = 0.03; % margins around plot
 colorDelta = 0.15; %space for colorbar
 colorPos = "east"; %position of colorbar (east or south)
 colorBarFontSize = 12;
-colorElement = "Node"; % "Node" or "Pipe" or "All"
+colorElement = "All"; % "Node" or "Pipe" or "All"
 colorBarOn = 1;
 
 caseFolder = '../../../../Tranziens Gilice/';

@@ -1,39 +1,33 @@
 clear;
 
-% caseName = 'Net1';
-% caseName = 'ky1';
-% caseName = 'C-town';
-% caseName = 'nagycenk';
-% caseName = 'tomalom';
-% caseName = 'lovo';
+% caseName = 'Net1Test';
 % caseName = 'balf';
-% caseName = 'becsidomb';
-% caseName = 'villasor';
-caseName = 'und';
+caseName = 'MUModel';
 
 % plot settings
-pumpRadius = 0.013;
-presRadius = 0.012;
+pumpRadius = 0.003;
+presRadius = 0.002;
 presAngle = 270;
-tankSize = 0.025;
+tankSize = 0.003;
 tankAngle = 45;
-valveSize = 0.0005;
+valveSize = 0.0002;
 lineWidth = 1.3;
 nodeMarkerSize = 5;
 backgroundColor = [1.0,1.0,1.0];
 closedColor = [1.0,0.0,0.0];
+closedValue = -1;
 
 % colorbar settings
 %blackBody, blackBodyExt, cividis, coolWarmBent, coolWarmSmooth, inferno, jet, kindlmann, kindlmannExt, magma, plasma, viridis
 %discrete: lines, prism
-colorMapName = 'inferno'; 
+colorMapName = 'lines'; 
 colorBarText = 'Head [m]';
 margin = 0.03; % margins around plot
 colorDelta = 0.15; %space for colorbar
 colorPos = "east"; %position of colorbar (east or south)
 colorBarFontSize = 12;
-colorElement = "None"; % "Node" or "Pipe" or "All"
-colorBarOn = 0;
+colorElement = "All"; % "Node" or "Pipe" or "All"
+colorBarOn = 1;
 
 caseFolder = '../../Networks/';
 addpath('../../Plot');
@@ -112,7 +106,7 @@ end
 % start of plotting
 for i=1:pipeCounter
     if(colorElement == "Pipe" || colorElement == "All")
-        if(~isnan(pipeColor(i)))
+        if(pipeData(i) ~= closedValue)
             r = min(1,max(0,interp1(colorMap(:,1),colorMap(:,2),pipeColor(i),'spline')));
             g = min(1,max(0,interp1(colorMap(:,1),colorMap(:,3),pipeColor(i),'spline')));
             b = min(1,max(0,interp1(colorMap(:,1),colorMap(:,4),pipeColor(i),'spline')));
@@ -135,7 +129,7 @@ for i=1:pipeCounter
     if(colorElement == "None")
         text = "";
     else
-        if(isnan(pipeData(i)))
+        if(pipeData(i) == closedValue)
             text = "OFF";
         else
             text = pipeData(i);
@@ -145,7 +139,7 @@ for i=1:pipeCounter
 end
 for i=1:pumpCounter
     if(colorElement == "All")
-        if(~isnan(pumpColor(i)))
+        if(pumpData(i) ~= closedValue)
             r = min(1,max(0,interp1(colorMap(:,1),colorMap(:,2),pumpColor(i),'spline')));
             g = min(1,max(0,interp1(colorMap(:,1),colorMap(:,3),pumpColor(i),'spline')));
             b = min(1,max(0,interp1(colorMap(:,1),colorMap(:,4),pumpColor(i),'spline')));
@@ -163,7 +157,7 @@ for i=1:pumpCounter
         g = 0.5;
         b = 0.5;
     end
-    if(isnan(pumpData(i)))
+    if(pumpData(i) == closedValue)
         text = "OFF";
     else
         text = pumpData(i);
@@ -172,7 +166,7 @@ for i=1:pumpCounter
 end
 for i=1:presCounter
     if(colorElement == "All")
-        if(~isnan(presColor(i)))
+        if(presData(i) ~= closedValue)
             r = min(1,max(0,interp1(colorMap(:,1),colorMap(:,2),presColor(i),'spline')));
             g = min(1,max(0,interp1(colorMap(:,1),colorMap(:,3),presColor(i),'spline')));
             b = min(1,max(0,interp1(colorMap(:,1),colorMap(:,4),presColor(i),'spline')));
@@ -190,7 +184,7 @@ for i=1:presCounter
         g = 0.5;
         b = 0.5;
     end
-    if(isnan(presData(i)))
+    if(presData(i) == closedValue)
         text = "OFF";
     else
         text = presData(i);
@@ -199,7 +193,7 @@ for i=1:presCounter
 end
 for i=1:poolCounter
     if(colorElement == "All")
-        if(~isnan(poolColor(i)))
+        if(poolData(i) ~= closedValue)
             r = min(1,max(0,interp1(colorMap(:,1),colorMap(:,2),poolColor(i),'spline')));
             g = min(1,max(0,interp1(colorMap(:,1),colorMap(:,3),poolColor(i),'spline')));
             b = min(1,max(0,interp1(colorMap(:,1),colorMap(:,4),poolColor(i),'spline')));
@@ -208,7 +202,7 @@ for i=1:poolCounter
             g = closedColor(2);
             b = closedColor(3); 
         end
-        if(isnan(poolData(i)))
+        if(poolData(i) == closedValue)
             text = "OFF";
         else
             text = poolData(i);
@@ -229,7 +223,7 @@ for i=1:valveCounter
 end
 for i=1:nodeCounter
     if(colorElement == "Node" || colorElement == "All")
-        if(~isnan(nodeColor(i)))
+        if(nodeData(i) ~= closedValue)
             r = min(1,max(0,interp1(colorMap(:,1),colorMap(:,2),nodeColor(i),'spline')));
             g = min(1,max(0,interp1(colorMap(:,1),colorMap(:,3),nodeColor(i),'spline')));
             b = min(1,max(0,interp1(colorMap(:,1),colorMap(:,4),nodeColor(i),'spline')));
@@ -250,7 +244,7 @@ for i=1:nodeCounter
     if(colorElement == "None")
         text = "";
     else
-        if(isnan(nodeData(i)))
+        if(nodeData(i) == closedValue)
             text = "OFF";
         else
             text = nodeData(i);

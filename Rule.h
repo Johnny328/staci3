@@ -2,11 +2,6 @@
                                   Rule
                                   ----
   TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-  TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-  TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-  TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-  TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-  TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
  
   staci3 is using Eigen, see http://eigen.tuxfamily.org
 
@@ -33,23 +28,20 @@ public:
 
   string ID; // ID of the rule
 
+  // Handling conditions
   vector<string> conditionType; // SYSTEM, NODE, LINK etc.
   vector<string> conditionID;
   vector<int> conditionIndex;
   vector<string> conditionRelation; // BELOW, ABOVE, <, >, =, <=, >=
-  vector<double> conditionValue; // simple double number
+  vector<double> conditionValue; // double number
 
+  // Taking actions
   vector<string> actionType; // LINK, PUMP, PIPE, VALVE
   vector<string> actionID;
+  vector<int> actionIndex;
   vector<bool>   actionSetting; // if SETTING true, if STATUS false
   vector<double> actionValue;
   vector<bool>   actionCounter; // if THEN ... false, if ELSE ... true
 };
-
-//Rule(string id){
-//  ID = id;
-//}
-//
-//~Rule(){}
 
 #endif

@@ -92,4 +92,8 @@ VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int &order
 // Powering Eigen VectorXd by elements to order
 VectorXd eigenVectorXdPow(const VectorXd &x, int order);
 
+// Finding the n number of max values in an Eigen VectorXd, also tracking the indicies
+// if av is true, it takes the absolute value of f
+vector<double> findMaxValues(const VectorXd &f, vector<int> &vidx, int n, bool av);
+
 #endif

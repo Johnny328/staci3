@@ -460,3 +460,43 @@ VectorXd eigenVectorXdPow(const VectorXd &x, int order){
   }
   return out;
 }
+
+//--------------------------------------------------------------
+vector<double> findMaxValues(const VectorXd &f, vector<int> &vidx, int n, bool av)
+{
+  vector<double> out;
+  vidx.clear();
+  for(int j=0; j<n; j++)
+  {
+    double max = -1e20;
+    int idx = 0;
+    for(int i=0; i<f.size(); i++)
+    {
+      bool gotit = false;
+      for(int k=0; k<vidx.size(); k++)
+      {
+        if(i==vidx[k])
+          gotit = true;
+      }
+      if(av) // with absolute value
+      {
+        if(abs(f(i))>max && !gotit)
+        {
+          max = abs(f(i));
+          idx = i;
+        }
+      }
+      else // without abosolute value
+      {
+        if(f(i)>max && !gotit)
+        {
+          max = f(i);
+          idx = i;
+        }
+      }
+    }
+    out.push_back(max);
+    vidx.push_back(idx);
+  }
+  return out;
+}

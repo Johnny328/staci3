@@ -2,37 +2,35 @@
 
 using namespace std;
 
-Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_roughness, const double a_volumeFlowRate, bool a_isCheckValve) : Edge(a_name, a_diameter * a_diameter * M_PI / 4., a_volumeFlowRate, a_density)
+Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_roughness, const double a_volumeFlowRate, bool a_isCheckValve, int a_frictionModel) : Edge(a_name, a_diameter * a_diameter * M_PI / 4., a_volumeFlowRate, a_density)
 {
-  type = "Pipe";
   numberNode = 2;
   startNodeName = a_startNodeName;
   endNodeName = a_endNodeName;
   length = a_length;
   diameter = a_diameter;
   roughness = a_roughness;
-  lambda = 0.02;
+
+  frictionModel = a_frictionModel;
+  setPipeConst();
+
   isCheckValve = a_isCheckValve;
-  status = 1;
-}
-
-//--------------------------------------------------------------
-//! Sets the friction model
-/*!
-DW (frictionModel = 0) -> Darcy Wiesenbach
-HW (frictionModel = 1) -> Hazen-Williams
-*/
-void Pipe::setFrictionModel(string a_fric_type) {
-  if (a_fric_type == "DW")
-    frictionModel = 0;
-  else if (a_fric_type == "HW")
-    frictionModel = 1;
+  if(isCheckValve)
+  {
+    typeCode = 0;
+    type = "PipeCV";
+  }
   else
-    cout << endl << "!ERROR! Unknown friction model: " << a_fric_type << endl << "Available options: DW | HW " << endl << endl;
+  {
+    typeCode = 1;
+    type = "Pipe";
+  }
+
+  status = 1; // i.e. open
 }
 
 //--------------------------------------------------------------
-Pipe::~Pipe() {}
+Pipe::~Pipe(){}
 
 //--------------------------------------------------------------
 string Pipe::info()
@@ -49,9 +47,9 @@ string Pipe::info()
   strstrm << "\n velocity              : " << getDoubleProperty("velocity") << " [m/s]";
   strstrm << "\n friction model        : ";
   if(frictionModel==0)
-    strstrm << "DW";
-  else if(frictionModel==1)
-    strstrm << "HW";
+    strstrm << "H-W";
+  else if(frictionModel==2)
+    strstrm << "C-F";
   else
     strstrm << "!ERROR!";
   strstrm << endl;
@@ -60,165 +58,106 @@ string Pipe::info()
 }
 
 //--------------------------------------------------------------
-double Pipe::function(vector<double> x)// x = [Pstart, Pend, VolumeFlowRate]
+double Pipe::function(const VectorXd &ppq, VectorXd &fDer)// ppq = [Pstart, Pend, VolumeFlowRate]
 { 
+  double out = 0.0;
   if(status == 1) // OPEN
-    return x[1] - x[0] + (endHeight-startHeight) + computeHeadloss(x[2]);
-  else // CLOSED
-    return x[2];
+  {
+    fDer(0) = -1.0;
+    fDer(1) = 1.0;
+    if(frictionModel == 0) // H-W: HAZEN - WILLIAMS
+    {
+      double tmp = pipeConst * pow(abs(ppq(2)),0.85185);
+      out = ppq(1) - ppq(0) + (endHeight-startHeight) +  ppq(2) * tmp;
+      fDer(2) = 1.85185 * tmp;
+    }
+    else if(frictionModel == 2) // C-F: CONSTANT FRICTION COEFFICIENT
+    {
+      out = ppq(1) - ppq(0) + (endHeight-startHeight) + pipeConst * ppq(2) * abs(ppq(2));
+      fDer(2) = 2 * pipeConst * abs(ppq(2));
+    }
+  }
+  else // CLOSED, status is 0 or -1
+  {
+    //out = ppq(2);
+    //fDer(2) = 1.0;
+
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e8 * ppq(2) * abs(ppq(2));
+    out = 0.0;
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
+    fDer(2) = 2 * 1e8;
+  }
+  
+  return out;
+  
 }
 
 //--------------------------------------------------------------
-vector<double> Pipe::functionDerivative(vector<double> x)
-{ 
-  vector<double> out;
-  if(status == 1) // OPEN
-  { 
-    out.push_back(-1.0);
-    out.push_back(1.0);
-    out.push_back(computeHeadlossDerivative(x[2]));
-  }
-  else // CLOSED
-  {
-    out.push_back(0.0);
-    out.push_back(0.0);
-    out.push_back(1.0);
-  }
-  return out;
+void Pipe::setPipeConst()
+{
+  if(frictionModel == 0)
+    pipeConst = 10.654 * pow(roughness,-1.85185) * pow(diameter,-4.87) * length;
+  else if(frictionModel == 2)
+    pipeConst = roughness * length / (diameter * 2. * gravity * (diameter*diameter*M_PI/4.));
 }
 
 //--------------------------------------------------------------
 void Pipe::initialization(int mode, double value)
 {
-  if(mode == 0)
-    setDoubleProperty("volumeFlowRate", 1.);
-  else
-    setDoubleProperty("volumeFlowRate", value);
+  if(status == 1) // open
+  {
+    if(mode == 0)
+      volumeFlowRate = 1.;
+    else
+      volumeFlowRate = value;
+  }
+  else // closed
+  {
+    volumeFlowRate = 0.0;
+  }
 }
 
 //--------------------------------------------------------------
-double Pipe::functionParameterDerivative(string parameter)
+double Pipe::functionParameterDerivative(int parameter)
+// 0: roughness coefficient, 1: diameter
 {
   double out = 0.0;
-  if (parameter == "diameter"){
-    out = -5. * getLambda(volumeFlowRate) * length / pow(diameter, 6) * 8 / density / pow(M_PI, 2) * volumeFlowRate * abs(volumeFlowRate);  // Pa/m
-  }
-  else if (parameter == "friction_coeff")
+  if(status == 1) // OPEN
   {
-    double old = roughness;
-    double delta = roughness * 0.001;
-    roughness += delta;
-    double f1 = computeHeadloss(volumeFlowRate);
-    roughness = old;
-    double f0 = computeHeadloss(volumeFlowRate);
-    out = (f1 - f0) / delta;
-  }else{
-    cout << endl << "!!!ERROR!!! Pipe::functionParameterDerivative(parameter), unkown input: parameter=" << parameter << endl << "Available parameters: diameter | friction_coeff" << endl;
-    cout << endl << "Name of pipe: " << name << endl;
+    if(parameter == 0) // roghness
+    {
+      if(frictionModel == 0) // H-W: HAZEN - WILLIAMS
+      {
+        out = pipeConst * (-1.85185) / roughness * volumeFlowRate * pow(abs(volumeFlowRate),0.85185);
+      }
+      else if(frictionModel == 2)// C-F: CONSTANT FRICTION COEFFICIENT
+      {
+        out = pipeConst / roughness * volumeFlowRate * abs(volumeFlowRate);
+      }
+    }
+    else if(parameter == 1) // diameter
+    {
+      if(frictionModel == 0) // H-W: HAZEN - WILLIAMS
+      {
+        out = pipeConst * (-4.87) / diameter * volumeFlowRate * pow(abs(volumeFlowRate),0.85185);
+      }
+      else if(frictionModel == 2)// C-F: CONSTANT FRICTION COEFFICIENT
+      {
+        out = pipeConst * (-5) / diameter * volumeFlowRate * abs(volumeFlowRate);
+      }
+    }
+    else
+    {
+      cout << endl << "!WARNING! Pipe::functionParameterDerivative(parameter), unkown input: parameter = " << parameter << endl << "Available parameters: 0: roughness, 1: diameter" << endl;
+      cout << endl << "Name of pipe: " << name << endl;
+    }
+  }
+  else // CLOSED
+  {
     out = 0.0;
   }
   return out;
-  //return out / density / gravity;
-}
-
-//--------------------------------------------------------------
-double Pipe::computeHeadloss(double q)
-{ // q is volumeFlowRate
-  double velocity = q / 1000. / referenceCrossSection;
-  lambda = getLambda(q);
-  double headloss = lambda * length / diameter / gravity / 2. * velocity * abs(velocity);
-  //double headloss = lambda * length / diameter * density / 2. * velocity * abs(velocity);
-
-  return headloss;
-}
-
-//--------------------------------------------------------------
-double Pipe::computeHeadlossDerivative(double q)
-{ // q is volumeFlowRate
-  double out;
-  out = 2.* getLambda(q) * length/diameter / gravity / 2. / (referenceCrossSection*referenceCrossSection) * abs(q/1000.) / density;
-  //out = getLambda(q) * length / pow(diameter, 5) * 8 / density / pow(M_PI, 2) * 2 * abs(q);
-  return out;
-}
-
-//--------------------------------------------------------------
-//! Sets the friction coefficient lambda
-/*!
-Based on the actual friction model (DW, HW) computes the friction coefficient.
-
-For DW (frictionModel = 0) -> Darcy Wiesenbach model parameter 'roughness'
-is pipe surface roughness in mm
-
-For HW (frictionModel = 1) -> Hazen-Williams model parameter 'roughness' is
-the Hazen-Williamd constant. If the user-supplied value is less tha 10, it is
-overwritten to 10.
-
-For any of these models, if parameter roughness is negative, it is assumed that
-lambda=-roughness
-*/
-double Pipe::getLambda(double q) { // q is volumeFlowRate
-  double v_min = 0.001;
-  double velocity = q / 1000. / referenceCrossSection;
-  if(fabs(velocity) < v_min)
-    velocity = v_min;
-  double nu = 1e-6;
-  double lambda_min = 0.001;
-  double lambda_max = 64./0.1;
-  double dp;
-
-  if(roughness <= 0)
-  {
-    lambda = -roughness;
-  }
-  else if(frictionModel == 0)  // Darcy-Wiesenbach
-  {
-    double Re = fabs(velocity) * diameter / nu;
-
-    double error = 1.0e10, tmp = 0.0, lambda_new = 0.0;
-    unsigned int i = 0;
-    while ((error > 1e-6) && (i < 20)) {
-      if (Re < 2300)
-        lambda_new = 64. / Re;
-      else {
-        tmp = -2.0 * log10(roughness / 1000 / diameter / 3.71 + 2.51 / Re / sqrt(lambda));
-        lambda_new = 1 / tmp / tmp;
-      }
-
-      if (lambda_new < lambda_min)
-        lambda_new = lambda_min;
-      if (lambda > lambda_max)
-        lambda_new = lambda_max;
-
-      error = fabs((lambda - lambda_new) / lambda);
-      lambda = lambda_new;
-
-      i++;
-    }
-  }
-  else if (frictionModel == 1)  // Hazen-Williams, C factor around 100 // TODO: REDUCE THE MATH OPERATIONS
-  {
-    if (roughness <= 0)
-      lambda = -roughness;
-    else {
-      double C_factor = roughness;
-      double C_MIN = 1.;
-
-      if (C_factor < C_MIN) {
-        C_factor = C_MIN;
-        roughness = C_MIN;
-      }
-
-      dp = length / pow(C_factor, 1.852) / pow(diameter, 4.871) * 7.88 / pow(0.85, 1.85) * pow(abs(velocity*referenceCrossSection), 0.852) * (velocity * referenceCrossSection) * density * gravity;
-
-      lambda = abs(dp / (length / diameter * density / 2 * velocity * fabs(velocity)));      
-    }
-  }
-  else
-  {
-    cout << endl << "!ERROR! Pipe name: " << name << ", friction model is not set, frictionModel: " << frictionModel << endl;
-    exit(-1);
-  }
-  return lambda;
 }
 
 //--------------------------------------------------------------
@@ -237,10 +176,6 @@ double Pipe::getDoubleProperty(string prop)
     out = diameter / 2.;
   else if (prop == "roughness")
     out = roughness;
-  else if (prop == "headLoss" || prop == "headloss")
-    out = abs(computeHeadloss(volumeFlowRate) / density / gravity);
-  else if (prop == "headLossPerUnitLength" || prop == "headloss_per_unit_length")
-    out = abs(computeHeadloss(volumeFlowRate) / density / gravity / length);
   else if(prop == "massFlowRate" || prop == "mass_flow_rate")
     out = volumeFlowRate * density/1000.;
   else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")

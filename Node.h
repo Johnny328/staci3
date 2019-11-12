@@ -24,7 +24,10 @@
 #include <ctime>
 #include <stdlib.h>
 
+#include "Eigen/Eigen/Eigen"
+
 using namespace std;
+using namespace Eigen;
 
 class Node
 {
@@ -40,8 +43,13 @@ public:
   void initialization(int mode, double value);
 
   // In case of pressure dependent demands, df/dx i.e. dd/dp is not zero
-  double function(double head);
-  double functionDerivative(double head);
+  double function(const VectorXd &pq, bool isPressureDemand, VectorXd &fDer);
+
+  // Getting the consumption in case of pressure dependent consumption
+  double getConsumption(double head);
+
+  // Calculating the function derivative with respect to the parameter for sensitivity calculation
+  double functionParameterDerivative(bool isPressureDemand);
 
   /// Setting a certain node double property
   /// demand|head|pressure|density|height|xPosition|yPosition|user1|user2
@@ -62,6 +70,8 @@ public:
   vector<double> vectorHead;
   // [l/s] actual served water in time
   vector<double> vectorConsumption;
+  // [-] status of the nodes, 1: open, 0: closed
+  vector<int> vectorStatus;
 
   // [l/s] for series calculations, node can have multiple demand with different pattern
   vector<double> vectorDemand;

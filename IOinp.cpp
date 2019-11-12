@@ -1,8 +1,8 @@
 #include "Staci.h"
 
 //--------------------------------------------------------------------------------
-void Staci::loadSystem(){
-	
+void Staci::loadSystem()
+{
 	int warning_counter=0;
 	double density = 1000.;
 
@@ -39,7 +39,7 @@ void Staci::loadSystem(){
 
 	// SETTINGS
 	string flow_unit;
-	string friction_model;
+	int friction_model;
 
 // ################
 // READING THE FILE
@@ -49,16 +49,30 @@ void Staci::loadSystem(){
   string line;
   if(file_in.is_open())
   {
-	  while(getline(file_in,line))
+	  getline(file_in,line);
+	  while(true)
 	  {
+	  	while(line[0] != '[')
+	  		getline(file_in,line);
+
+	  	string line_old = line;
+
+	  	if(line.length() >= 6 && line.substr(0,5) == "[END]") // reaching the end of the file
+	  		break;
+
 			if(line.substr(0,11) == "[JUNCTIONS]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
-						vector<string> sv=line2sv(line);
+
+					if(line[0] != ';')
+					{
+						vector<string> sv = line2sv(line);
 						node_name.push_back(sv[0]);
 						elev.push_back(stod(sv[1],0));
 						if(sv.size()>2)
@@ -71,11 +85,16 @@ void Staci::loadSystem(){
 			}
 			if(line.substr(0,12) == "[RESERVOIRS]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						pres_name.push_back(sv[0]);
 						pres_p.push_back(stod(sv[1],0));
@@ -92,11 +111,16 @@ void Staci::loadSystem(){
 
 			if(line.substr(0,7) == "[TANKS]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						pool_name.push_back(sv[0]);
 						pool_botlev.push_back(stod(sv[1],0));
@@ -118,11 +142,16 @@ void Staci::loadSystem(){
 
 			if(line.substr(0,7) == "[PIPES]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						pipe_name.push_back(sv[0]);
 						node_from.push_back(sv[1]);
@@ -140,11 +169,16 @@ void Staci::loadSystem(){
 
 			if(line.substr(0,7) == "[PUMPS]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						pump_name.push_back(sv[0]);
 						pump_node_from.push_back(sv[1]);
@@ -168,11 +202,16 @@ void Staci::loadSystem(){
 			// Here only the sum is considered, the patterns are dealt in SeriesHydraulics
 	  	if(line.substr(0,9) == "[DEMANDS]")
 	  	{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						if(sv.size()>=2)
 						{
@@ -194,11 +233,16 @@ void Staci::loadSystem(){
 
 			if(line.substr(0,8) == "[STATUS]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						status_id.push_back(sv[0]);
 						status_setting.push_back(sv[1]);
@@ -208,11 +252,16 @@ void Staci::loadSystem(){
 
 			if(line.substr(0,8) == "[VALVES]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						valve_name.push_back(sv[0]);
 						valve_node_from.push_back(sv[1]);
@@ -229,24 +278,36 @@ void Staci::loadSystem(){
 			if(line.substr(0,8) == "[CURVES]")
 			{
 				vector<double> x,y;
-				while(true){
-					getline(file_in,line);
-					if(line[0] != ';'){
-						if(line.length()<=1 || line.substr(0,5) == "[END]"){
-							curve_x.push_back(x);
-							curve_y.push_back(y);
-							break;
-						}
+				while(getline(file_in,line)){
+
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[')
+					{
+						curve_x.push_back(x);
+						curve_y.push_back(y);
+						break;
+					}
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
-						if(curve.size()==0){
+						if(curve.size()==0)
+						{
 							curve.push_back(sv[0]);
 							x.push_back(stod(sv[1],0));
 							y.push_back(stod(sv[2],0));
-						}else{
-							if(sv[0] == curve.back()){
+						}
+						else
+						{
+							if(sv[0] == curve.back())
+							{
 								x.push_back(stod(sv[1],0));
 								y.push_back(stod(sv[2],0));
-							}else{
+							}
+							else
+							{
 								curve_x.push_back(x);
 								curve_y.push_back(y);
 								x.clear(); y.clear();
@@ -263,21 +324,36 @@ void Staci::loadSystem(){
 			if(line.substr(0,9) == "[OPTIONS]")
 			{
 			//TODO There are more options that might be intresting later
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
-						if(sv.size()>=2){
-							if(sv[0] == "Units" || sv[0] == "UNITS"){
+						if(sv.size()>=2)
+						{
+							if(sv[0] == "Units" || sv[0] == "UNITS")
 								flow_unit = sv[1];
-							}
-							if(sv[0] == "Headloss" || sv[0] == "HEADLOSS"){ //TODO D-W, C-W
-								if(sv[1] == "H-W")
-									friction_model = "HW";
-								if(sv[1] == "D-W")
-									friction_model = "DW";
+
+							if(sv[0] == "Headloss" || sv[0] == "HEADLOSS")
+							{
+								if(sv[1] == "H-W") // Hazen - Williams
+									friction_model = 0;
+								// TODO TODO TODO
+								//else if(sv[1] == "D-W") // Darcy - Weisbach 
+								//	friction_model = 1;
+								else if(sv[1] == "C-F") // Constant friction coefficient in case of Sopron Networks
+									friction_model = 2;
+								else
+								{
+									cout << endl << " !ERROR! Friction model is unknown: " << sv[1] << "\n Available options: H-W, D-W, C-F\n Exiting..." << endl;
+									exit(-1);
+								}
 							}
 						}
 					}
@@ -286,29 +362,42 @@ void Staci::loadSystem(){
 
 			if(line.substr(0,13) == "[COORDINATES]")
 			{
-				while(true){
-					getline(file_in,line);
-					if(line.length()<=1 || line.substr(0,5) == "[END]")
+				while(getline(file_in,line))
+				{
+					while(line.length() <= 1) // skipping the empty lines
+		  			getline(file_in,line);
+
+					if(line[0] == '[') // reaching the end of this section
 						break;
-					if(line[0] != ';'){
+
+					if(line[0] != ';')
+					{
 						vector<string> sv=line2sv(line);
 						int idx=-1;
 						for(int i=0; i<node_name.size(); i++)
-							if(node_name[i]==sv[0]){
+						{
+							if(node_name[i]==sv[0])
+							{
 								idx = i;
 								break;
 							}
-						if(idx==-1){
+						}
+						if(idx==-1)
+						{
 							cout << "\n !WARNING! node_name not found for coordinate " << sv[0] << endl;
 							warning_counter++;
 						}
-						else{
+						else
+						{
 							xcoord[idx] = stod(sv[1],0);
 							ycoord[idx] = stod(sv[2],0);
 						}
 					}
 				}
 			}
+			if(line == line_old) // [XYZ] is not intresting
+				if(!getline(file_in,line)) // if we reached the end of file break
+					break;
 	  }
   }
   else
@@ -418,52 +507,64 @@ void Staci::loadSystem(){
 
   // Converting units from EPANET to STACI (litre/sec)
   // US units
-  if(flow_unit == "CFS"){ // cubic feet seconds
+  if(flow_unit == "CFS")
+  {
   	demandUnit = 28.316846592;
   	unit = "US";
   }
-  else if(flow_unit == "GPM"){ // gallon(US) per minute
+  else if(flow_unit == "GPM")
+  {
   	demandUnit = 0.06309;
   	unit = "US";
   }
-  else if(flow_unit == "MGD"){ // million gallon(US) per day
+  else if(flow_unit == "MGD")
+  {
   	demandUnit = 43.8126364;
   	unit = "US";
   }
-  else if(flow_unit == "IMGD"){ // imperial million gallon per day
+  else if(flow_unit == "IMGD")
+  {
   	demandUnit = 52.6168042;
   	unit = "US";
   }
-  else if(flow_unit == "AFD"){ // acre-feet / day
+  else if(flow_unit == "AFD")
+  {
   	demandUnit = 14.2764102;
   	unit = "US";
   }
   // NORMAL units
-  else if(flow_unit == "LPS"){ // litre per sec
+  else if(flow_unit == "LPS")
+  {
   	demandUnit = 1.0;
   	unit = "SI";
   }
-  else if(flow_unit == "LPM"){ // litre per minute
+  else if(flow_unit == "LPM")
+  {
   	demandUnit = 1./60.;
   	unit = "SI";
   }
-  else if(flow_unit == "MLD"){ // million litre per day
+  else if(flow_unit == "MLD")
+  {
   	demandUnit = 11.5740741;
   	unit = "SI";
   }
-  else if(flow_unit == "CMH"){ // cubic meter per hour
+  else if(flow_unit == "CMH")
+  {
   	demandUnit = 1./3.6;
   	unit = "SI";
   }
-  else if(flow_unit == "CMD"){ // cubic meter per day
+  else if(flow_unit == "CMD")
+  {
   	demandUnit = 0.0115740741;
   	unit = "SI";
   }
-  else{
+  else
+  {
   	cout << "\n !ERROR! Flow unit unkown: " << flow_unit << endl;
   	cout << "Exiting..." << endl;
   	exit(-1);
   }
+  demandUnit /= 1000.; // lps to m3/s
 
   for(int i=0; i<node_name.size(); i++)
   	demand[i] = demand[i]*demandUnit;
@@ -488,7 +589,7 @@ void Staci::loadSystem(){
   		valve_d[i] = valve_d[i]*0.0254; // inches to meter
 	  for(int i=0; i<pump_name.size(); i++){
   		for(int j=0; j<pump_cv_x[i].size(); j++){
-  			pump_cv_x[i][j] = pump_cv_x[i][j]*demandUnit; // * to lps
+  			pump_cv_x[i][j] = pump_cv_x[i][j]*demandUnit; // * to m3/s
   			pump_cv_y[i][j] = pump_cv_y[i][j]*0.3048; // feet to meter
   		}
 	  }
@@ -532,8 +633,7 @@ void Staci::loadSystem(){
 		else
 			isCheckValve = false;
 
-  	edges.push_back(new Pipe(pipe_name[i], node_from[i], node_to[i], density, l[i], D[i], roughness[i], 0.0, isCheckValve));
-   	edges[edges.size()-1]->setFrictionModel(friction_model);
+  	edges.push_back(new Pipe(pipe_name[i], node_from[i], node_to[i], density, l[i], D[i], roughness[i], 0.0, isCheckValve, friction_model));
 
    	if(pipe_status[i] == "Open")
    		edges[edges.size()-1]->status = 1;
@@ -597,13 +697,12 @@ void Staci::loadSystem(){
 	// Initial status of edges from [STATUS]
 	for(int i=0; i<status_id.size(); i++)
 	{
-		cout << i << "  " << status_id[i] << "  " << status_setting[i] << endl;
 		for(int j=0; j<edges.size(); j++)
 		{
 			if(edges[j]->name == status_id[i])
 			{
 				if(status_setting[i] == "CLOSED") // there might be more options
-					edges[j]->status = 0;
+					edges[j]->status = -1;
 				break;
 			}
 			if(j==edges.size()-1)
@@ -666,7 +765,7 @@ void Staci::saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string fric
   fprintf(wfile, ";ID              \tElev        \tDemand      \tPattern         \n");
   for(int i=0; i<nodes.size(); i++){
     if(isRealNode[i])
-    	fprintf(wfile, " %-16s\t%-12.4f\t%-12.6f\t%-16s\t;\n", nodes[i]->getName().c_str(),nodes[i]->getProperty("geodeticHeight"),nodes[i]->getProperty("demand"),"");
+    	fprintf(wfile, " %-16s\t%-12.4f\t%-12.6f\t%-16s\t;\n", nodes[i]->getName().c_str(),nodes[i]->getProperty("geodeticHeight"),1000.*nodes[i]->getProperty("demand"),"");
   }
 
   fprintf(wfile, "\n[RESERVOIRS]\n");
@@ -762,7 +861,7 @@ void Staci::saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string fric
   fprintf(wfile, "\n[REPORT]\n");
 
   fprintf(wfile, "\n[OPTIONS]\n");
-  fprintf(wfile, " Units              \tLPS\n");
+  fprintf(wfile, " Units              \t\n");
   if(frictionModel == "HW")
     fprintf(wfile, " Headloss           \tH-W\n");
   else if(frictionModel == "DW")
@@ -803,14 +902,18 @@ void Staci::saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string fric
 }
 
 //--------------------------------------------------
-vector<string> Staci::line2sv(string line){
+vector<string> Staci::line2sv(string line)
+{
 	string s="";
 	vector<string> sv;
-	for(string::iterator i=line.begin(); i!=line.end(); i++){
-		if(*i != ';'){
+	for(string::iterator i=line.begin(); i!=line.end(); i++)
+	{
+		if(*i != ';')
+		{
 			if(*i!=' ' && *i!='\t' && *i!='\n' && *i!='\r')
 				s += *i;
-			else if(s.length()>0){
+			else if(s.length()>0)
+			{
 				sv.push_back(s);
 				s="";
 			}

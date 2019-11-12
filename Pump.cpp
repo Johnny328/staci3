@@ -13,6 +13,7 @@ Pump::Pump(const string a_name, const string a_startNodeName, const string a_end
   hCurve = a_hCurve;
   curveType = a_curveType;
   status = 1; // OPEN
+  typeCode = 2;
 
   int numberPoint = qCurve.size();
   if(numberPoint != hCurve.size()){
@@ -32,9 +33,6 @@ Pump::Pump(const string a_name, const string a_startNodeName, const string a_end
     // Fitting second order polynomial to Q-H points with least squares method
     curveOrder = 2;
     VectorXd C = leastSquaresPolynomial(Q,H,curveOrder);
-    C(0) = 101.6;
-    C(1) = 0.;
-    C(2) = -0.002837;
 
     // Copying back to vector<double>
     for(int i=0; i<C.rows(); i++)
@@ -74,39 +72,36 @@ string Pump::info(){
 }
 
 //--------------------------------------------------------------
-double Pump::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
-  if(status == 1) // OPEN | ACTIVE
-    return (x[1] - x[0]) - characteristicCurve(x[2]) + (endHeight - startHeight);
-  else
-    return x[2]; // CLOSED
-}
-
-//--------------------------------------------------------------
-vector<double> Pump::functionDerivative(vector<double> x){
-  vector<double> out;
-  if(status == 1) // OPEN | ACTIVE
+double Pump::function(const VectorXd &ppq, VectorXd &fDer)// ppq = [Pstart, Pend, VolumeFlowRate]
+{
+  double out;
+  if(status == 1) // OPEN
   {
-    out.push_back(-1.0);
-    out.push_back(+1.0);
+    double dp = characteristicCurve(ppq(2));
+    out = (ppq(1) - ppq(0)) - dp + (endHeight - startHeight);
 
-    // More general way
-    double derivative=0., dx;
-    if(abs(x[2])>0.1)
-      dx = x[2]*0.001;
+    double dx;
+    if(abs(ppq(2))>0.1)
+      dx = ppq(2)*0.001;
     else
       dx = 0.01;
 
-    derivative = (characteristicCurve(x[2]) - characteristicCurve(x[2]+dx)) / dx;
+    double dp2 = characteristicCurve(ppq(2)+dx);
+    double derivative = (dp-dp2)/dx;
 
-    out.push_back(derivative);
+    fDer(0) = -1.0;
+    fDer(1) = 1.0;
+    fDer(2) = derivative;
   }
-  else // CLOSED
+  else // CLOSED, status is 0 or -1
   {
-    out.push_back(0.0);
-    out.push_back(0.0);
-    out.push_back(1.0);
-  }
+    out = ppq(2); 
+    fDer(2) = 1.0;
 
+    //alternative solution, somehow converges slowly
+    //out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e15 * ppq(2) * abs(ppq(2));
+    //fDer(2) = 2 * 1e15 * abs(ppq(2));
+  }
   return out;
 }
 
@@ -122,7 +117,8 @@ void Pump::initialization(int mode, double value){
 double Pump::characteristicCurve(double Q){
     
   double H = 0.;
-  if(curveType == "parabolic"){
+  if(curveType == "parabolic")
+  {
     for(int i=0; i<coeffCurve.size(); i++)
       H += coeffCurve[i] * pow(revolutionNumber,2-i) * pow(Q,i);
   }
@@ -135,12 +131,14 @@ double Pump::characteristicCurve(double Q){
 }
 
 //--------------------------------------------------------------
-void Pump::checkPump(){
-  if(curveOrder >= 1){
+void Pump::checkPump()
+{
+  if(curveOrder >= 1)
+  {
     if(volumeFlowRate < min(qCurve))
-      cout << endl << "!WARNING! Volume flow rate (" << volumeFlowRate << ") is smaller than the minimum (" << min(qCurve) << ") at Pump" << name << endl;
+      cout << endl << "!WARNING! Volume flow rate (" << volumeFlowRate << ") is smaller than the minimum (" << min(qCurve) << ") at Pump: " << name << endl;
     if(volumeFlowRate > max(qCurve))
-      cout << endl << "!WARNING! Volume flow rate (" << volumeFlowRate << ") is larger than the maximum (" << max(qCurve) << ") at Pump" << name << endl;
+      cout << endl << "!WARNING! Volume flow rate (" << volumeFlowRate << ") is larger than the maximum (" << max(qCurve) << ") at Pump: " << name << endl;
   }
 }
 

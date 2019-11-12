@@ -27,10 +27,10 @@ public:
 	string info();
 
   /// A line of F(x) = equation, rearranged to 0 in w.c.m.
-	double function(vector<double> x);
+  double function(const VectorXd &ppq, VectorXd &fDer);
 
   /// Jacobian: df/dhe, df/dhv, df/dmp
-	vector<double> functionDerivative(vector<double>);
+	//vector<double> functionDerivative(vector<double>);
 
   /// Initialization, mode: 0->automatic | 1-> using value
 	void initialization(int mode, double value);
@@ -43,7 +43,6 @@ public:
   void setStringProperty(string prop, string value);
   vector<double> getVectorProperty(string prop);
 
-//private:
 	vector<double> qCurve, hCurve; // Pump CURVE at nominal revolution speed
 	vector<double> coeffCurve; // coefficients of fitted polynomails
 	int curveOrder;

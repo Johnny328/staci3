@@ -3,7 +3,7 @@
 //--------------------------------------------------------------
 Shutdown::Shutdown(string spr_filename) : Staci(spr_filename)
 {
-  buildSegmentGraph();
+  //buildSegmentGraph();
 }
 Shutdown::~Shutdown(){}
 
@@ -25,13 +25,13 @@ void Shutdown::buildSegmentGraph()
       nodes[abs(segmentVector[i][j+1])]->setSegment(i);
       for(int k=0; k<edges.size(); k++)
       {
-        string type = edges[k]->getEdgeStringProperty("type");
+        string type = edges[k]->type;
         if(type == "Pipe" || type == "Pump"){
-          if(abs(segmentVector[i][j]) == edges[k]->getEdgeIntProperty("startNodeIndex") && abs(segmentVector[i][j+1]) == edges[k]->getEdgeIntProperty("endNodeIndex"))
+          if(abs(segmentVector[i][j]) == edges[k]->startNodeIndex && abs(segmentVector[i][j+1]) == edges[k]->endNodeIndex)
             edges[k]->setEdgeIntProperty("segment",i);
         }
         if(type == "Pool" || type == "PressurePoint"){
-          if(abs(segmentVector[i][j]) == edges[k]->getEdgeIntProperty("startNodeIndex") || abs(segmentVector[i][j+1]) == edges[k]->getEdgeIntProperty("startNodeIndex"))
+          if(abs(segmentVector[i][j]) == edges[k]->startNodeIndex || abs(segmentVector[i][j+1]) == edges[k]->startNodeIndex)
             edges[k]->setEdgeIntProperty("segment",i);
         }
       }
@@ -42,11 +42,11 @@ void Shutdown::buildSegmentGraph()
   segmentEdgeVector.clear();
   for(int i=0; i<edges.size(); i++)
   {
-    if(edges[i]->getEdgeStringProperty("type") == "ValveISO")
+    if(edges[i]->type == "ValveISO")
     {
       int idx_from, idx_to;
-      idx_from = edges[i]->getEdgeIntProperty("startNodeIndex");
-      idx_to = edges[i]->getEdgeIntProperty("endNodeIndex");
+      idx_from = edges[i]->startNodeIndex;
+      idx_to = edges[i]->endNodeIndex;
       segmentEdgeVector.push_back(nodes[idx_from]->getSegment());
       segmentEdgeVector.push_back(nodes[idx_to]->getSegment());
 
@@ -135,17 +135,17 @@ vector<int> Shutdown::closeDisconnectedParts(){
   vector<int> pressurePrescribed;
   for(int i=0; i<edges.size(); i++)
   {
-    if(edges[i]->status == 0)
+    if(edges[i]->status > 0)
     {
-      string type = edges[i]->getEdgeStringProperty("type");
-      if(type == "Pipe" || type == "Pump" || type == "ValveISO")
+      string type = edges[i]->type;
+      if(type != "PressurePoint" && type != "Pool")
       {
-        edgeVectorWithValves.push_back(edges[i]->getEdgeIntProperty("startNodeIndex"));
-        edgeVectorWithValves.push_back(edges[i]->getEdgeIntProperty("endNodeIndex"));
+        edgeVectorWithValves.push_back(edges[i]->startNodeIndex);
+        edgeVectorWithValves.push_back(edges[i]->endNodeIndex);
       }
-      if(type == "PressurePoint" || type == "Pool")
+      else
       {
-        pressurePrescribed.push_back(edges[i]->getEdgeIntProperty("startNodeIndex"));
+        pressurePrescribed.push_back(edges[i]->startNodeIndex);
       }
     }
   }
@@ -180,8 +180,7 @@ vector<int> Shutdown::closeDisconnectedParts(){
         closedSegment.push_back(nodes[segmentVectorWithValves[i][0]]->getSegment());
         for(int j=0; j<segmentVectorWithValves[i].size(); j++)
         {
-
-          //nodes[segmentVectorWithValves[i][j]]->isClosed = true;
+          nodes[segmentVectorWithValves[i][j]]->status = 0;
         }
       }
     }
@@ -190,12 +189,11 @@ vector<int> Shutdown::closeDisconnectedParts(){
     for(int i=0; i<edges.size(); i++)
     {
       int idx_from = edges[i]->startNodeIndex;
-      if(nodes[idx_from]->status < 1){
+      if(nodes[idx_from]->status < 1)
         edges[i]->status = 0;
-        //changeEdgeStatus(edges[i]->getEdgeStringProperty("name"),false);
-      }
     }
   }
+
   return closedSegment;
 }
 
@@ -207,10 +205,12 @@ void Shutdown::updateEdgeVector(){
   {
     if(edges[i]->status > 0)
     {
-      if(edges[i]->getEdgeStringProperty("type") == "Pipe" || edges[i]->getEdgeStringProperty("type") == "Pump")
+      string type = edges[i]->type;
+      //if(edges[i]->type == "Pipe" || edges[i]->type == "Pump")
+      if(type != "PressurePoint" && type != "Pool" && type != "ValveISO")
       {
-        edgeVector.push_back(edges[i]->getEdgeIntProperty("startNodeIndex"));
-        edgeVector.push_back(edges[i]->getEdgeIntProperty("endNodeIndex"));
+        edgeVector.push_back(edges[i]->startNodeIndex);
+        edgeVector.push_back(edges[i]->endNodeIndex);
       }
     }
   }
@@ -223,16 +223,16 @@ vector<int> Shutdown::findConnectionError(vector<int> connectingNodes)
   vector<int> rank(nodes.size());
   for(int i=0; i<edges.size(); i++)
   { 
-    string type = edges[i]->getEdgeStringProperty("type");
+    string type = edges[i]->type;
 
     if(type == "Pipe" || type == "Pump")
     {
-      rank[edges[i]->getEdgeIntProperty("startNodeIndex")]++;
-      rank[edges[i]->getEdgeIntProperty("endNodeIndex")]++;
+      rank[edges[i]->startNodeIndex]++;
+      rank[edges[i]->endNodeIndex]++;
     }
     if(type == "PressurePoint" || type == "Pool")
     { 
-      rank[edges[i]->getEdgeIntProperty("startNodeIndex")]++;
+      rank[edges[i]->startNodeIndex]++;
     }
   }
 

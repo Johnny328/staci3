@@ -17,36 +17,102 @@ Node::~Node(){}
 //--------------------------------------------------------------
 void Node::initialization(int mode, double value)
 {
-  if (mode == 0)
+  if(mode == 0)
     head = 50.;
   else
     head = value - geodeticHeight;
 }
 
 //--------------------------------------------------------------
-double Node::function(double head){ // for head dependent demnads
-  double out;
-  if(head<pdMinPressure)
-    out = 0.0;
-  else if(head<pdDesiredPressure && head>pdMinPressure)
-    out = -demand*pow((head-pdMinPressure)/(pdDesiredPressure-pdMinPressure),1./pdExponent);
-  else
-    out = -demand;
+double Node::function(const VectorXd &pq, bool isPressureDemand, VectorXd &fDer)
+// pq = [p, Qin1, Qin2, ..., Qout1, Qout2, ...]
+// fDer = [df/dp, df/dQin1, df/dQin2, ..., df/dQout1, df/dQou2, ...]
+{
+  double out = 0.0;
+  if(status) // if the node is active
+  {
+    if(isPressureDemand) // if the demands are depending the nodal pressure
+    {
+      if(pq(0)<pdMinPressure)
+      {
+        out -= 0.0;
+        fDer(0) = 0.0;
+      }
+      else if(pq(0)<pdDesiredPressure && pq(0)>pdMinPressure)
+      {
+        double cons = getConsumption(pq(0));
+        out -= cons;
+        fDer(0) = cons/(pdExponent*(pq(0)-pdMinPressure));
+      }
+      else
+      {
+        out -= demand;
+        fDer(0) = 0.0;
+      }
+    }
+    else // for constant demands
+    {
+      out -= demand;
+      fDer(0) = 0.0;
+    }
 
+    for(int i=0; i<edgeIn.size(); i++)
+    {
+      out += pq(1 + i);
+      fDer(1 + i) = 1.0;
+    }
+
+    for(int i=0; i<edgeOut.size(); i++)
+    {
+      out -= pq(1 + edgeIn.size() + i);
+      fDer(1 + edgeIn.size() + i) = -1.0;
+    }
+  }
+  else // if the node is NOT active
+  {
+    out = pq(0);
+    fDer(0) = 1.0;
+  }
   return out;
 }
 
 //--------------------------------------------------------------
-double Node::functionDerivative(double head){ // for head dependent demnads
+double Node::functionParameterDerivative(bool isPressureDemand)
+{
   double out;
-  if(head<pdMinPressure)
+  if(status) // if the node is active
+  {
+    if(isPressureDemand) // if the demands are depending the nodal pressure
+    {
+      if(head<pdMinPressure)
+      {
+        out = 0.0;
+      }
+      else if(head<pdDesiredPressure && head>pdMinPressure)
+      {
+        out = getConsumption(head) / demand;
+      }
+      else
+      {
+        out = -1.0;
+      }
+    }
+    else // for constant demands
+    {
+      out = -1.0;
+    }
+  }
+  else // if the node is NOT active
+  {
     out = 0.0;
-  else if(head<pdDesiredPressure && head>pdMinPressure)
-    out = -demand*pow((head-pdMinPressure)/(pdDesiredPressure-pdMinPressure),1./pdExponent-1)/(pdDesiredPressure-pdMinPressure);
-  else
-    out = 0.0;
-
+  }
   return out;
+}
+
+//--------------------------------------------------------------
+double Node::getConsumption(double head)
+{
+  return demand*pow((head-pdMinPressure)/(pdDesiredPressure-pdMinPressure),1./pdExponent);
 }
 
 //--------------------------------------------------------------

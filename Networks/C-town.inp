@@ -1098,7 +1098,7 @@ LINK          V2 CLOSED IF  NODE          T2            ABOVE          5.5
 ; ----------- T3 ---
 LINK          PU4 OPEN IF   NODE          T3            BELOW          3 
 LINK          PU4 CLOSED IF NODE          T3            ABOVE          5.3 
-  
+
 LINK          PU5 OPEN IF   NODE          T3            BELOW          1 
 LINK          PU5 CLOSED IF NODE          T3            ABOVE          3.5 
 
@@ -1116,7 +1116,7 @@ LINK          PU8 CLOSED IF NODE          T5            ABOVE          4.5
 ; ----------- T7 ---
 LINK          PU10 OPEN IF  NODE          T7            BELOW          2.5 
 LINK          PU10 CLOSED IF NODE         T7            ABOVE          4.8 
-  
+
 LINK          PU11 OPEN IF  NODE          T7            BELOW          1 
 LINK          PU11 CLOSED IF NODE         T7            ABOVE          3 
 
@@ -1192,7 +1192,7 @@ LINK          PU11 CLOSED IF NODE         T7            ABOVE          3
  Quality Timestep   	0:05 
  Pattern Timestep   	1:00 
  Pattern Start      	0:00 
- Report Timestep    	1:00
+ Report Timestep    	0:15
  Report Start       	0:00 
  Start ClockTime    	0:00
  Statistic          	NONE
@@ -1629,7 +1629,6 @@ LINK          PU11 CLOSED IF NODE         T7            ABOVE          3
  -249280.46       150121.94        "Tank T1" T1              
  -247584.27       149585.05        "T7" T7              
  -246904.84       148601.54        "T2" T2              
- -251418.52       149865.37        "Tank T3"                 
  -246462.97       148382.99        "T3" T3              
  -247755.31       150934.40        "T5" T5              
  -246211.16       150948.66        "T4" T4              

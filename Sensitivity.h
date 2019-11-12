@@ -31,11 +31,6 @@ public:
       diameter | friction_coeff | demand */
 	bool calculateSensitivity(string parameter);
 	
-private:
-  //SparseMatrix<double, ColMajor> functionDerivative; // derivative of eqs. w.r.t. parameter
-  //MatrixXd resultDerivative; // derivative of eqs. w.r.t. parameter
-  SparseVector<double> functionDerivative; // derivative of eqs. w.r.t. parameter
-  VectorXd resultDerivative; // derivative of eqs. w.r.t. parameter
 };
 
 #endif

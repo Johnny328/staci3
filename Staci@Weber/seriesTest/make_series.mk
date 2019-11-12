@@ -17,14 +17,15 @@ $(STACI_DIR)Pool.o \
 $(STACI_DIR)PressurePoint.o \
 $(STACI_DIR)Pump.o \
 $(STACI_DIR)SeriesHydraulics.o \
+$(STACI_DIR)Shutdown.o \
 $(STACI_DIR)Staci.o \
 $(STACI_DIR)Statistic.o \
 $(STACI_DIR)Valve.o \
-$(STACI_DIR)ValveTCV.o \
-$(STACI_DIR)ValveISO.o \
 $(STACI_DIR)ValveFCV.o \
+$(STACI_DIR)ValveISO.o \
 $(STACI_DIR)ValvePRV.o \
 $(STACI_DIR)ValvePSV.o \
+$(STACI_DIR)ValveTCV.o \
 $(FUNC).o
 
 %.o: ../../%.cpp

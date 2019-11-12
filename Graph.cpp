@@ -290,7 +290,9 @@ vector< vector<int> > segmenter(vector<int> SledgeVector)
     return Segments;
 }
 
-vector<vector<int> > segmenterWR(vector<int> edgeVector){
+//--------------------------------------------------------------
+vector<vector<int> > segmenterWR(vector<int> edgeVector)
+{
   vector<vector<int> > everySegment;
   vector<int> segment;
 

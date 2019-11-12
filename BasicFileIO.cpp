@@ -1,7 +1,5 @@
 #include "BasicFileIO.h"
 
-using namespace std;
-
 // Reading lines into string from file
 vector<string> readVectorString(string fileName){
   ifstream ifile(fileName);

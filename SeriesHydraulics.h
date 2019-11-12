@@ -32,10 +32,10 @@ public:
   void seriesSolve();
 
   // Printing results to console
-  void timeTableNode(vector<string> ID, double convertUnit);
-  void timeTableNode(vector<int> idx, double convertUnit);
-  void timeTableEdge(vector<string> ID, double convertUnit);
-  void timeTableEdge(vector<int> idx, double convertUnit);
+  void timeTableNode(vector<string> ID, string unit);
+  void timeTableNode(vector<int> idx, string unit);
+  void timeTableEdge(vector<string> ID, string unit);
+  void timeTableEdge(vector<int> idx, string unit);
 
 private:
   // loading the series settings from INP file
@@ -52,6 +52,7 @@ private:
   void updatePool();
   void updateControl();
   void updateRule();
+  bool checkCondition(int i, double dt);
 
   // converting string to a boolean operator between val1 and val2, e.g. val1 op val2 -> val1 > val2
   bool booleanWithString(string op, double left, double right);
@@ -59,12 +60,15 @@ private:
   // info about the seires calculation
   void seriesInfo();
 
+  // Converting time (double) to a string in for of xy:as
+  string secondsToTime(double seconds);
+
   // Converting everything to seconds like 24:00 or 7.0 DAYS
   double timeToSeconds(string s1, string s2);
 
   // time stuff
-  double duration, startClock=0., time, clockTime;
-  double patternTimeStep, hydraulicTimeStep, hydraulicTimeStepOriginal;
+  double duration=0., startClock=0., time, clockTime;
+  double patternTimeStep, hydraulicTimeStep = 60., hydraulicTimeStepOriginal = 60.;
   vector<double> vectorTime;
 
   // demand patterns

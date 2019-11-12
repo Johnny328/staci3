@@ -5,10 +5,11 @@ Pool::Pool(const string a_name, const string a_startNodeName, const double a_den
     type = "Pool";
     numberNode = 1;
     startNodeName = a_startNodeName;
-    endNodeName = "endNothingYet";
+    endNodeName = "<none>";
     bottomLevel = a_bottomLevel;
     waterLevel = a_waterLevel;
     status = 1;
+    typeCode = -1;
 }
 
 //--------------------------------------------------------------
@@ -27,14 +28,31 @@ string Pool::info() {
 }
 
 //--------------------------------------------------------------
+double Pool::function(const VectorXd &ppq, VectorXd &fDer)
+{
+  double out;
+  if(status == 1) // open
+  {
+    out = -ppq(0) - startHeight + (bottomLevel + waterLevel);
+    fDer(0) = -1.0;
+  }
+  else // closed, status is 0 or -1
+  {
+    out = ppq(2);
+    fDer(2) = 1.0;
+  }
+  return out;
+}
+
+/*
 double Pool::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
   if(status == 1) // open
     return x[0] + startHeight - (bottomLevel + waterLevel);
   else // closed
     return x[2];
-}
+}*/
 
-//--------------------------------------------------------------
+/*//--------------------------------------------------------------
 vector<double> Pool::functionDerivative(vector<double> x){
   vector<double> out;
   if(status == 1) // open
@@ -51,7 +69,7 @@ vector<double> Pool::functionDerivative(vector<double> x){
   }
 
   return out;
-}
+}*/
 
 //--------------------------------------------------------------
 void Pool::initialization(int mode, double value) {

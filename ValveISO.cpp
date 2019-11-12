@@ -2,6 +2,8 @@
 
 ValveISO::ValveISO(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, const double a_volumeFlowRate) : Valve(a_name, a_startNodeName, a_endNodeName, a_density,a_referenceCrossSection, a_volumeFlowRate) {
   type = "ValveISO";
+  status = 1;
+  typeCode = 9;  
 }
 
 //--------------------------------------------------------------
@@ -19,29 +21,20 @@ string ValveISO::info() {
 }
 
 //--------------------------------------------------------------
-double ValveISO::function(vector<double> x) {
-  if(status == 1) // OPEN
-    return x[1] - x[0] + (endHeight-startHeight);
-  else // CLOSED
-    return x[2];
-}
-
-//--------------------------------------------------------------
-vector<double> ValveISO::functionDerivative(vector<double> x) {
-  vector<double> out;
+double ValveISO::function(const VectorXd &ppq, VectorXd &fDer)
+{
+  double out;
   if(status == 1) // OPEN
   {
-    out.push_back(-1.0);
-    out.push_back(+1.0);
-    out.push_back(0.0);
+    out = ppq(1) - ppq(0) + (endHeight-startHeight);
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
   }
-  else // CLOSED
+  else // CLOSED, status is 0 or -1
   {
-    out.push_back(0.0);
-    out.push_back(0.0);
-    out.push_back(1.0);
+    out = ppq(2);
+    fDer(2) =  1.0;
   }
-
   return out;
 }
 

@@ -6,13 +6,15 @@ ValvePSV::ValvePSV(const string a_name, const string a_startNodeName, const stri
   minorLossCoeff = a_minorLossCoeff;
 
   status = 1; // 2: open, 1: active, 0: closed
+  typeCode = 4;
 }
 
 //--------------------------------------------------------------
-ValvePSV::~ValvePSV() {}
+ValvePSV::~ValvePSV(){}
 
 //--------------------------------------------------------------
-string ValvePSV::info() {
+string ValvePSV::info()
+{
   ostringstream ss;
   ss << Edge::info();
   ss << "\n connection            : " << startNodeName << " (index:" << startNodeIndex << ") --> " << endNodeName << " (index:" << endNodeIndex << ")";
@@ -20,48 +22,37 @@ string ValvePSV::info() {
 }
 
 //--------------------------------------------------------------
-double ValvePSV::function(vector<double> x){
+double ValvePSV::function(const VectorXd &ppq, VectorXd &fDer)
+{
   double out;
   if(status == 2) // ACTIVE
   {
-    out = x[0] - setting;
+    //out = ppq(0) - setting;
+    //fDer(0) = 1.0;
+
+    double k = 10.;
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + k * ppq(2) * abs(ppq(2)) + 1e8*(ppq(0) - setting);
+    fDer(0) = 1e8;
+    fDer(1) = 1.0;
+    fDer(2) = 2 * k * abs(ppq(2));
   }
   else if(status == 1) // OPEN
   {
-    //double v = x[2]/1000./referenceCrossSection; // velocity in m/s
-    out = x[1] - x[0] + (endHeight-startHeight);// + minorLossCoeff*v*v/(2*gravity);
+    out = ppq(1) - ppq(0) + (endHeight-startHeight);// + minorLossCoeff*v*v/(2*gravity);
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
   }
-  else // CLOSED
+  else // CLOSED, status is 0 or -1
   {
-    out = x[2];
-  }
+    //out = ppq(2);
+    //fDer(2) = 1.0;
 
-  return out;
-}
-
-//--------------------------------------------------------------
-vector<double> ValvePSV::functionDerivative(vector<double> x) {
-  vector<double> out;
-  if(status == 2) // ACTIVE
-  {
-    out.push_back(1.0);
-    out.push_back(0.0);
-    out.push_back(0.0);
+    double k = 10.;
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + k * ppq(2) * abs(ppq(2)) + 1e8 * ppq(2);
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
+    fDer(2) = 2 * k * abs(ppq(2)) + 1e8;
   }
-  else if(status == 1) // OPEN
-  {
-    out.push_back(-1.0);
-    out.push_back(1.0);
-    out.push_back(0.0); 
-  }
-  else // CLOSED
-  {
-    out.push_back(0.0);
-    out.push_back(0.0);
-    out.push_back(1.0);
-    //out.push_back(minorLossCoeff*x[2]/1000/referenceCrossSection/referenceCrossSection/gravity);
-  }
-
   return out;
 }
 

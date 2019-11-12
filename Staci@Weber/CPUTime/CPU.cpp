@@ -46,16 +46,32 @@ int main(int argc, char* argv[]){
   ido = clock();
   wds->solveSystem();
   cout << endl << "\nSolver:  " << double(clock()-ido)/ CLOCKS_PER_SEC << " s" << endl;
+  /*printf("   name   | vf\n");
+  for(int i=0; i<wds->edges.size(); i++)
+    printf(" %8s | %8.3f\n", wds->edges[i]->name.c_str(), wds->edges[i]->volumeFlowRate);
+  printf("   name   | head\n");
+  for(int i=0; i<wds->nodes.size(); i++)
+    printf(" %8s | %8.3f\n", wds->nodes[i]->name.c_str(), wds->nodes[i]->head);*/
 
   wds->initialization();
   ido = clock();
   wds->calculateSensitivity("demand");
   cout << endl << "\nSensitivity, demand:  " << double(clock()-ido)/ CLOCKS_PER_SEC << " s" << endl;
 
+  // debug
+  cout << endl << " Sens, mf-dem: " << endl << wds->massFlowRateSensitivity << endl;
+  cout << endl << " Sens, pres-dem: " << endl << wds->pressureSensitivity << endl;
+  // debug
+
   wds->initialization();
   ido = clock();
-  wds->calculateSensitivity("friction_coeff");
+  wds->calculateSensitivity("roughness");
   cout << endl << "\nSensitivity, fric:  " << double(clock()-ido)/ CLOCKS_PER_SEC << " s" << endl;
+
+  // debug
+  cout << endl << " Sens, mf-dem: " << endl << wds->massFlowRateSensitivity << endl;
+  cout << endl << " Sens, pres-dem: " << endl << wds->pressureSensitivity << endl;
+  // debug
 
   cout << endl << endl;
   return 0;

@@ -22,52 +22,43 @@ class Pipe : public Edge
 {
 
 public:
-    Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_rougness, const double a_massFlowRate, bool a_isCheckValve);
-    ~Pipe();
+  Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_rougness, const double a_massFlowRate, bool a_isCheckValve, int a_frictionModel);
+  ~Pipe();
 
-    /// Provides basic informations
-    string info();
+  /// Provides basic informations
+  string info();
 
-    /// A line of F(x) = equation, rearranged to 0 in w.c.m.
-    double function(vector<double> x);
+  /// A line of F(x) = equation, rearranged to 0 in w.c.m.
+  double function(const VectorXd &ppq, VectorXd &fDer);
 
-    /// Function ferivative w.r.t. variable (head / mass flow rate)
-    vector<double> functionDerivative(vector<double>);
+  /// Function ferivative w.r.t. parameter (diameter / roughness)
+  double functionParameterDerivative(int parameter);
 
-    /// Function ferivative w.r.t. parameter (diameter / roughness)
-    double functionParameterDerivative(string parameter);
+  /// Initialization, mode: 0->automatic | 1-> using value
+  void initialization(int mode, double value);
+  
+  //========================
+  //GETSETGETSETGETSETGETSET
+  //========================
+  double getDoubleProperty(string prop);
+  int getIntProperty(string prop);
+  void setDoubleProperty(string prop, double value);
+  void setIntProperty(string prop, int value);
+  
+  // Basic pipe data
+  double length, diameter, lambda;
 
-    /// Initialization, mode: 0->automatic | 1-> using value
-    void initialization(int mode, double value);
-    
-    //========================
-    //GETSETGETSETGETSETGETSET
-    //========================
-    double getDoubleProperty(string prop);
-    int getIntProperty(string prop);
-    void setDoubleProperty(string prop, double value);
-    void setIntProperty(string prop, int value);
-    
-    void setFrictionModel(string friction_model);
+  // Calculating a constant for pressure drop calulations to reduce math operations
+  double pipeConst;
 
-//private:
-    double length, diameter, lambda;
-    double roughness; // Pipefal roughness (HW: C factor, DW: relative roughness)
-    int frictionModel=-1; // 0 - Darcy-Weisbach (DW), 1 - Hazen-Williams (HW)
+  // Pipe roughness (H-W: C factor, D-W: relative roughness, C-F: friction coefficient)
+  double roughness; 
+  // 0 - Hazen-Williams (H-W), 1 - Darcy-Weisbach (D-W), 2 - Constant friction coefficient (C-F)
+  int frictionModel=-1; 
 
 private:
-    //! Computes the head loss in Pa
-    /*! dp'=lambda*length/diameter*density/2*velocity*fabs(velocity)*/
-    double computeHeadloss(double mp);
-
-    //! Computes the head loss derivative w.r.t. mass flow rate
-    /*! dp'=lambda*length/diameter*density/2*velocity*fabs(velocity)
-    diameter dp'/dmp=lambda*length/diameter*density/2*1/(density*A)^2*abs(velocity)*/
-    double computeHeadlossDerivative(double mp);
-
-    /// Calculating lambda value from roughness based on friction model (DW / HW)
-    double getLambda(double mp);
-
+  // setting the pipeConst value
+  void setPipeConst();
 };
 
 #endif

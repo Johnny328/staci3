@@ -7,6 +7,7 @@ ValveTCV::ValveTCV(const string a_name, const string a_startNodeName, const stri
   charY = a_charY;
   position = a_position;
   updateLoss();
+  typeCode = 7;  
 }
 
 //--------------------------------------------------------------
@@ -32,20 +33,14 @@ string ValveTCV::info()
 }
 
 //--------------------------------------------------------------
-double ValveTCV::function(vector<double> x)
+double ValveTCV::function(const VectorXd &ppq, VectorXd &fDer)
 {
-  return x[1] - x[0] + (endHeight-startHeight) + loss * x[2] * abs(x[2]);
-}
-
-//--------------------------------------------------------------
-vector<double> ValveTCV::functionDerivative(vector<double> x)
-{
-  vector<double> result;
-  result.push_back(-1.0);
-  result.push_back(+1.0);
-  result.push_back(+2 * loss * abs(x[2]));
-
-  return result;
+  double out;
+  out =  ppq(1) - ppq(0) + (endHeight-startHeight) + loss * ppq(2) * abs(ppq(2));
+  fDer(0) = -1.0;
+  fDer(1) =  1.0;
+  fDer(2) =  loss * abs(ppq(2));
+  return out;
 }
 
 //--------------------------------------------------------------

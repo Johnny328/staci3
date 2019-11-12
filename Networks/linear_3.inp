@@ -6,6 +6,7 @@ Converted from Epanet to Staci, case name: linear_3.spr
 ;ID              	Elev        	Demand      	Pattern         
  node_1          	0.0000      	38.580247   	                	;
  node_2          	0.0000      	38.580247   	                	;
+ node_3          	0.0000      	38.580247   	                	;
 
 [RESERVOIRS]
 ;ID              	Head        	Pattern         
@@ -16,8 +17,9 @@ Converted from Epanet to Staci, case name: linear_3.spr
 
 [PIPES]
 ;ID             	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
- pipe_0          	pres_0          	node_1          	333.3333    	200.0000    	-0.0200     	0.0000      	Open  ;
- pipe_1          	node_1          	node_2          	333.3333    	200.0000    	-0.0200     	0.0000      	Open  ;
+ pipe_0          	pres_0          	node_1          	333.3333    	200.0000    	100     	0.0000      	Open
+ pipe_1          	node_1          	node_2          	333.3333    	200.0000    	100     	0.0000      	Open
+ pipe_2          	node_2          	node_3          	333.3333    	200.0000    	100     	0.0000      	Open
 
 [PUMPS]
 ;ID             	Node1           	Node2           	Parameters
@@ -61,7 +63,7 @@ Converted from Epanet to Staci, case name: linear_3.spr
 
 [OPTIONS]
  Units              	LPS
- Headloss           	H-W
+ Headloss           	H-W 
  Specific Gravity   	1.0
  Viscosity          	1.0
  Trials             	40
@@ -82,6 +84,7 @@ Converted from Epanet to Staci, case name: linear_3.spr
  pres_0          	0.0000          	400.0000        
  node_1          	360.0000        	400.0000        
  node_2          	720.0000        	400.0000        
+ node_3          	1080.0000        	400.0000        
 
 [VERTICES]
 

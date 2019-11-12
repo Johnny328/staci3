@@ -56,9 +56,23 @@ public:
   vector<Node *> nodes;
   vector<Edge *> edges;
 
-  // TODO TODO TODO TODO TODO TODO
   // indicies vector for edge types, avoiding the for cycles
-  vector<int> poolIndex, presIndex, pumpIndex, valveIndex, pipeIndex;
+  // e.g. poolIndex contains the indicies of the pools in the edges list
+  /* typeCode values for edges
+  -2: pool
+  -1: pressure point
+  0:  pipe with check valve
+  1:  normal pipe
+  2:  pump
+  3:  pressure reduction valve (PRV)
+  4:  pressure sustaining valve (PSV)
+  5:  pressure breaker valve (PBV)
+  6:  flow control valve (FCV)
+  7:  throttle control valve (TCV)
+  8:  general purpose valve (GPV)
+  9:  isolation valve (ISO)
+  */
+  vector<int> poolIndex, presIndex, pumpIndex, valveIndex, valveISOIndex, pipeIndex, pipeCVIndex;
 
   // Prints everything 
   void listSystem();
@@ -110,10 +124,12 @@ protected:
   int nodeIDtoIndex(string ID);
   int edgeIDtoIndex(string ID);
 
+  // Checking lonely nodes and newly connected ones
+  // void checkNodeStatus(int index);
+
   // UNITS
   double demandUnit; // LPS, GPM etc. to LPS
   string unit; // SI or US
-  double headTolerance = 1e-3, volumeFlowRateTolerance = 1e-2;
 
   // number of edges and nodes
   int numberEdges, numberNodes;
@@ -124,6 +140,8 @@ private:
   string frictionModel;
   // Creates the indicies for the nodes of edges and edges of nodes i.e. indexing of the sparse Jacobian
   void buildSystem();
+  // Create the indexing, making the code more efficient
+  void buildIndexing();
 };
 
 #endif //STACI_H

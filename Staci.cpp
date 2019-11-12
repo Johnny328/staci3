@@ -2,7 +2,8 @@
 
 using namespace Eigen;
 
-Staci::Staci(string fileName) {
+Staci::Staci(string fileName)
+{
   definitionFile = fileName;
 
   // getting rid of global path
@@ -27,6 +28,9 @@ Staci::Staci(string fileName) {
   
   // Finding the indicies of nodes for the edges and vica versa
   buildSystem();
+
+  // Fill up the index vectors to make the code more efficient
+  buildIndexing();
 }
 
 //--------------------------------------------------------------
@@ -34,7 +38,8 @@ Staci::~Staci() {
 }
 
 //--------------------------------------------------------------
-void Staci::buildSystem(){
+void Staci::buildSystem()
+{
   bool startGotIt = false, endGotIt = false;
   int j = 0;
   int startNode = -1, endNode = -1;
@@ -81,19 +86,72 @@ void Staci::buildSystem(){
       }
     }
 
-    if(edges[i]->getEdgeIntProperty("numberNode") == 2){
-      edges[i]->setEdgeIntProperty("startNodeIndex", startNode);
-      edges[i]->setEdgeIntProperty("endNodeIndex", endNode);
+    if(edges[i]->numberNode == 2){
+      edges[i]->startNodeIndex = startNode;
+      edges[i]->endNodeIndex = endNode;
     }
     else{
-      edges[i]->setEdgeIntProperty("startNodeIndex", startNode);
-      edges[i]->setEdgeIntProperty("endNodeIndex", -1);
+      edges[i]->startNodeIndex = startNode;
+      edges[i]->endNodeIndex = -1;
     }
   }
 }
 
 //--------------------------------------------------------------
-void Staci::listSystem() {
+void Staci::buildIndexing()
+{
+  poolIndex.clear(); 
+  presIndex.clear(); 
+  pumpIndex.clear(); 
+  valveIndex.clear();
+  valveISOIndex.clear();
+  pipeIndex.clear();
+  pipeCVIndex.clear();
+
+  for(int i=0; i<edges.size(); i++)
+  { 
+    int typeCode = edges[i]->typeCode;
+    if(typeCode == 1) // normal pipe
+    {
+      pipeIndex.push_back(i);
+    }
+    else if(typeCode == 0) // pipe with cv
+    {
+      pipeIndex.push_back(i);
+      pipeCVIndex.push_back(i);
+    }
+    else if(typeCode == 2) // pump
+    {
+      pumpIndex.push_back(i);
+    }
+    else if(typeCode == 3 || typeCode == 4 || typeCode == 5 || typeCode == 6 || typeCode == 7 || typeCode == 8) // active valves
+    {
+      valveIndex.push_back(i);
+    }
+    else if(typeCode == 9) // ISO valves
+    {
+      valveIndex.push_back(i);
+      valveISOIndex.push_back(i);
+    }
+    else if(typeCode == -1) // pool
+    {
+      poolIndex.push_back(i);
+    }
+    else if(typeCode == -2) // pressure point
+    {
+      presIndex.push_back(i);
+    }
+    else
+    {
+      cout << endl << "!WARNING! Unkown typeCode: " << typeCode << ", type: " << edges[i]->type << ", name: " << edges[i]->name << endl;
+    }
+  }
+}
+
+
+//--------------------------------------------------------------
+void Staci::listSystem()
+{
   cout << "\n\n Nodes:\n--------------------------";
   for (int i = 0; i < numberNodes; i++)
     cout << nodes[i]->info(true);
@@ -103,8 +161,7 @@ void Staci::listSystem() {
 }
 
 
-/*! WR: find the the given node IDs and gives back the Indicies
-  *id:  vector containing the IDs*/
+//--------------------------------------------------------------
 vector<int> Staci::ID2Index(const vector<string> &id){
   int n_id = id.size();
   bool gotIt = false;
@@ -120,7 +177,7 @@ vector<int> Staci::ID2Index(const vector<string> &id){
       i++;
     }
     if(gotIt == false)
-      cout << "\n!!!WARNING!!!\nStaci:ID2Indicies function\nNode is not existing, id: " << id[j] << endl<< "\nContinouing...";
+      cout << "\n!!!WARNING!!!\nStaci:ID2Indicies function\nNode is not existing, id: " << id[j] << endl << "Continouing..." << endl;
   }
   return idx;
 }
@@ -136,9 +193,9 @@ void Staci::checkSystem()
   cout << "\n [*] Looking for identical IDs  ";
   string name1, name2;
   for(int i = 0; i < numberEdges; i++){
-    name1 = edges.at(i)->getEdgeStringProperty("name");
+    name1 = edges.at(i)->name;
     for(int j = 0; j < numberEdges; j++){
-      name2 = edges.at(j)->getEdgeStringProperty("name");
+      name2 = edges.at(j)->name;
       if(i != j){
         if(name1 == name2){
           cout << "\n !!!ERROR!!! edge #" << i << ": " << name1 << " and edge #" << j << ": " << name2 << " with same ID!" << endl;
@@ -165,13 +222,14 @@ void Staci::checkSystem()
 }
 
 //--------------------------------------------------------------
-void Staci::saveResult(string property, string element){
-
+void Staci::saveResult(string property, string element)
+{
   vector<string> allElement{"All","Node","Pipe","Pump","PressurePoint","Pool"};
 
   bool elementExist = false;
   int i=0;
-  while(i<allElement.size() && !elementExist){
+  while(i<allElement.size() && !elementExist)
+  {
     if(element == allElement[i])
       elementExist = true;
     i++;
@@ -256,12 +314,13 @@ void Staci::saveResult(string property, string element){
 }
 
 //--------------------------------------------------------------
-int Staci::nodeIDtoIndex(string ID){
+int Staci::nodeIDtoIndex(string ID)
+{
   int i=0, idx=-1;
   bool gotIt=false;
   while(i<numberNodes && !gotIt)
   {
-    if(ID.compare(nodes[i]->getName()) == 0)
+    if(ID.compare(nodes[i]->name) == 0)
     {
       gotIt = true;
       idx = i;
@@ -270,18 +329,19 @@ int Staci::nodeIDtoIndex(string ID){
   }
   if(idx == -1)
   {
-    cout << "\n!!!WARNING!!!\nStaci:nodeIDtoIndex function\nNode is not existing, ID: " << ID << endl<< "\nContinouing...";
+    cout << "\n!!!WARNING!!!\nStaci:nodeIDtoIndex function\nNode is not existing, ID: " << ID << "\nContinouing..." << endl;
   }
   return idx;
 }
 
 //--------------------------------------------------------------
-int Staci::edgeIDtoIndex(string ID){
+int Staci::edgeIDtoIndex(string ID)
+{
   int i=0, idx=-1;
   bool gotIt=false;
   while(i<numberEdges && !gotIt)
   {
-    if(ID.compare(edges[i]->getEdgeStringProperty("name")) == 0)
+    if(ID.compare(edges[i]->name) == 0)
     {
       gotIt = true;
       idx = i;
@@ -290,7 +350,7 @@ int Staci::edgeIDtoIndex(string ID){
   }
   if(idx == -1)
   {
-    cout << "\n!!!WARNING!!!\nStaci:edgeIDtoIndex function\nNode is not existing, ID: " << ID << endl<< "\nContinouing...";
+    cout << "\n!!!WARNING!!!\nStaci:edgeIDtoIndex function\nNode is not existing, ID: " << ID << "\nContinouing..." << endl;
   }
   return idx;
 }

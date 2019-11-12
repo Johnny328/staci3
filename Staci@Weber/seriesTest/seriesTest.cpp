@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 
 #include "../../SeriesHydraulics.h"
+#include "../../Shutdown.h"
 
 using namespace std;
 using namespace Eigen;
@@ -32,23 +33,56 @@ int main(int argc, char* argv[]){
 
   cout << endl << "Case: " << caseName << endl;
 
-  SeriesHydraulics *wds;
-  wds = new SeriesHydraulics(caseFolder + caseName);
-  //for(int i=0; i<wds->edges.size(); i++)
-  //  if(wds->edges[i]->getEdgeStringProperty("type") == "Pump")
-  //    wds->edges[i]->setStringProperty("curveType", "linear");
-  //wds->solveSystem();
-  wds->seriesSolve();
+  SeriesHydraulics *sh;
+  sh = new SeriesHydraulics(caseFolder + caseName);
+  //for(int i=0; i<sh->edges.size(); i++)
+  //  if(sh->edges[i]->getEdgeStringProperty("type") == "Pump")
+  //    sh->edges[i]->setStringProperty("curveType", "linear");
+  //sh->solveSystem();
+  sh->seriesSolve();
+
+    // For checking the disconnected network areas
+  /*Shutdown *sd;
+  sd = new Shutdown(caseFolder + caseName);
+
+  for(int i=0; i<sd->edges.size(); i++)
+    sd->edges[i]->status = sh->edges[i]->status;
+
+  sd->buildSegmentGraph();
+  int nSegments = sd->getNumberSegment();
+  cout << "Number of segments: " << nSegments << endl;
+  sd->saveResult("segment","All");
+  cout << endl << "SEGMENT GRAPH OK " << endl;
+
+  vector<int> disc = sd->closeDisconnectedParts();
+  cout << "\ndisc: " << disc.size() << endl;
+  for(int i=0; i<disc.size(); i++)
+  {
+    cout << disc[i] << endl;
+  }*/
+
+  /*cout << endl << "edges";
+  for(int i=0; i<sh->edges.size(); i++)
+    cout << endl << sh->edges[i]->name << "   " << sh->edges[i]->volumeFlowRate;
+  cout << endl << "nodes";
+  for(int i=0; i<sh->nodes.size(); i++)
+    cout << endl << sh->nodes[i]->name << "   " << sh->nodes[i]->head;*/
 
   vector<string> tableEdge;
+  tableEdge.push_back("9");
+  tableEdge.push_back("21");
+  tableEdge.push_back("22");
+  tableEdge.push_back("PRV");
+  tableEdge.push_back("FCV");
   tableEdge.push_back("valve");
-  tableEdge.push_back("112");
-  wds->timeTableEdge(tableEdge,15.85037);
+  sh->timeTableEdge(tableEdge,"gpm");
 
-  vector<string> talbeNode;
-  talbeNode.push_back("32");
-  talbeNode.push_back("22");
-  wds->timeTableNode(talbeNode,1.42197);
+  vector<string> tableNode;
+  tableNode.push_back("2");
+  tableNode.push_back("23");
+  tableNode.push_back("32");
+  tableNode.push_back("33");
+  sh->timeTableNode(tableNode,"psi");
 
   //for(int i=0; i<wds->edges.size(); i++)
     //if(wds->edges[i]->getEdgeStringProperty("type") == "PressurePoint" || wds->edges[i]->getEdgeStringProperty("type") == "Pool")
