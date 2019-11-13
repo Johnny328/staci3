@@ -19,7 +19,7 @@
 class ValveTCV : public Valve
 {
 public:
-  ValveTCV(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_charX, vector<double> a_charY, double a_position, const double a_massFlowRate);
+  ValveTCV(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, const double a_setting, const double a_volumeFlowRate);
   ~ValveTCV();
 
   /// Provides basic informations

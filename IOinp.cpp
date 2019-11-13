@@ -618,6 +618,9 @@ void Staci::loadSystem()
 	  		pump_performance[i] = pump_performance[i]*1000.;// horsepower tot watt
 			}
 	  }
+
+	  for(int i=0; i<valve_name.size(); i++)
+  		valve_d[i] /= 1000.; // mm to meter
   }
 
 	for(int i=0; i<pres_name.size(); i++){
@@ -696,10 +699,7 @@ void Staci::loadSystem()
 		}
 		else if(valve_type[i] == "TCV") // THROTTLE VALVE WITH CURVE
 		{
-			vector<double> valve_cv_x,valve_cv_y;
-			valve_cv_x.push_back(0); valve_cv_y.push_back(0);
-			valve_cv_x.push_back(100); valve_cv_y.push_back(1e10);
-			edges.push_back(new ValveTCV(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., valve_cv_x, valve_cv_y, 0.0, 0.0));
+			edges.push_back(new ValveTCV(valve_name[i], valve_node_from[i], valve_node_to[i], density, valve_d[i]*valve_d[i]*M_PI/4., valve_set[i], 0.0));
 		}
 		else if(valve_type[i] == "FCV") // FLOW CONTROL VALVE
 		{

@@ -1,17 +1,19 @@
 #include "ValveTCV.h"
 
-ValveTCV::ValveTCV(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_charX, vector<double> a_charY, double a_position, const double a_volumeFlowRate) : Valve(a_name, a_startNodeName, a_endNodeName, a_density,a_referenceCrossSection, a_volumeFlowRate)
+ValveTCV::ValveTCV(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, const double a_setting, const double a_volumeFlowRate) : Valve(a_name, a_startNodeName, a_endNodeName, a_density, a_referenceCrossSection, a_volumeFlowRate)
 {
   type = "ValveTCV";
-  charX = a_charX;
-  charY = a_charY;
-  position = a_position;
-  updateLoss();
+
+  setting = a_setting / (2. * gravity * referenceCrossSection * referenceCrossSection);
+
+  cout << endl << "k: " << a_setting << "  m: " << setting << endl;
+
+  status = 2; // active
   typeCode = 7;  
 }
 
 //--------------------------------------------------------------
-ValveTCV::~ValveTCV() {}
+ValveTCV::~ValveTCV(){}
 
 //--------------------------------------------------------------
 string ValveTCV::info()
@@ -19,15 +21,7 @@ string ValveTCV::info()
   ostringstream ss;
   ss << Edge::info();
   ss << "\n connection            : " << startNodeName << " (index:" << startNodeIndex << ") --> " << endNodeName << " (index:" << endNodeIndex << ")";
-  vector<double>::iterator it;
-  ss << "\n char curve X [%]      : ";
-  for (it = charX.begin(); it != charX.end(); it++)
-    ss << *(it) << "  ";
-  ss << "\n char curve Y [-]      : ";
-  for (it = charY.begin(); it != charY.end(); it++)
-    ss << *(it) << "  ";
-  ss << "\n position              : " << position;
-  ss << "\n loss coefficient      : " << loss << endl;
+  ss << "\n setting              : " << setting;
 
   return ss.str();
 }
@@ -36,10 +30,26 @@ string ValveTCV::info()
 double ValveTCV::function(const VectorXd &ppq, VectorXd &fDer)
 {
   double out;
-  out =  ppq(1) - ppq(0) + (endHeight-startHeight) + loss * ppq(2) * abs(ppq(2));
-  fDer(0) = -1.0;
-  fDer(1) =  1.0;
-  fDer(2) =  loss * abs(ppq(2));
+  if(status == 2) // active, i.e. there is a loss coefficient
+  {
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + setting * ppq(2) * abs(ppq(2));
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
+    fDer(2) =  setting * abs(ppq(2));
+  }
+  else if(status == 1) // open, i.e. without loss
+  {
+    out = ppq(1) - ppq(0) + (endHeight-startHeight);
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
+  }
+  else // Closed
+  {
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e8 * ppq(2);
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
+    fDer(2) =  1e8;
+  }
   return out;
 }
 
