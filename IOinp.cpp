@@ -4,7 +4,6 @@
 void Staci::loadSystem()
 {
 	int warning_counter=0;
-	double density = 1000.;
 
 	// FOR NODES
 	vector<string> node_name;
@@ -23,7 +22,8 @@ void Staci::loadSystem()
 	vector<double> pool_botlev, pool_watlev, pool_aref, pool_minlev, pool_maxlev;
 
 	// FOR PUMPS
-	vector<string> pump_name, pump_node_from, pump_node_to, pump_par;
+	vector<string> pump_name, pump_node_from, pump_node_to, pump_type, pump_par;
+	vector<double> pump_performance;
 	vector<vector<double> > pump_cv_x, pump_cv_y;
 
 	// FOR VALVES
@@ -190,10 +190,8 @@ void Staci::loadSystem()
 							cout << "\n !WARNING! No pump_name curve, or power is defined for " << sv[0] << endl;
 							warning_counter++;
 						}
-						if(sv.size()==5){
-							if(sv[3]=="HEAD")
-								pump_par.push_back(sv[4]);
-						} // TODO later: add POWER, SPEED etc.
+						pump_type.push_back(sv[3]); // HEAD or POWER
+						pump_par.push_back(sv[4]);
 					}
 				}
 			}
@@ -489,73 +487,81 @@ void Staci::loadSystem()
   // Matching curves to pumps
   for(int i=0; i<pump_name.size(); i++){
   	for(int j=0; j<curve.size(); j++){
-  		if(pump_par[i]==curve[j]){
-  			for(int k=0; k<curve_x[j].size(); k++){
-  				pump_cv_x[i].push_back(curve_x[j][k]);
-  				pump_cv_y[i].push_back(curve_y[j][k]);
+  		if(pump_type[i]=="HEAD"){
+	  		if(pump_par[i]==curve[j]){
+	  			for(int k=0; k<curve_x[j].size(); k++){
+	  				pump_cv_x[i].push_back(curve_x[j][k]);
+	  				pump_cv_y[i].push_back(curve_y[j][k]);
+	  				pump_performance.push_back(0.); // not used
+	  			}
   			}
+  		}
+  		else if(pump_type[i]=="POWER"){
+ 				pump_cv_x[i].push_back(0.); // not used
+ 				pump_cv_y[i].push_back(0.); // not used
+ 				pump_performance.push_back(stod(pump_par[i],0)); // not used
   		}
   	}
   }
 
   // Modifying pump_name curves, STACI must have at least 3 points
-  for(int i=0; i<pump_name.size(); i++)
-  	if(pump_cv_x[i].size()<=2){
-  		cout << "\n!WARNING! Pump " << pump_name[i] << " only has " << pump_cv_x[i].size() << " point(s)" << endl;
-  		warning_counter++;
-  	}
+  //for(int i=0; i<pump_name.size(); i++)
+  //	if(pump_cv_x[i].size()<=2){
+  //		cout << "\n!WARNING! Pump " << pump_name[i] << " only has " << pump_cv_x[i].size() << " point(s)" << endl;
+  //		warning_counter++;
+  //	}
 
   // Converting units from EPANET to STACI (litre/sec)
   // US units
   if(flow_unit == "CFS")
   {
-  	demandUnit = 28.316846592;
+  	demandUnit = 0.028316846592;
   	unit = "US";
   }
   else if(flow_unit == "GPM")
   {
-  	demandUnit = 0.06309;
+  	demandUnit = 0.00006309;
   	unit = "US";
   }
   else if(flow_unit == "MGD")
   {
-  	demandUnit = 43.8126364;
+  	demandUnit = 0.0438126364;
   	unit = "US";
   }
   else if(flow_unit == "IMGD")
   {
-  	demandUnit = 52.6168042;
+  	demandUnit = 0.0526168042;
   	unit = "US";
   }
   else if(flow_unit == "AFD")
   {
-  	demandUnit = 14.2764102;
+  	demandUnit = 0.0142764102;
   	unit = "US";
   }
   // NORMAL units
   else if(flow_unit == "LPS")
   {
-  	demandUnit = 1.0;
+  	demandUnit = 0.001;
   	unit = "SI";
   }
   else if(flow_unit == "LPM")
   {
-  	demandUnit = 1./60.;
+  	demandUnit = 0.001/60.;
   	unit = "SI";
   }
   else if(flow_unit == "MLD")
   {
-  	demandUnit = 11.5740741;
+  	demandUnit = 0.0115740741;
   	unit = "SI";
   }
   else if(flow_unit == "CMH")
   {
-  	demandUnit = 1./3.6;
+  	demandUnit = 0.001/3.6;
   	unit = "SI";
   }
   else if(flow_unit == "CMD")
   {
-  	demandUnit = 0.0115740741;
+  	demandUnit = 0.0000115740741;
   	unit = "SI";
   }
   else
@@ -564,7 +570,6 @@ void Staci::loadSystem()
   	cout << "Exiting..." << endl;
   	exit(-1);
   }
-  demandUnit /= 1000.; // lps to m3/s
 
   for(int i=0; i<node_name.size(); i++)
   	demand[i] = demand[i]*demandUnit;
@@ -588,15 +593,31 @@ void Staci::loadSystem()
 	  for(int i=0; i<valve_name.size(); i++)
   		valve_d[i] = valve_d[i]*0.0254; // inches to meter
 	  for(int i=0; i<pump_name.size(); i++){
-  		for(int j=0; j<pump_cv_x[i].size(); j++){
-  			pump_cv_x[i][j] = pump_cv_x[i][j]*demandUnit; // * to m3/s
-  			pump_cv_y[i][j] = pump_cv_y[i][j]*0.3048; // feet to meter
-  		}
+	  	if(pump_type[i] == "HEAD"){
+	  		for(int j=0; j<pump_cv_x[i].size(); j++){
+	  			pump_cv_x[i][j] = pump_cv_x[i][j]*demandUnit; // * to m3/s
+	  			pump_cv_y[i][j] = pump_cv_y[i][j]*0.3048; // feet to meter
+	  		}
+	  	}
+	  	else if(pump_type[i] == "POWER"){
+	  		pump_performance[i] = pump_performance[i]*745.699872;// horsepower tot watt
+	  	}
 	  }
   }
   else if(unit == "SI"){
   	for(int i=0; i<pipe_name.size(); i++)
 	  	D[i] /= 1000.;
+
+	  for(int i=0; i<pump_name.size(); i++){
+			if(pump_type[i]=="HEAD"){
+				for(int j=0; j<pump_cv_x[i].size(); j++){
+					pump_cv_x[i][j] = pump_cv_x[i][j]*demandUnit; // * to m3/s
+				}
+			}
+			else if(pump_type[i]=="POWER"){
+	  		pump_performance[i] = pump_performance[i]*1000.;// horsepower tot watt
+			}
+	  }
   }
 
 	for(int i=0; i<pres_name.size(); i++){
@@ -628,7 +649,7 @@ void Staci::loadSystem()
 	for(int i=0; i<pipe_name.size(); i++)
 	{
 		bool isCheckValve;
-		if(pipe_status[i] == "cv")
+		if(pipe_status[i] == "cv" || pipe_status[i] == "CV")
 			isCheckValve = true;
 		else
 			isCheckValve = false;
@@ -646,7 +667,26 @@ void Staci::loadSystem()
 	}
 	for(int i=0; i<pump_name.size(); i++)
 	{
-    	edges.push_back(new Pump(pump_name[i], pump_node_from[i], pump_node_to[i], density, 1.0, pump_cv_x[i], pump_cv_y[i], 0.0, "parabolic"));
+		// -1: epanet POWER type with constant performance
+		//  0: epanet HEAD type with Q-H curve
+		//  1: linear
+		//  2: parabolic (least squares method)
+		int pumpType;
+		if(pump_type[i] == "HEAD")
+		{
+			pumpType = 0; 
+		}
+		else if(pump_type[i] == "POWER")
+		{
+			pumpType = -1;
+		}
+		else
+		{
+			pumpType = 0;
+			cout << endl << "!WARNING! Pump type unkown: " << pump_type[i] << " at " << pump_name[i] << endl;
+			cin.get();
+		}
+   	edges.push_back(new Pump(pump_name[i], pump_node_from[i], pump_node_to[i], density, 1.0, pump_cv_x[i], pump_cv_y[i], pump_performance[i], 0.0, pumpType));
 	}
 	for(int i=0; i<valve_name.size(); i++)
 	{
@@ -701,7 +741,7 @@ void Staci::loadSystem()
 		{
 			if(edges[j]->name == status_id[i])
 			{
-				if(status_setting[i] == "CLOSED") // there might be more options
+				if(status_setting[i] == "CLOSED" || status_setting[i] == "Closed") // there might be more options
 					edges[j]->status = -1;
 				break;
 			}

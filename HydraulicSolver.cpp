@@ -82,7 +82,7 @@ bool HydraulicSolver::solveSystem()
   updateJacobian();
 
   computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
-  iterInfo(iter, e_mp, e_p, changedIndex);
+  //iterInfo(iter, e_mp, e_p, changedIndex);
   while((iter<maxIterationNumber+1) && !isConv)
   {
     //checkJacobianMatrix();
@@ -97,7 +97,7 @@ bool HydraulicSolver::solveSystem()
 
     updateJacobian();
     computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
-    iterInfo(iter+1, e_mp, e_p, changedIndex);
+    //iterInfo(iter+1, e_mp, e_p, changedIndex);
 
     if(isConv)
     {
@@ -377,10 +377,19 @@ void HydraulicSolver::initialization()
   }
   for(int i=0; i<pumpIndex.size(); i++)
   {
-    vector<double> qCurve = edges[pumpIndex[i]]->getVectorProperty("qCurve");
-    double min = *min_element(qCurve.begin(),qCurve.end());
-    double max = *max_element(qCurve.begin(),qCurve.end());
-    edges[pumpIndex[i]]->initialization(1, (min+max)/2.);
+    int idx = pumpIndex[i];
+    int pumpType = edges[idx]->getIntProperty("pumpType");
+    if(pumpType >= 0)
+    {
+      vector<double> qCurve = edges[idx]->getVectorProperty("qCurve");
+      double min = *min_element(qCurve.begin(),qCurve.end());
+      double max = *max_element(qCurve.begin(),qCurve.end());
+      edges[idx]->initialization(1, (min+max)/2.);
+    }
+    else if(pumpType == -1)
+    {
+      edges[idx]->initialization(1, 0.1);
+    }
   }
   for(int i=0; i<valveIndex.size(); i++)
   {

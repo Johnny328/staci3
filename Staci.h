@@ -77,6 +77,10 @@ public:
   // Prints everything 
   void listSystem();
 
+  // Constants for hydraulics, note: there are constants in Edge.h
+  const double gravity = 9.81; // [m/s2]
+  const double density = 1000.; // [kg/m3]
+
   // Converts node names (IDs) to indicies i.e. finds the node name in the list of the nodes
   vector<int> ID2Index(const vector<string> &id);
 

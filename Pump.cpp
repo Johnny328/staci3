@@ -3,35 +3,92 @@
 using namespace std;
 using namespace Eigen;
 
-Pump::Pump(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_qCurve, vector<double> a_hCurve, const double a_volumeFlowRate, string a_curveType) : Edge(a_name, a_referenceCrossSection, a_volumeFlowRate, a_density){
-
+Pump::Pump(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_referenceCrossSection, vector<double> a_qCurve, vector<double> a_hCurve, const double a_pumpPerformance, const double a_volumeFlowRate, int a_pumpType) : Edge(a_name, a_referenceCrossSection, a_volumeFlowRate, a_density)
+{
   type = "Pump";
+  typeCode = 2;
+
   numberNode = 2;
   startNodeName = a_startNodeName;
   endNodeName = a_endNodeName;
+
+  // for HEAD (Q-H curve)
   qCurve = a_qCurve;
   hCurve = a_hCurve;
-  curveType = a_curveType;
+
+  // for POWER (const performance)
+  constantPerformance = a_pumpPerformance;
+
+  // -1: epanet POWER type with constant performance
+  //  0: epanet HEAD type with Q-H curve
+  //  1: linear
+  //  2: parabolic (least squares method)
+  pumpType = a_pumpType;
+
   status = 1; // OPEN
-  typeCode = 2;
 
   int numberPoint = qCurve.size();
-  if(numberPoint != hCurve.size()){
+  if(numberPoint != hCurve.size())
+  {
     cout << endl << "!!!ERROR!!! Pump(" << name << ") characteristic curve: number of Q (" << numberPoint << ") is NOT equal to number of H (" << qCurve.size() << ") !" << endl << "Pump ID: " << a_name << endl << "Exiting..." << endl;
     exit(0);
   }
 
-  if(curveType == "parabolic")
+  if(pumpType == -1)
   {
+    curveType = -1; // H*Q*rho*g = CONST
+
+    constantPerformance /= (density*gravity); // H*Q = CONST2
+  }
+  else if(pumpType == 0) // EPANET HEAD STYLE
+  {
+    if(numberPoint == 1)
+    {
+      curveType = 0; // h(q) = a + bq^2
+
+      double a = 4./3.*hCurve[0];
+      double b = (hCurve[0] - a) / (qCurve[0]*qCurve[0]);
+      coeffCurve.push_back(a);
+      coeffCurve.push_back(b);
+    }
+    else if(numberPoint == 2) 
+    {
+      curveType = 1; // h(q) = aq + b
+    }
+    else if(numberPoint == 3)
+    {
+      curveType = 3; // h(q) = a + bq^c
+
+      double c = log((hCurve[2]-hCurve[0])/(hCurve[1]-hCurve[0])) / log((qCurve[2]-qCurve[0])/(qCurve[1]-qCurve[0]));
+      double b = (hCurve[1]-hCurve[0]) / pow(qCurve[1]-qCurve[0], c);
+      double a = hCurve[0] - b*pow(qCurve[0], c);
+      coeffCurve.push_back(a);
+      coeffCurve.push_back(b);
+      coeffCurve.push_back(c);
+    }
+    else if(numberPoint > 3) // changing to linear interpolation
+    {
+      curveType = 1;
+    }
+  }
+  else if(pumpType == 1) // only linear interpolation
+  {
+    curveType = 1;
+  }
+  else if(pumpType == 2) // parabolic function fitting with least squares method
+  {
+    curveType = 2;
+
     // Copying vector<double> to Eigen::VectorXd
     VectorXd Q(numberPoint), H(numberPoint);
-    for(int i=0; i<numberPoint; i++){
+    for(int i=0; i<numberPoint; i++)
+    {
       Q(i) = qCurve[i];
       H(i) = hCurve[i];
     }
 
     // Fitting second order polynomial to Q-H points with least squares method
-    curveOrder = 2;
+    int curveOrder = 2;
     VectorXd C = leastSquaresPolynomial(Q,H,curveOrder);
 
     // Copying back to vector<double>
@@ -43,30 +100,22 @@ Pump::Pump(const string a_name, const string a_startNodeName, const string a_end
     cout << endl << "!ERROR! curve type: " << curveType << " unkown at pump " << name << endl << "Exiting..." << endl;
     exit(-1);
   }
-
 }
 
 //--------------------------------------------------------------
-Pump::~Pump() {}
+Pump::~Pump(){}
 
 //--------------------------------------------------------------
-string Pump::info(){
+string Pump::info()
+{
   ostringstream strstrm;
   strstrm << Edge::info();
   strstrm << "\n head                  : " << getDoubleProperty("head") << " [m]";
   strstrm << "\n type                  : " << type;
   strstrm << "\n connection            : " << startNodeName << "(index:" << startNodeIndex << ") --> " << endNodeName << "(index:" << endNodeIndex << ")\n";
+  strstrm << "\n pump type             : " << pumpType;
+  strstrm << "\n curve type            : " << curveType;
 
-  strstrm << scientific << setprecision(3);
-  strstrm << "\n characteristic curve\n----------------------\n Q [l/s] |  H [m]   ";
-  for(int i = 0; i < qCurve.size(); i++)
-    strstrm << endl << qCurve[i] << " | " << hCurve[i];
-  strstrm << "\n\n fitted polynomial (order: " << curveOrder << ")\n--------------------------------\n H(Q) = " << coeffCurve[0];
-  for(int i = 1; i < coeffCurve.size(); i++){
-    strstrm << " + " << coeffCurve[i] << "*Q";
-    if(i>1)
-      strstrm << "^" << i;
-  } 
   strstrm << endl;
   return strstrm.str();
 }
@@ -84,7 +133,7 @@ double Pump::function(const VectorXd &ppq, VectorXd &fDer)// ppq = [Pstart, Pend
     if(abs(ppq(2))>0.1)
       dx = ppq(2)*0.001;
     else
-      dx = 0.01;
+      dx = 1e-4;
 
     double dp2 = characteristicCurve(ppq(2)+dx);
     double derivative = (dp-dp2)/dx;
@@ -95,36 +144,59 @@ double Pump::function(const VectorXd &ppq, VectorXd &fDer)// ppq = [Pstart, Pend
   }
   else // CLOSED, status is 0 or -1
   {
-    out = ppq(2); 
-    fDer(2) = 1.0;
+    // slightly unstable
+    //out = ppq(2); 
+    //fDer(2) = 1.0;
 
-    //alternative solution, somehow converges slowly
-    //out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e15 * ppq(2) * abs(ppq(2));
-    //fDer(2) = 2 * 1e15 * abs(ppq(2));
+    // alternative solution
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e8 * ppq(2);
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
+    fDer(2) =  1e8;
   }
   return out;
 }
 
 //--------------------------------------------------------------
-void Pump::initialization(int mode, double value){
+void Pump::initialization(int mode, double value)
+{
   if(mode == 0)
-    setDoubleProperty("volumeFlowRate", 1.);
+    volumeFlowRate = 1.;
   else
-    setDoubleProperty("volumeFlowRate", value);
+    volumeFlowRate = value;
 }
 
 //--------------------------------------------------------------
-double Pump::characteristicCurve(double Q){
-    
+double Pump::characteristicCurve(double Q)
+{
   double H = 0.;
-  if(curveType == "parabolic")
+
+  if(curveType == -1) // P0/Q i.e. POWER is constant
+  {
+    if(abs(Q)<2.832e-5)
+      Q = 2.832e-5;
+
+    H = constantPerformance / Q;
+  }
+  else if(curveType == 0) // a+bq^2
+  {
+    H = coeffCurve[0] + coeffCurve[1] * Q*Q;
+  }
+  else if(curveType == 1) // linear interpolation
+  {
+    H = linearInterpolation(qCurve, hCurve, Q);
+  }
+  else if(curveType == 2) // second order with least squares method
   {
     for(int i=0; i<coeffCurve.size(); i++)
       H += coeffCurve[i] * pow(revolutionNumber,2-i) * pow(Q,i);
   }
-  else if (curveType == "linear")
+  else if(curveType == 3) // a+bq^c
   {
-    H = linearInterpolation(qCurve, hCurve, Q);
+    if(Q<0.0) // avoiding complex numbers
+      Q = -Q;
+
+    H = coeffCurve[0] + coeffCurve[1] * pow(Q, coeffCurve[2]);
   }
 
   return H;
@@ -133,7 +205,7 @@ double Pump::characteristicCurve(double Q){
 //--------------------------------------------------------------
 void Pump::checkPump()
 {
-  if(curveOrder >= 1)
+  if(pumpType >= 0)
   {
     if(volumeFlowRate < min(qCurve))
       cout << endl << "!WARNING! Volume flow rate (" << volumeFlowRate << ") is smaller than the minimum (" << min(qCurve) << ") at Pump: " << name << endl;
@@ -143,7 +215,8 @@ void Pump::checkPump()
 }
 
 //--------------------------------------------------------------
-double Pump::getDoubleProperty(string prop){
+double Pump::getDoubleProperty(string prop)
+{
   double out = 0.0;
   if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     out = referenceCrossSection;
@@ -172,7 +245,8 @@ double Pump::getDoubleProperty(string prop){
 }
 
 //--------------------------------------------------------------
-void Pump::setDoubleProperty(string prop, double value){
+void Pump::setDoubleProperty(string prop, double value)
+{
   if(prop == "volumeFlowRate")
     volumeFlowRate = value;
   else if(prop == "density")
@@ -193,18 +267,36 @@ void Pump::setDoubleProperty(string prop, double value){
 }
 
 //--------------------------------------------------------------
-void Pump::setStringProperty(string prop, string value){
+void Pump::setIntProperty(string prop, int value)
+{
   if(prop == "curveType")
     curveType = value;
   else
   {  
-    cout << endl << endl << "void Pump::setStringProperty( STRING ) wrong argument:" << prop;
+    cout << endl << endl << "void Pump::setStringProperty( INT ) wrong argument:" << prop;
     cout << ", right values: curveType " << endl << endl;
   }
 }
 
 //--------------------------------------------------------------
-vector<double> Pump::getVectorProperty(string prop){
+int Pump::getIntProperty(string prop)
+{
+  int out = 0;
+  if(prop == "pumpType")
+    out = pumpType;
+  else if(prop == "curveType")
+    out = curveType;
+  else
+  {
+    cout << endl << endl << "INT Pipe::getIntProperty() wrong argument:" << prop;
+    cout << ", right values: frictionModel" << endl << endl;
+  }
+  return out;
+}
+
+//--------------------------------------------------------------
+vector<double> Pump::getVectorProperty(string prop)
+{
   vector<double> out;
   if(prop == "qCurve")
     out = qCurve;

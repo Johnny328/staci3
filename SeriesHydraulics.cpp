@@ -27,25 +27,24 @@ void SeriesHydraulics::seriesSolve()
 
 		updateDemand();
 		updateRule();
+		updateControl();
+
 		convOk = solveSystem();
 
 		// saving head, consumptions for nodes and flows for edges
 		saveOutput();
 
-		hydraulicTimeStep = newHydraulicTimeStep();
-		time += hydraulicTimeStep;
+		//hydraulicTimeStep = newHydraulicTimeStep();
+		//time += hydraulicTimeStep;
+		time += hydraulicTimeStepOriginal;
 		vectorTime.push_back(time);
 
 		// updating the settings, pools etc.
 		updatePool();
-		updateControl();
 
 		clockTime = time;
 		while(clockTime>=86400.)
 			clockTime -= 86400.;
-
-		//cout << endl << edges[12]->name << "  vf: " << edges[12]->volumeFlowRate << "  wl: " << edges[12]->getDoubleProperty("waterLevel") << endl;
-		cin.get();
 	}
 
 	if(!convOk)
@@ -58,7 +57,8 @@ void SeriesHydraulics::saveOutput()
 	for(int i=0; i<numberNodes; i++)
 	{
 		nodes[i]->vectorHead.push_back(nodes[i]->head);
-		nodes[i]->vectorConsumption.push_back(nodes[i]->getProperty("consumption"));
+		//nodes[i]->vectorConsumption.push_back(nodes[i]->getProperty("consumption"));
+		nodes[i]->vectorConsumption.push_back(nodes[i]->demand);
 		nodes[i]->vectorStatus.push_back(nodes[i]->status);
 	}
 	for(int i=0; i<numberEdges; i++)
@@ -106,23 +106,24 @@ double SeriesHydraulics::newHydraulicTimeStep()
 		double aref = edges[controlNodeIndex[i]]->referenceCrossSection;
 		double set = controlValue[i];
 		double vf = edges[controlNodeIndex[i]]->volumeFlowRate;
-		if(controlType[i] == "Pool") // && edges[i]->status == 1 ???
+		if(controlType[i] == "Pool")
 		{
-
 			if(vf > 0. && controlAbove[i]) // FILLING THE TANK
-				dt2 = (set - wl) * aref / vf;
+				dt2 = abs((set - wl) * aref / vf);
 			else if(vf < 0. && !controlAbove[i])
-				dt2 = (set - wl) * aref / vf;
+				dt2 = abs((set - wl) * aref / vf);
 
-			if(dt2<0.)
-				cout << endl << "!WARNING! Something is wrong, dt is negative at Control " << controlEdgeID[i] << endl;
+			if(dt2<hydraulicTimeStepOriginal/100.)
+			{
+				cout << endl << "!WARNING! Something is wrong, dt is too small at Control " << controlEdgeID[i] << endl;
+				cout << endl << " set: " << set << " vf: " << vf << " wl: " << wl << " aref: " << aref <<  " dt : " << dt2 << endl;
+				cin.get();
+			}
 			else if(dt2<dt)
-				dt = dt2;
+				dt = dt2*1.01;
 		}
 		else
 			cout << endl << "!WARNING! [CONTROLS] control type unkown: " << controlType[i] << endl;
-
-		cout << endl << "ID: " << controlEdgeID[i] << " set: " << set << " vf: " << vf << " wl: " << wl <<  " dt : " << dt << endl;
 	}
 
 	// Checking the tank fillups
@@ -138,17 +139,19 @@ double SeriesHydraulics::newHydraulicTimeStep()
 			double aref = edges[idx]->referenceCrossSection;
 
 			if(vf > 0.) // VF > 0. -> FILLING UP
-				dt2 = (max_wl-wl) * aref / vf;
+				dt2 = abs((max_wl - wl) * aref / vf);
 			else if(vf < 0.) // VF < 0. -> EMPTYING
-				dt2 = (min_wl-wl) * aref / vf;
+				dt2 = abs((min_wl - wl) * aref / vf);
 
-			if(dt2<0.)
-				cout << endl << "!WARNING! Something is wrong, dt is negative at Tank Fillup: " << i << " th edge, name: " << edges[idx]->name << endl;
+			if(dt2<hydraulicTimeStepOriginal/100.)
+			{
+				cout << endl << "!WARNING! Something is wrong, dt is too small at Tank Fillup: " << i << " th edge, name: " << edges[idx]->name << endl;
+				cout << endl << " max_wl: " << max_wl << " min_wl: " << min_wl << " vf: " << vf << " wl: " << wl <<  " dt : " << dt2 << endl;
+				cin.get();
+			}
 			else if(dt2<dt)
-				dt = dt2;
+				dt = dt2*1.01;
 		}
-
-		cout << edges[idx]->name << " dt : " << dt << endl;
 	}
 
 	// Checking the [RULES]
@@ -200,7 +203,7 @@ double SeriesHydraulics::newHydraulicTimeStep()
 					dt = dt2;
 			}
 		}
-		cout << "rules dt : " << dt << endl;
+		//cout << "rules dt : " << dt << endl;
 	}
 
 	// setting back timestep to hydraulicTimeStep*i where i is integer
@@ -252,31 +255,6 @@ void SeriesHydraulics::updatePool()
 				edges[idx]->setDoubleProperty("waterLevel",wl);
 		}
 	}
-
-	/*for(int i=0; i<numberEdges; i++)
-	{	
-		if(edges[i]->type == "Pool")
-		{
-			if(edges[i]->status == 0) // CLOSED i.e. FULL
-			{
-				if(nodes[edges[i]->startNodeIndex]->head < edges[i]->getDoubleProperty("waterLevel"))
-					edges[i]->status = 1;
-			}
-			else // OPEN
-			{
-				double waterLevel = edges[i]->getDoubleProperty("waterLevel");
-				waterLevel += edges[i]->volumeFlowRate/1000. * hydraulicTimeStep / edges[i]->referenceCrossSection;
-				if(waterLevel <= edges[i]->getDoubleProperty("minLevel"))
-					edges[i]->setDoubleProperty("waterLevel",edges[i]->getDoubleProperty("minLevel"));
-				else if(waterLevel >= edges[i]->getDoubleProperty("maxLevel")){
-					edges[i]->setDoubleProperty("waterLevel",edges[i]->getDoubleProperty("maxLevel"));
-					edges[i]->status = 0;
-				}
-				else
-					edges[i]->setDoubleProperty("waterLevel",waterLevel);
-			}
-		}
-	}*/
 }
 
 //-------------------------------------------------------------------
@@ -285,17 +263,18 @@ void SeriesHydraulics::updateControl()
 	for(int i=0; i<controlEdgeID.size(); i++)
 	{
 		if(controlType[i] == "Pool")
-		{		
+		{
+			double wl = edges[controlNodeIndex[i]]->getDoubleProperty("waterLevel");
 			if(controlAbove[i])
 			{
-				if(edges[controlNodeIndex[i]]->getDoubleProperty("waterLevel") > controlValue[i] - headTolerance)
+				if(wl >= controlValue[i])
 				{
 					edges[controlEdgeIndex[i]]->status = controlStatus[i];
 				}
 			}
 			else
 			{
-				if(edges[controlNodeIndex[i]]->getDoubleProperty("waterLevel") < controlValue[i] + headTolerance)
+				if(wl <= controlValue[i])
 				{
 					edges[controlEdgeIndex[i]]->status = controlStatus[i];
 				}
@@ -328,9 +307,9 @@ void SeriesHydraulics::updateRule()
 				else // STATUS
 				{
 					edges[rules[i]->actionIndex[j]]->status = rules[i]->actionValue[j];
-					if(edges[rules[i]->actionIndex[j]]->status == 0)
-						edges[rules[i]->actionIndex[j]]->volumeFlowRate = 0.0;
 				}
+				if(edges[rules[i]->actionIndex[j]]->status == 0)
+					edges[rules[i]->actionIndex[j]]->volumeFlowRate = 0.0;
 			}
 		}
 	}
@@ -397,6 +376,203 @@ bool SeriesHydraulics::booleanWithString(string op, double left, double right)
 void SeriesHydraulics::seriesInfo()
 {
 	cout << endl << "[*] time: " << secondsToTime(time) << endl;
+}
+
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableNode(vector<string> ID, string unit)
+{
+	vector<int> idx;
+	for(int i=0; i<ID.size(); i++)
+	{	
+		int k = nodeIDtoIndex(ID[i]);
+		if(k!=-1)
+	  	idx.push_back(k);
+	}
+	timeTableNode(idx,unit);
+}
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableNode(vector<int> idx, string unit)
+{
+	double convertUnit = 1.;
+	if(unit == "psi")
+		convertUnit = 1/0.7032;
+	else unit = " m ";
+
+	cout << endl;
+	printf(" |   ID   |");
+	for(int i=0; i<idx.size(); i++)
+		printf(" %-19s |",nodes[idx[i]]->name.c_str());
+
+	printf("\n |  time  |");
+	for(int i=0; i<idx.size(); i++)
+		printf(" head [%3s] | status |",unit.c_str());// | status |");
+
+	printf("\n |--------");
+	for(int i=0; i<idx.size(); i++)
+		printf("+---------------------");
+	printf("|");
+
+	for(int i=0; i<vectorTime.size()-1; i++)
+	{
+		printf("\n");
+		int hour = vectorTime[i]/3600.;
+		int minute = (vectorTime[i] - hour*3600.)/60.;
+		if(minute < 10)
+			printf(" | %3i:0%1i |", hour, minute);
+		else
+			printf(" | %3i:%2i |", hour, minute);
+
+		for(int j=0; j<idx.size(); j++)
+		{
+			printf(" %10.3f |", nodes[idx[j]]->vectorHead[i]*convertUnit);
+			if(nodes[idx[j]]->vectorStatus[i] == 1)
+				printf("  open  |");
+			else if(nodes[idx[j]]->vectorStatus[i] == 0)
+				printf(" closed |");
+			else
+				printf(" lofasz |");
+		}
+	}
+	cout << endl;
+}
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableEdge(vector<string> ID, string unit)
+{
+	vector<int> idx;
+	for(int i=0; i<ID.size(); i++)
+	{	
+		int k = edgeIDtoIndex(ID[i]);
+		if(k!=-1)
+	  	idx.push_back(k);
+	}
+	timeTableEdge(idx, unit);
+}
+//-------------------------------------------------------------------
+void SeriesHydraulics::timeTableEdge(vector<int> idx, string unit)
+{
+	double convertUnit = 1000.;
+	if(unit == "gpm")
+		convertUnit = 1/0.06309*1000.;
+	else
+		unit = "lps";
+
+	cout << endl;
+	printf(" |   ID   |");
+	for(int i=0; i<idx.size(); i++)
+		printf(" %-19s |",edges[idx[i]]->name.c_str());
+
+	printf("\n |  time  |");
+	for(int i=0; i<idx.size(); i++)
+		printf(" flow [%3s] | status |",unit.c_str());
+
+	printf("\n |--------");
+	for(int i=0; i<idx.size(); i++)
+		printf("+---------------------");
+	printf("|");
+
+	for(int i=0; i<vectorTime.size()-1; i++)
+	{
+		printf("\n");
+		int hour = vectorTime[i]/3600.;
+		int minute = (vectorTime[i] - hour*3600.)/60.;
+		if(minute < 10)
+			printf(" | %3i:0%1i |", hour, minute);
+		else
+			printf(" | %3i:%2i |", hour, minute);
+
+		for(int j=0; j<idx.size(); j++)
+		{
+			printf(" %10.3f |", edges[idx[j]]->vectorVolumeFlowRate[i]*convertUnit);
+			if(edges[idx[j]]->vectorStatus[i] == 2)
+				printf(" active |");
+			else if(edges[idx[j]]->vectorStatus[i] == 1)
+				printf("  open  |");
+			else if(edges[idx[j]]->vectorStatus[i] == 0)
+				printf(" closed |");
+			else if(edges[idx[j]]->vectorStatus[i] == -1)
+				printf(" CLOSED |");
+			else
+				printf(" lofasz |");
+		}
+	}
+	cout << endl;
+}
+
+//-------------------------------------------------------------------
+string SeriesHydraulics::secondsToTime(double seconds)
+{
+	string out;
+	int hour = seconds/3600.;
+	int minute = (seconds - hour*3600.)/60.;
+	if(minute < 10)
+		out = to_string(hour) + ":0" + to_string(minute);
+	else
+		out = to_string(hour) + ":" + to_string(minute);
+	return out;
+}
+
+//-------------------------------------------------------------------
+double SeriesHydraulics::timeToSeconds(string s1, string s2)
+{
+	double time;
+	if(s2 == "") // HANDLING 12:00, 14:30, 09:45 etc.
+	{
+		time = stod(s1.substr(0,s1.find(":")),0) * 3600. + stod(s1.substr(s1.find(":")+1,s1.length()),0) * 60.;
+	}
+	else // HANDLING 9:45 AM, 2 Days, 4 Hours etc.
+	{
+		if(s2 == "DAYS" || s2 == "Days" || s2 == "days")
+			time = stod(s1,0) * 86400.;
+		else if(s2 == "HOURS" || s2 == "Hours" || s2 == "hours")
+			time = stod(s1,0) * 3600.;
+		else if(s2 == "MIN" || s2 == "Min" || s2 == "min")
+			time = stod(s1,0) * 60.;
+		else if(s2 == "AM" || s2 == "am")
+		{
+			double t1 = stod(s1.substr(0,s1.find(":")),0);
+			if(t1 >= 12.)
+				t1 -= 12.;
+			if(s1.find(":") <= s1.length())
+				time =  t1* 3600. + stod(s1.substr(s1.find(":")+1,s1.length()),0) * 60.;
+			else
+				time =  t1* 3600.;
+		}
+		else if(s2 == "PM" || s2 == "pm")
+		{
+			double t1 = stod(s1.substr(0,s1.find(":")),0);
+			t1 += 12.;
+			if(s1.find(":") <= s1.length())
+				time =  t1* 3600. + stod(s1.substr(s1.find(":")+1,s1.length()),0) * 60.;
+			else
+				time =  t1* 3600.;
+		}
+		else
+		{
+			cout << endl << "!WARNING! Unkown input: " << s2 << "\nAvailable inputs: DAYS | HOURS | MIN | AM | PM" << endl;
+			time = 0.;
+		}
+	}
+	return time;
+}
+
+//-------------------------------------------------------------------
+void SeriesHydraulics::patternIDtoIndex()
+{
+ 	for(int i=0; i<numberNodes; i++)
+ 	{
+ 		for(int j=0; j<nodes[i]->vectorPatternID.size(); j++)
+ 		{	
+ 			nodes[i]->vectorPatternIndex.resize(nodes[i]->vectorPatternID.size(),-1);
+ 			for(int k=0; k<patternID.size(); k++)
+ 			{
+ 				if(nodes[i]->vectorPatternID[j] == patternID[k])
+ 				{
+ 					nodes[i]->vectorPatternIndex[j] = k;
+ 					break;
+ 				}
+ 			}
+ 		}
+ 	}
 }
 
 //-------------------------------------------------------------------
@@ -732,200 +908,3 @@ void SeriesHydraulics::loadTimeSettings()
 		}//end of while(getline)
 	}//end of if(fileIn.is_open())
 } 
-
-//-------------------------------------------------------------------
-void SeriesHydraulics::timeTableNode(vector<string> ID, string unit)
-{
-	vector<int> idx;
-	for(int i=0; i<ID.size(); i++)
-	{	
-		int k = nodeIDtoIndex(ID[i]);
-		if(k!=-1)
-	  	idx.push_back(k);
-	}
-	timeTableNode(idx,unit);
-}
-//-------------------------------------------------------------------
-void SeriesHydraulics::timeTableNode(vector<int> idx, string unit)
-{
-	double convertUnit = 1.;
-	if(unit == "psi")
-		convertUnit = 1/0.7032;
-	else unit = " m ";
-
-	cout << endl;
-	printf(" |   ID   |");
-	for(int i=0; i<idx.size(); i++)
-		printf(" %-19s |",nodes[idx[i]]->name.c_str());
-
-	printf("\n |  time  |");
-	for(int i=0; i<idx.size(); i++)
-		printf(" head [%3s] | status |",unit.c_str());// | status |");
-
-	printf("\n |--------");
-	for(int i=0; i<idx.size(); i++)
-		printf("+---------------------");
-	printf("|");
-
-	for(int i=0; i<vectorTime.size()-1; i++)
-	{
-		printf("\n");
-		int hour = vectorTime[i]/3600.;
-		int minute = (vectorTime[i] - hour*3600.)/60.;
-		if(minute < 10)
-			printf(" | %3i:0%1i |", hour, minute);
-		else
-			printf(" | %3i:%2i |", hour, minute);
-
-		for(int j=0; j<idx.size(); j++)
-		{
-			printf(" %10.3f |", nodes[idx[j]]->vectorHead[i]*convertUnit);
-			if(nodes[idx[j]]->vectorStatus[i] == 1)
-				printf("  open  |");
-			else if(nodes[idx[j]]->vectorStatus[i] == 0)
-				printf(" closed |");
-			else
-				printf(" lofasz |");
-		}
-	}
-	cout << endl;
-}
-//-------------------------------------------------------------------
-void SeriesHydraulics::timeTableEdge(vector<string> ID, string unit)
-{
-	vector<int> idx;
-	for(int i=0; i<ID.size(); i++)
-	{	
-		int k = edgeIDtoIndex(ID[i]);
-		if(k!=-1)
-	  	idx.push_back(k);
-	}
-	timeTableEdge(idx, unit);
-}
-//-------------------------------------------------------------------
-void SeriesHydraulics::timeTableEdge(vector<int> idx, string unit)
-{
-	double convertUnit = 1000.;
-	if(unit == "gpm")
-		convertUnit = 1/0.06309*1000.;
-	else
-		unit = "lps";
-
-	cout << endl;
-	printf(" |   ID   |");
-	for(int i=0; i<idx.size(); i++)
-		printf(" %-19s |",edges[idx[i]]->name.c_str());
-
-	printf("\n |  time  |");
-	for(int i=0; i<idx.size(); i++)
-		printf(" flow [%3s] | status |",unit.c_str());
-
-	printf("\n |--------");
-	for(int i=0; i<idx.size(); i++)
-		printf("+---------------------");
-	printf("|");
-
-	for(int i=0; i<vectorTime.size()-1; i++)
-	{
-		printf("\n");
-		int hour = vectorTime[i]/3600.;
-		int minute = (vectorTime[i] - hour*3600.)/60.;
-		if(minute < 10)
-			printf(" | %3i:0%1i |", hour, minute);
-		else
-			printf(" | %3i:%2i |", hour, minute);
-
-		for(int j=0; j<idx.size(); j++)
-		{
-			printf(" %10.3f |", edges[idx[j]]->vectorVolumeFlowRate[i]*convertUnit);
-			if(edges[idx[j]]->vectorStatus[i] == 2)
-				printf(" active |");
-			else if(edges[idx[j]]->vectorStatus[i] == 1)
-				printf("  open  |");
-			else if(edges[idx[j]]->vectorStatus[i] == 0)
-				printf(" closed |");
-			else if(edges[idx[j]]->vectorStatus[i] == -1)
-				printf(" CLOSED |");
-			else
-				printf(" lofasz |");
-		}
-	}
-	cout << endl;
-}
-
-//-------------------------------------------------------------------
-string SeriesHydraulics::secondsToTime(double seconds)
-{
-	string out;
-	int hour = seconds/3600.;
-	int minute = (seconds - hour*3600.)/60.;
-	if(minute < 10)
-		out = to_string(hour) + ":0" + to_string(minute);
-	else
-		out = to_string(hour) + ":" + to_string(minute);
-	return out;
-}
-
-//-------------------------------------------------------------------
-double SeriesHydraulics::timeToSeconds(string s1, string s2)
-{
-	double time;
-	if(s2 == "") // HANDLING 12:00, 14:30, 09:45 etc.
-	{
-		time = stod(s1.substr(0,s1.find(":")),0) * 3600. + stod(s1.substr(s1.find(":")+1,s1.length()),0) * 60.;
-	}
-	else // HANDLING 9:45 AM, 2 Days, 4 Hours etc.
-	{
-		if(s2 == "DAYS" || s2 == "Days" || s2 == "days")
-			time = stod(s1,0) * 86400.;
-		else if(s2 == "HOURS" || s2 == "Hours" || s2 == "hours")
-			time = stod(s1,0) * 3600.;
-		else if(s2 == "MIN" || s2 == "Min" || s2 == "min")
-			time = stod(s1,0) * 60.;
-		else if(s2 == "AM" || s2 == "am")
-		{
-			double t1 = stod(s1.substr(0,s1.find(":")),0);
-			if(t1 >= 12.)
-				t1 -= 12.;
-			if(s1.find(":") <= s1.length())
-				time =  t1* 3600. + stod(s1.substr(s1.find(":")+1,s1.length()),0) * 60.;
-			else
-				time =  t1* 3600.;
-		}
-		else if(s2 == "PM" || s2 == "pm")
-		{
-			double t1 = stod(s1.substr(0,s1.find(":")),0);
-			t1 += 12.;
-			if(s1.find(":") <= s1.length())
-				time =  t1* 3600. + stod(s1.substr(s1.find(":")+1,s1.length()),0) * 60.;
-			else
-				time =  t1* 3600.;
-		}
-		else
-		{
-			cout << endl << "!WARNING! Unkown input: " << s2 << "\nAvailable inputs: DAYS | HOURS | MIN | AM | PM" << endl;
-			time = 0.;
-		}
-	}
-	return time;
-}
-
-//-------------------------------------------------------------------
-void SeriesHydraulics::patternIDtoIndex()
-{
- 	for(int i=0; i<numberNodes; i++)
- 	{
- 		for(int j=0; j<nodes[i]->vectorPatternID.size(); j++)
- 		{	
- 			nodes[i]->vectorPatternIndex.resize(nodes[i]->vectorPatternID.size(),-1);
- 			for(int k=0; k<patternID.size(); k++)
- 			{
- 				if(nodes[i]->vectorPatternID[j] == patternID[k])
- 				{
- 					nodes[i]->vectorPatternIndex[j] = k;
- 					break;
- 				}
- 			}
- 		}
- 	}
-}

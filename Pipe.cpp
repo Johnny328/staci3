@@ -82,11 +82,10 @@ double Pipe::function(const VectorXd &ppq, VectorXd &fDer)// ppq = [Pstart, Pend
     //out = ppq(2);
     //fDer(2) = 1.0;
 
-    out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e8 * ppq(2) * abs(ppq(2));
-    out = 0.0;
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e8 * ppq(2);
     fDer(0) = -1.0;
     fDer(1) =  1.0;
-    fDer(2) = 2 * 1e8;
+    fDer(2) =  1e8 ;
   }
   
   return out;
