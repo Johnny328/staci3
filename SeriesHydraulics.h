@@ -36,23 +36,27 @@ public:
   void timeTableNode(vector<int> idx, string unit);
   void timeTableEdge(vector<string> ID, string unit);
   void timeTableEdge(vector<int> idx, string unit);
+  // saving heads, consumtions for nodes and flow rate for edges in file
+  void saveToFile(vector<string> edgeID, vector<string> nodeID, string qUnit, string hUnit);
 
 private:
   // loading the series settings from INP file
   void loadTimeSettings();
     
-  // saving heads, consumtions for nodes and flow rate for edges
+  // saving heads, consumtions for nodes and flow rate for edges in vector* variables
   void saveOutput();
+
 
   // Calculating new time step based on controls and rules (tank filling etc.)
   double newHydraulicTimeStep();
 
   // updating stuffs
   void updateDemand();
+  void updatePressurePointPattern();
   void updatePool();
   void updateControl();
   void updateRule();
-  bool checkCondition(int i, double dt);
+  bool checkCondition(int i, double dt, double dwl);
 
   // converting string to a boolean operator between val1 and val2, e.g. val1 op val2 -> val1 > val2
   bool booleanWithString(string op, double left, double right);

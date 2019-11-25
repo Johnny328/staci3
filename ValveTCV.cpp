@@ -6,8 +6,6 @@ ValveTCV::ValveTCV(const string a_name, const string a_startNodeName, const stri
 
   setting = a_setting / (2. * gravity * referenceCrossSection * referenceCrossSection);
 
-  cout << endl << "k: " << a_setting << "  m: " << setting << endl;
-
   status = 2; // active
   typeCode = 7;  
 }
@@ -45,10 +43,11 @@ double ValveTCV::function(const VectorXd &ppq, VectorXd &fDer)
   }
   else // Closed
   {
-    out = ppq(1) - ppq(0) + (endHeight-startHeight) + 1e8 * ppq(2);
+    double k = 10.;
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + k * ppq(2) * abs(ppq(2)) + 1e8 * ppq(2);
     fDer(0) = -1.0;
     fDer(1) =  1.0;
-    fDer(2) =  1e8;
+    fDer(2) = 2 * k * abs(ppq(2)) + 1e8;
   }
   return out;
 }

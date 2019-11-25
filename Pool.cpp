@@ -38,8 +38,12 @@ double Pool::function(const VectorXd &ppq, VectorXd &fDer)
   }
   else // closed, status is 0 or -1
   {
-    out = ppq(2);
-    fDer(2) = 1.0;
+    //out = ppq(2);
+    //fDer(2) = 1.0;
+
+    out = -ppq(0) - startHeight + (bottomLevel + waterLevel) + 1e8 * ppq(2);
+    fDer(0) = -1.0;
+    fDer(2) =  1e8;
   }
   return out;
 }

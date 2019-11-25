@@ -55,6 +55,8 @@ public:
   // Basic Node and Edge list
   vector<Node *> nodes;
   vector<Edge *> edges;
+  // number of edges and nodes
+  int numberEdges, numberNodes;
 
   // indicies vector for edge types, avoiding the for cycles
   // e.g. poolIndex contains the indicies of the pools in the edges list
@@ -82,17 +84,10 @@ public:
   const double density = 1000.; // [kg/m3]
 
   // Converts node names (IDs) to indicies i.e. finds the node name in the list of the nodes
-  vector<int> ID2Index(const vector<string> &id);
+  //vector<int> ID2Index(const vector<string> &id);
 
   // Checking the IDs of the edges, if one has identical ones drops exit(-1)
   void checkSystem();
-
-  // Closing/opening edges (close: state = false | open: state = true)
-  //void changeEdgeStatus(string ID, bool state); // with ID (calls the idx version)
-  //void changeEdgeStatus(int idx, bool state); // with index
-
-  /// Containing indicies of open edges and nodes for HydSolver
-  //vector<int> openEdges, openNodes;
 
   /// Saving results to file
   void saveResult(string property, string element);
@@ -102,45 +97,24 @@ public:
   /// Saving the system to INP | IOinp.cpp
   void saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string frictionModel);
 
-  /// ************************************************ ///
-  /// GETSET GETSET GETSET GETSET GETSET GETSET GETSET ///
-  /// ************************************************ ///
-  string getDefinitionFile()
-  {
-      return definitionFile;
-  }
-  bool getIsInitialization()
-  {
-      return isInitialization;
-  }
-  void setIsInitialization(const bool var)
-  {
-      isInitialization = var;
-  }
-  string getFrictionModel(){
-      return frictionModel;
-  }
+  // level of printing
+  int printLevel = 0;
 
 protected:
-  /// Finds the index of value in the v vector
-  //int getVectorIndex(const vector<int> &v, int value);
   vector<string> line2sv(string line); // cutting string line to pieces
   int nodeIDtoIndex(string ID);
   int edgeIDtoIndex(string ID);
 
-  // Checking lonely nodes and newly connected ones
-  // void checkNodeStatus(int index);
-
   // UNITS
-  double demandUnit; // LPS, GPM etc. to LPS
+  double demandUnit, headUnit; // LPS, GPM etc. to LPS
   string unit; // SI or US
 
-  // number of edges and nodes
-  int numberEdges, numberNodes;
+  // name of the network without extension or folders
+  string caseName;
+  string definitionFile;
 
 private:
   bool isInitialization = false;
-  string definitionFile, caseName;
   string frictionModel;
   // Creates the indicies for the nodes of edges and edges of nodes i.e. indexing of the sparse Jacobian
   void buildSystem();

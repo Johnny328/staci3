@@ -20,17 +20,21 @@
 class PressurePoint: public Edge
 {
 public:
-    PressurePoint(const string a_name, const double a_referenceCrossSection, const string a_startNodeName, const double a_density, const double a_head, const double a_massFlowRate);
+    PressurePoint(const string a_name, const double a_referenceCrossSection, const string a_startNodeName, const double a_density, const double a_head, const double a_totalHead, const double a_massFlowRate);
     ~PressurePoint();
 
     /// Provides basic informations
     string info();
 
+    /// prescribed head
+    double head;
+    double headNominal;
+    /// head can have pattern
+    string patternID="";
+    int patternIndex=-1;
+
     /// A line of F(x) = equation, rearranged to 0 in w.c.m.
     double function(const VectorXd &ppq, VectorXd &fDer);
-
-    /// Jacobian: df/dhe, df/dhv, df/dmp
-    //vector<double> functionDerivative(vector<double>);
 
     /// Initialization, mode: 0->automatic | 1-> using value
     void initialization(int mode, double value);
@@ -40,9 +44,10 @@ public:
     //========================
     double getDoubleProperty(string prop);
     void setDoubleProperty(string prop, double value);
-
-//private:
-    double head;
+    string getStringProperty(string prop);
+    void setStringProperty(string prop, string value);
+    int getIntProperty(string prop);
+    void setIntProperty(string prop, int value);
 };
 
 #endif

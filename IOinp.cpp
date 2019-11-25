@@ -15,7 +15,7 @@ void Staci::loadSystem()
 
 	// FOR PRES
 	vector<string> pres_name, pres_node_from, pres_node_to;
-	vector<double> pres_p;
+	vector<double> pres_head, pres_totalHead;
 
 	// FOR POOLS
 	vector<string> pool_name, pool_node_from, pool_node_to;
@@ -97,7 +97,8 @@ void Staci::loadSystem()
 					{
 						vector<string> sv=line2sv(line);
 						pres_name.push_back(sv[0]);
-						pres_p.push_back(stod(sv[1],0));
+						pres_head.push_back(stod(sv[1],0));
+						pres_totalHead.push_back(stod(sv[1],0));
 						// Creating the node_name
 						node_name.push_back(sv[0]);
 						elev.push_back(-1.); // no data in inp, will be equal to other end's
@@ -400,7 +401,7 @@ void Staci::loadSystem()
   }
   else
   {
-		cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << "epanet2staci(), File is not open when calling epanet2staci() function!!! file: " << definitionFile << endl;
+		cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << "loadSystem(), File is not open when calling loadSystem() function!!! file: " << definitionFile << endl;
 		exit(-1);
   }
   file_in.close();
@@ -475,7 +476,6 @@ void Staci::loadSystem()
  		}
   }
 
-
   // Setting x-y coordinates for dummy nodes of pools and press
   for(int i=0; i<node_name.size(); i++){
   	if(xcoord[i]==-1.){
@@ -504,64 +504,67 @@ void Staci::loadSystem()
   	}
   }
 
-  // Modifying pump_name curves, STACI must have at least 3 points
-  //for(int i=0; i<pump_name.size(); i++)
-  //	if(pump_cv_x[i].size()<=2){
-  //		cout << "\n!WARNING! Pump " << pump_name[i] << " only has " << pump_cv_x[i].size() << " point(s)" << endl;
-  //		warning_counter++;
-  //	}
-
   // Converting units from EPANET to STACI (litre/sec)
   // US units
   if(flow_unit == "CFS")
   {
   	demandUnit = 0.028316846592;
+  	headUnit = 0.3048;
   	unit = "US";
   }
   else if(flow_unit == "GPM")
   {
   	demandUnit = 0.00006309;
+  	headUnit = 0.3048;
   	unit = "US";
   }
   else if(flow_unit == "MGD")
   {
   	demandUnit = 0.0438126364;
+  	headUnit = 0.3048;
   	unit = "US";
   }
   else if(flow_unit == "IMGD")
   {
   	demandUnit = 0.0526168042;
+  	headUnit = 0.3048;
   	unit = "US";
   }
   else if(flow_unit == "AFD")
   {
   	demandUnit = 0.0142764102;
+  	headUnit = 0.3048;
   	unit = "US";
   }
   // NORMAL units
   else if(flow_unit == "LPS")
   {
   	demandUnit = 0.001;
+  	headUnit = 1.;
   	unit = "SI";
   }
   else if(flow_unit == "LPM")
   {
   	demandUnit = 0.001/60.;
+  	headUnit = 1.;
   	unit = "SI";
   }
   else if(flow_unit == "MLD")
   {
   	demandUnit = 0.0115740741;
+  	headUnit = 1.;
   	unit = "SI";
   }
   else if(flow_unit == "CMH")
   {
   	demandUnit = 0.001/3.6;
+  	headUnit = 1.;
   	unit = "SI";
   }
   else if(flow_unit == "CMD")
   {
   	demandUnit = 0.0000115740741;
+  	headUnit = 1.;
   	unit = "SI";
   }
   else
@@ -575,20 +578,22 @@ void Staci::loadSystem()
   	demand[i] = demand[i]*demandUnit;
   if(unit=="US"){
 		for(int i=0; i<node_name.size(); i++)
-	  		elev[i] = elev[i]*0.3048; // feet to meter
+	  		elev[i] = elev[i]*headUnit; // feet to meter
 	  for(int i=0; i<pipe_name.size(); i++){
-  		l[i] = l[i]*0.3048; // feet to meter
+  		l[i] = l[i]*headUnit; // feet to meter
   		D[i] = D[i]*0.0254; // inches to meter
   		 // TODO Roughness in D-W
   	}
-		for(int i=0; i<pres_name.size(); i++)
-		  pres_p[i] = pres_p[i]*0.3048; // feet to meter
+		for(int i=0; i<pres_name.size(); i++){
+		  pres_head[i] = pres_head[i]*headUnit; // feet to meter
+		  pres_totalHead[i] = pres_totalHead[i]*headUnit; // feet to meter
+		}
 		for(int i=0; i<pool_name.size(); i++){
-			pool_botlev[i] = pool_botlev[i]*0.3048; // feet to meter
-			pool_watlev[i] = pool_watlev[i]*0.3048; // feet to meter
-			pool_minlev[i] = pool_minlev[i]*0.3048; // feet to meter
-			pool_maxlev[i] = pool_maxlev[i]*0.3048; // feet to meter
-			pool_aref[i] = pool_aref[i]*0.3048*0.3048; // square feet to square meter
+			pool_botlev[i] = pool_botlev[i]*headUnit; // feet to meter
+			pool_watlev[i] = pool_watlev[i]*headUnit; // feet to meter
+			pool_minlev[i] = pool_minlev[i]*headUnit; // feet to meter
+			pool_maxlev[i] = pool_maxlev[i]*headUnit; // feet to meter
+			pool_aref[i] = pool_aref[i]*headUnit*headUnit; // square feet to square meter
 	  }
 	  for(int i=0; i<valve_name.size(); i++)
   		valve_d[i] = valve_d[i]*0.0254; // inches to meter
@@ -596,7 +601,7 @@ void Staci::loadSystem()
 	  	if(pump_type[i] == "HEAD"){
 	  		for(int j=0; j<pump_cv_x[i].size(); j++){
 	  			pump_cv_x[i][j] = pump_cv_x[i][j]*demandUnit; // * to m3/s
-	  			pump_cv_y[i][j] = pump_cv_y[i][j]*0.3048; // feet to meter
+	  			pump_cv_y[i][j] = pump_cv_y[i][j]*headUnit; // feet to meter
 	  		}
 	  	}
 	  	else if(pump_type[i] == "POWER"){
@@ -629,8 +634,9 @@ void Staci::loadSystem()
 			if(node_name[j]==pres_node_from[i])
 				idx = j;
 
-		pres_p[i] = (pres_p[i]-elev[idx])*9.81*1000.; // meter to Pascal minus elevation
+		pres_head[i] = pres_head[i]-elev[idx]; // meter to Pascal minus elevation
 	}
+
 
 	// ########################
 	// CREATING THE NODES/PIPES
@@ -639,16 +645,19 @@ void Staci::loadSystem()
 	{
 	  nodes.push_back(new Node(node_name[i], xcoord[i], ycoord[i], elev[i], demand[i], 0.0, density));
 	}
+
 	for(int i=0; i<pres_name.size(); i++)
 	{	
-	  edges.push_back(new PressurePoint(pres_name[i], 1.0, pres_node_from[i], density, pres_p[i], 0.0));
+	  edges.push_back(new PressurePoint(pres_name[i], 1.0, pres_node_from[i], density, pres_head[i], pres_totalHead[i], 0.0));
 	}
+
 	for(int i=0; i<pool_name.size(); i++)
 	{
 	  edges.push_back(new Pool(pool_name[i], pool_node_from[i], density, pool_aref[i], pool_botlev[i], pool_watlev[i], 0.0));
 	  edges[edges.size()-1]->setDoubleProperty("minLevel",pool_minlev[i]);
 	  edges[edges.size()-1]->setDoubleProperty("maxLevel",pool_maxlev[i]);
 	}
+
 	for(int i=0; i<pipe_name.size(); i++)
 	{
 		bool isCheckValve;
@@ -668,6 +677,7 @@ void Staci::loadSystem()
    	else
    		edges[edges.size()-1]->status = 1;
 	}
+
 	for(int i=0; i<pump_name.size(); i++)
 	{
 		// -1: epanet POWER type with constant performance
@@ -691,6 +701,7 @@ void Staci::loadSystem()
 		}
    	edges.push_back(new Pump(pump_name[i], pump_node_from[i], pump_node_to[i], density, 1.0, pump_cv_x[i], pump_cv_y[i], pump_performance[i], 0.0, pumpType));
 	}
+
 	for(int i=0; i<valve_name.size(); i++)
 	{
 		if(valve_type[i] == "ISO") // ISOLATION VALVE

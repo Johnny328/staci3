@@ -4,8 +4,8 @@
 HydraulicSolver::HydraulicSolver(string spr_filename) : Staci(spr_filename)
 {
   maxIterationNumber = 100;
-  maxPressureError = 1e-4;
-  maxMassFlowError = 1e-6;
+  maxPressureError = 1.524e-4*5.;
+  maxMassFlowError = 2.832e-5*5.;
   relaxationFactor = 1.0;
   relaxationFactorIncrement = 1.1;
   relaxationFactorDecrement = 0.8;
@@ -82,7 +82,10 @@ bool HydraulicSolver::solveSystem()
   updateJacobian();
 
   computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
-  //iterInfo(iter, e_mp, e_p, changedIndex);
+
+  if(printLevel > 2)
+    iterInfo(iter, e_mp, e_p, changedIndex);
+
   while((iter<maxIterationNumber+1) && !isConv)
   {
     //checkJacobianMatrix();
@@ -97,7 +100,11 @@ bool HydraulicSolver::solveSystem()
 
     updateJacobian();
     computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
-    //iterInfo(iter+1, e_mp, e_p, changedIndex);
+
+    if(printLevel > 2)
+      iterInfo(iter+1, e_mp, e_p, changedIndex);
+    if(printLevel > 3)
+      iterInfoDetail();
 
     if(isConv)
     {
@@ -119,15 +126,10 @@ bool HydraulicSolver::solveSystem()
     iter++;
   }
 
-  for(int i=0; i<numberEdges; i++)
-    edges[i]->volumeFlowRate = x(i);
-  for(int i=0; i<numberNodes; i++)
-    nodes[i]->head = x(numberEdges + i);
-
   if(iter > maxIterationNumber)
   {
     iterInfo(iter, e_mp, e_p, changedIndex);
-    iterInfoDetail(f);
+    iterInfoDetail();
   }
   else
   {
@@ -161,6 +163,9 @@ void HydraulicSolver::linearSolver()
   VectorXd dx = VectorXd::Zero(numberEquations);
   solver.analyzePattern(jacobianMatrix);
   solver.factorize(jacobianMatrix); // performing LU decomposition
+  //cout << endl << "EIGEN FACTORIZE: " << solver.info() << endl;
+  //cout << endl << "JAC DET        : " << solver.absDeterminant() << endl;
+  //cout << endl << solver.lastErrorMessage() << endl;
   dx = solver.solve(-f); // Solving Jac*dx = -f
   x += relaxationFactor*dx; // x_i+1 = x_i + relax*dx (~0.1<relax<~1.0)
 }
@@ -267,30 +272,16 @@ VectorXd HydraulicSolver::getNodeFunction(int i)
 {
   int nIn = nodes[i]->edgeIn.size(), nOut = nodes[i]->edgeOut.size();
   VectorXd pq = VectorXd::Constant(1 + nIn + nOut, 0.0);
-  vector<bool> edgeStatus(nIn + nOut, true);
 
   pq(0) = x(numberEdges + i); // pq = [p, Qin1, Qin2, ..., Qout1, Qout2, ...]
   for(int j=0; j<nIn; j++)
   {
     pq(1+j) = x(nodes[i]->edgeIn[j]);
-    if(edges[nodes[i]->edgeIn[j]]->status < 1)
-      edgeStatus[j] = false;
   }
   for(int j=0; j<nOut; j++)
   {
     pq(1+nIn+j) = x(nodes[i]->edgeOut[j]);
-    if(edges[nodes[i]->edgeOut[j]]->status < 1)
-      edgeStatus[nIn + j] = false;
   }
-
-  // checking whethet the node is active or not
-  bool nActive = false;
-  for(int j=0; j<edgeStatus.size(); j++)
-    nActive += edgeStatus[j];
-  if(nActive)
-    nodes[i]->status = 1;
-  else
-    nodes[i]->status = 0;
 
   // calling the functions and function derivatives
   VectorXd funcDer = VectorXd::Constant(1 + nIn + nOut, 0.0);
@@ -426,29 +417,29 @@ void HydraulicSolver::iterInfo(int iter, double e_mp, double e_p, vector<int> id
 }
 
 //--------------------------------------------------------------
-void HydraulicSolver::iterInfoDetail(const VectorXd &f)
+void HydraulicSolver::iterInfoDetail()
 {   
-  printf("\n==================================");
+  printf("\n==========================================================");
   printf("\n   WORSTLY CONVERVGED ELEMENTS    ");
-  printf("\n=====================+============");
+  printf("\n=====================+====================================");
   vector<int> idx;
   vector<double> fs = findMaxValues(f.head(numberEdges), idx, 10, true);
-  printf("\n      Edge name      |     f    | vf [m3/s] ");
-  printf("\n=====================+============");
+  printf("\n      Edge name      |      f     |  vf [m3/s]  | status |");
+  printf("\n=====================+====================================");
   for(int i=0; i<fs.size(); i++)
   {
-    printf("\n%20s | %8.3e | %8.3e ",edges[idx[i]]->name.c_str(), fs[i], x(idx[i]));
+    printf("\n%20s | %10.3e | %10.3e | %6i |",edges[idx[i]]->name.c_str(), fs[i], x(idx[i]), edges[idx[i]]->status);
   }
-  printf("\n=====================+============");
+  printf("\n=====================+====================================");
 
   fs = findMaxValues(f.tail(numberNodes), idx, 10, true);
   printf("\n      Node name      |     f    |  p  [m]  ");
-  printf("\n=====================+============");
+  printf("\n=====================+====================================");
   for(int i=0; i<fs.size(); i++)
   {
     printf("\n%20s | %8.3e | %8.3f ",nodes[idx[i]]->name.c_str(), fs[i], x(numberEdges + idx[i]));
   }
-  printf("\n=====================+============");
+  printf("\n=====================+====================================");
   cout << endl;
 }
 
@@ -527,6 +518,11 @@ vector<int> HydraulicSolver::edgeStatusUpdate()
         closeIsolatedNode(ii);
         closeIsolatedNode(ij); 
       }
+      else
+      {
+        nodes[edges[idx]->startNodeIndex]->status = 1;
+        nodes[edges[idx]->endNodeIndex]->status = 1;
+      }
     }
   }
 
@@ -599,9 +595,14 @@ vector<int> HydraulicSolver::edgeStatusUpdate()
           closeIsolatedNode(ii);
           closeIsolatedNode(ij);
         }
-        else if(edges[idx]->status == 2)
+        else
         {
-          x(numberEdges + ij) = setting;
+          nodes[edges[idx]->startNodeIndex]->status = 1;
+          nodes[edges[idx]->endNodeIndex]->status = 1;
+          if(edges[idx]->status == 2)
+          {
+            x(numberEdges + ij) = setting;
+          }
         }
       }
     }
@@ -690,20 +691,32 @@ vector<int> HydraulicSolver::edgeStatusUpdate()
           closeIsolatedNode(ii);
           closeIsolatedNode(ij);
         }
-        else if(edges[idx]->status == 2)
+        else
         {
-          x(idx) = setting;
+          nodes[edges[idx]->startNodeIndex]->status = 1;
+          nodes[edges[idx]->endNodeIndex]->status = 1;
+          if(edges[idx]->status == 2)
+          {
+            x(numberEdges + ij) = setting;
+          }
         }
       }
     }
   }
 
-  if(changedIndex.size() > 0)
-    printf("        name         |   type   | status |  setting   |     vf     |     p1     |     p0     |\n");
-  for(int i=0; i<changedIndex.size(); i++)
+  if(printLevel > 1)
   {
-    int idx = changedIndex[i];
-    printf("%-20s | %8s |  %3i   | %10.3e | %10.3e | %10.3e | %10.3e | \n", edges[idx]->name.c_str(), edges[idx]->type.c_str(), edges[idx]->status, edges[idx]->setting, x(idx), x(numberEdges + edges[idx]->endNodeIndex), x(numberEdges + edges[idx]->startNodeIndex));
+    if(changedIndex.size() > 0)
+    {
+      printf(" ************************************* CHANGE BY HYDRAULICS *************************************\n");
+      printf(" |       Edge ID        |   type   | status |  setting   | vf [m3/s]  |   p1 [m]   |    p0 [m]  |\n");
+      for(int i=0; i<changedIndex.size(); i++)
+      {
+        int idx = changedIndex[i];
+        printf(" | %-20s | %8s |  %3i   | %10.3e | %10.3e | %10.3e | %10.3e | \n", edges[idx]->name.c_str(), edges[idx]->type.c_str(), edges[idx]->status, edges[idx]->setting, x(idx), x(numberEdges + edges[idx]->endNodeIndex), x(numberEdges + edges[idx]->startNodeIndex));
+      }
+      cout << endl;
+    }
   }
 
   return changedIndex;

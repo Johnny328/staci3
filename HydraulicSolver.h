@@ -97,7 +97,7 @@ private:
 	/// Printing the basic iteration informaition to console and log file
 	void iterInfo(int iter, double e_mp, double e_p, vector<int> idx);
   /// Printing the detailed iteration informaition to console and log file
-  void iterInfoDetail(const VectorXd &f);
+  void iterInfoDetail();
 
   /// Checking the pump operational points, whether they are on the curve
   void checkPumpOperatingPoint();

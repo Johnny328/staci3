@@ -32,8 +32,14 @@ double ValveISO::function(const VectorXd &ppq, VectorXd &fDer)
   }
   else // CLOSED, status is 0 or -1
   {
-    out = ppq(2);
-    fDer(2) =  1.0;
+    //out = ppq(2);
+    //fDer(2) =  1.0;
+
+    double k = 10.;
+    out = ppq(1) - ppq(0) + (endHeight-startHeight) + k * ppq(2) * abs(ppq(2)) + 1e8 * ppq(2);
+    fDer(0) = -1.0;
+    fDer(1) =  1.0;
+    fDer(2) = 2 * k * abs(ppq(2)) + 1e8;
   }
   return out;
 }

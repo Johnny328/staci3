@@ -1,6 +1,6 @@
 #include "Sensitivity.h"
 
-Sensitivity::Sensitivity(string spr_filename) : HydraulicSolver(spr_filename){}
+Sensitivity::Sensitivity(string fileName) : HydraulicSolver(fileName){}
 Sensitivity::~Sensitivity(){}
 
 //-----------------------------------------------------------------

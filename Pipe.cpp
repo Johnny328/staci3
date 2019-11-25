@@ -76,6 +76,9 @@ double Pipe::function(const VectorXd &ppq, VectorXd &fDer)// ppq = [Pstart, Pend
       out = ppq(1) - ppq(0) + (endHeight-startHeight) + pipeConst * ppq(2) * abs(ppq(2));
       fDer(2) = 2 * pipeConst * abs(ppq(2));
     }
+
+    if(fDer(2) < 2*pipeConst*2.832e-5)
+      fDer(2) = 2*pipeConst*2.832e-5;
   }
   else // CLOSED, status is 0 or -1
   {
@@ -98,7 +101,7 @@ void Pipe::setPipeConst()
   if(frictionModel == 0)
     pipeConst = 10.654 * pow(roughness,-1.85185) * pow(diameter,-4.87) * length;
   else if(frictionModel == 2)
-    pipeConst = roughness * length / (diameter * 2. * gravity * (diameter*diameter*M_PI/4.));
+    pipeConst = roughness*length *8. / (diameter*diameter*diameter*diameter*diameter * density * M_PI*M_PI);
 }
 
 //--------------------------------------------------------------
