@@ -8,8 +8,8 @@ bool Sensitivity::calculateSensitivity(string parameter)
 {
   bool convergence = solveSystem();
 
-  if(convergence){
-
+  if(convergence)
+  {
     if(parameter == "diameter" || parameter == "roughness")
     {
       int parNumber;
@@ -18,8 +18,8 @@ bool Sensitivity::calculateSensitivity(string parameter)
       else if(parameter == "diameter")
         parNumber = 1;
 
-      massFlowRateSensitivity = MatrixXd::Zero(numberEdges,numberEdges);
-      pressureSensitivity = MatrixXd::Zero(numberNodes,numberEdges);
+      massFlowRateSensitivity.resize(numberEdges,numberEdges);
+      pressureSensitivity.resize(numberNodes,numberEdges);
       for(int i=0; i<numberEdges; i++)
       {
         SparseVector<double> funcParDer;
@@ -32,8 +32,8 @@ bool Sensitivity::calculateSensitivity(string parameter)
     }
     else if(strcmp(parameter.c_str(), "demand") == 0)
     {
-      massFlowRateSensitivity = MatrixXd::Zero(numberEdges,numberNodes);
-      pressureSensitivity = MatrixXd::Zero(numberNodes,numberNodes);
+      massFlowRateSensitivity.resize(numberEdges,numberNodes);
+      pressureSensitivity.resize(numberNodes,numberNodes);
       for(int i=0; i<numberNodes; i++)
       {
         SparseVector<double> funcParDer;

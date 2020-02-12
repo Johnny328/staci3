@@ -1,7 +1,7 @@
 #include "SeriesHydraulics.h"
 
 //-------------------------------------------------------------------
-SeriesHydraulics::SeriesHydraulics(string fileName) : HydraulicSolver(fileName)
+SeriesHydraulics::SeriesHydraulics(string fileName) : Sensitivity(fileName)
 {
   loadTimeSettings();  
   patternIDtoIndex(); // FILLING THE PATTERNS TO THE NODES
@@ -11,35 +11,43 @@ SeriesHydraulics::SeriesHydraulics(string fileName) : HydraulicSolver(fileName)
 SeriesHydraulics::~SeriesHydraulics(){}
 
 //-------------------------------------------------------------------
-void SeriesHydraulics::seriesSolve()
-{
-	initialization();
+void SeriesHydraulics::seriesSolve(ssc seriesSensitivityControl)
+{	
+	// clearing vectors
+	seriesInitialization(); // setting back tanks and clearing outputs
 
 	bool convOk = true;
-	time = startClock;
-	//vectorTime.push_back(time);
-	clockTime = startClock;
+	time = startTime;
+	clockTime = startTime;
 
-	while(time<=duration && convOk)
+	while(time<=endTime && convOk)
 	{
 		// printing basic info to consol
 		if(printLevel > 1)
-			seriesInfo();	
+			seriesInfo();
 
 		updateDemand();
 		updatePressurePointPattern();
 		updateControl();
 		updateRule();
 
-		convOk = solveSystem();
+		if(isSensitivityCalculation(seriesSensitivityControl))
+		{			
+			convOk = calculateSensitivity(seriesSensitivityControl.parameter);
+			saveSensitivityMatrix(seriesSensitivityControl);
+			if(printLevel > 1)
+				cout << endl << " Sensitivity calculation was done. " << endl;
+		}
+		else
+		{
+			convOk = solveSystem();
+		}
 
 		// saving head, consumptions for nodes and flows for edges
 		saveOutput();
 
 		hydraulicTimeStep = newHydraulicTimeStep();
 		time += hydraulicTimeStep;
-		//hydraulicTimeStep = hydraulicTimeStepOriginal;
-		//time += hydraulicTimeStepOriginal;
 
 		// updating the settings, pools etc.
 		updatePool();
@@ -54,13 +62,79 @@ void SeriesHydraulics::seriesSolve()
 }
 
 //-------------------------------------------------------------------
+void SeriesHydraulics::seriesSolve()
+{
+	ssc seriesSensitivityControl;
+	seriesSolve(seriesSensitivityControl);	
+}
+
+//-------------------------------------------------------------------
+bool SeriesHydraulics::isSensitivityCalculation(ssc seriesSensitivityControl)
+{
+	bool out = false;
+	for(int i=0; i<seriesSensitivityControl.time.size(); i++)
+	{
+		if(abs(seriesSensitivityControl.time[i] - time)<1e-2)
+			out = true;
+	}
+
+	return out;
+}
+
+//-------------------------------------------------------------------
+void SeriesHydraulics::saveSensitivityMatrix(ssc seriesSensitivityControl)
+{	
+	MatrixXd SM;
+	int rowSize = seriesSensitivityControl.rowIndex.size();
+	int colSize = seriesSensitivityControl.colIndex.size();
+	if(seriesSensitivityControl.isPressure)
+	{
+		if(rowSize == 0 && colSize == 0)
+		{
+			SM = pressureSensitivity(all,all);
+		}
+		else if(rowSize != 0 && colSize == 0)
+		{
+			SM = pressureSensitivity(seriesSensitivityControl.rowIndex,all);
+		}
+		else if(rowSize == 0 && colSize != 0)
+		{
+			SM = pressureSensitivity(all,seriesSensitivityControl.colIndex);
+		}
+		else
+		{
+			SM = pressureSensitivity(seriesSensitivityControl.rowIndex,seriesSensitivityControl.colIndex);
+		}
+	}
+	else
+	{
+		if(rowSize == 0 && colSize == 0)
+		{
+			SM = massFlowRateSensitivity(all,all);
+		}
+		else if(rowSize != 0 && colSize == 0)
+		{
+			SM = massFlowRateSensitivity(seriesSensitivityControl.rowIndex,all);
+		}
+		else if(rowSize == 0 && colSize != 0)
+		{
+			SM = massFlowRateSensitivity(all,seriesSensitivityControl.colIndex);
+		}
+		else
+		{
+			SM = massFlowRateSensitivity(seriesSensitivityControl.rowIndex,seriesSensitivityControl.colIndex);
+		}
+	}
+	seriesSensitivity.push_back(SM);
+}
+
+//-------------------------------------------------------------------
 void SeriesHydraulics::saveOutput()
 {
 	vectorTime.push_back(time);
 	for(int i=0; i<numberNodes; i++)
 	{
 		nodes[i]->vectorHead.push_back(nodes[i]->head);
-		//nodes[i]->vectorConsumption.push_back(nodes[i]->getProperty("consumption"));
 		nodes[i]->vectorConsumption.push_back(nodes[i]->demand);
 		nodes[i]->vectorStatus.push_back(nodes[i]->status);
 	}
@@ -68,6 +142,36 @@ void SeriesHydraulics::saveOutput()
 	{
 		edges[i]->vectorVolumeFlowRate.push_back(edges[i]->volumeFlowRate);
 		edges[i]->vectorStatus.push_back(edges[i]->status);
+	}
+}
+
+//-------------------------------------------------------------------
+void SeriesHydraulics::clearOutput()
+{
+	vectorTime.clear();
+	for(int i=0; i<numberNodes; i++)
+	{
+		nodes[i]->vectorHead.clear();
+		nodes[i]->vectorConsumption.clear();
+		nodes[i]->vectorStatus.clear();
+	}
+	for(int i=0; i<numberEdges; i++)
+	{
+		edges[i]->vectorVolumeFlowRate.clear();
+		edges[i]->vectorStatus.clear();
+	}
+	seriesSensitivity.clear();
+}
+
+//-------------------------------------------------------------------
+void SeriesHydraulics::seriesInitialization()
+{
+	clearOutput();
+	for(int i=0; i<poolIndex.size(); i++)
+	{
+		int idx = poolIndex[i];
+		double initLevel = edges[idx]->getDoubleProperty("initLevel");
+		edges[idx]->setDoubleProperty("waterLevel", initLevel);
 	}
 }
 
@@ -574,7 +678,7 @@ void SeriesHydraulics::timeTableNode(vector<int> idx, string unit)
 		printf("+---------------------");
 	printf("|");
 
-	for(int i=0; i<vectorTime.size()-1; i++)
+	for(int i=0; i<vectorTime.size(); i++)
 	{
 		printf("\n");
 		int hour = vectorTime[i]/3600.;
@@ -630,7 +734,7 @@ void SeriesHydraulics::timeTableEdge(vector<int> idx, string unit)
 		printf("+---------------------");
 	printf("|");
 
-	for(int i=0; i<vectorTime.size()-1; i++)
+	for(int i=0; i<vectorTime.size(); i++)
 	{
 		printf("\n");
 		int hour = vectorTime[i]/3600.;
@@ -845,7 +949,7 @@ void SeriesHydraulics::loadTimeSettings()
 							string id = sv[0];
 							for(int i=0; i<numberNodes; i++)
 							{
-								if(id == nodes[i]->getName())
+								if(id == nodes[i]->name)
 								{
 									nodes[i]->vectorDemand.push_back(demandUnit*stod(sv[1],0));
 									if(sv.size()>=3)
@@ -924,9 +1028,9 @@ void SeriesHydraulics::loadTimeSettings()
 							if(sv[0] == "Duration" || sv[0] == "DURATION")
 							{
 								if(sv.size() == 2)
-									duration = timeToSeconds(sv[1],"");
+									endTime = timeToSeconds(sv[1],"");
 								else
-									duration = timeToSeconds(sv[1],sv[2]);
+									endTime = timeToSeconds(sv[1],sv[2]);
 							}
 							if((sv[0] == "HYDRAULIC" && sv[1] == "TIMESTEP") || (sv[0] == "Hydraulic" && sv[1] == "Timestep"))
 							{
@@ -945,9 +1049,9 @@ void SeriesHydraulics::loadTimeSettings()
 							if((sv[0] == "START" && sv[1] == "CLOCKTIME") || (sv[0] == "Start" && sv[1] == "ClockTime"))
 							{
 								if(sv.size() == 3)
-									startClock = timeToSeconds(sv[2],"");
+									startTime = timeToSeconds(sv[2],"");
 								else
-									startClock = timeToSeconds(sv[2],sv[3]);
+									startTime = timeToSeconds(sv[2],sv[3]);
 							}
 						}
 					}
@@ -1114,3 +1218,10 @@ void SeriesHydraulics::loadTimeSettings()
 		}//end of while(getline)
 	}//end of if(fileIn.is_open())
 } 
+
+
+//-------------------------------------------------------------------
+double SeriesHydraulics::getHydraulicTimeStep()
+{
+	return hydraulicTimeStep;
+}

@@ -5,11 +5,12 @@ using namespace std;
 Pipe::Pipe(const string a_name, const string a_startNodeName, const string a_endNodeName, const double a_density, const double a_length, const double a_diameter, const double a_roughness, const double a_volumeFlowRate, bool a_isCheckValve, int a_frictionModel) : Edge(a_name, a_diameter * a_diameter * M_PI / 4., a_volumeFlowRate, a_density)
 {
   numberNode = 2;
+  
   startNodeName = a_startNodeName;
   endNodeName = a_endNodeName;
   length = a_length;
   diameter = a_diameter;
-  roughness = a_roughness;
+  roughness = abs(a_roughness);
 
   frictionModel = a_frictionModel;
   setPipeConst();
@@ -90,18 +91,17 @@ double Pipe::function(const VectorXd &ppq, VectorXd &fDer)// ppq = [Pstart, Pend
     fDer(1) =  1.0;
     fDer(2) =  1e8;
   }
-  
+
   return out;
-  
 }
 
 //--------------------------------------------------------------
 void Pipe::setPipeConst()
 {
-  if(frictionModel == 0)
+  if(frictionModel == 0) // HAZEN
     pipeConst = 10.654 * pow(roughness,-1.85185) * pow(diameter,-4.87) * length;
-  else if(frictionModel == 2)
-    pipeConst = roughness*length *8. / (diameter*diameter*diameter*diameter*diameter * density * M_PI*M_PI);
+  else if(frictionModel == 2) // CONSTANT FRICTION COEFFICIENT
+    pipeConst = roughness*length *8. / (diameter*diameter*diameter*diameter*diameter * gravity * M_PI*M_PI);
 }
 
 //--------------------------------------------------------------
@@ -166,18 +166,22 @@ double Pipe::functionParameterDerivative(int parameter)
 double Pipe::getDoubleProperty(string prop)
 {
   double out = 0.;
-  if(prop == "diameter")
+  if(prop == "roughness")
+    out = roughness;
+  else if(prop == "diameter")
     out = diameter;
   else if(prop == "length")
     out = length;
-  else if (prop == "lambda")
+  else if(prop == "lambda")
     out = lambda;
-  else if (prop == "segment")
+  else if(prop == "volume")
+    out = referenceCrossSection*length;
+  else if(prop == "segment")
     out = (double)segment;
-  else if (prop == "Rh")
+  else if(prop == "status")
+    out = (double)status;
+  else if(prop == "Rh")
     out = diameter / 2.;
-  else if (prop == "roughness")
-    out = roughness;
   else if(prop == "massFlowRate" || prop == "mass_flow_rate")
     out = volumeFlowRate * density/1000.;
   else if(prop == "volumeFlowRate" || prop == "volume_flow_rate")
@@ -194,8 +198,7 @@ double Pipe::getDoubleProperty(string prop)
     out = startHeight;
   else if(prop == "endHeight")
     out = endHeight;
-  else if(prop == "volume")
-    out = referenceCrossSection*length;
+
   else
   {
     cout << endl << endl << "DOUBLE Pipe::getDoubleProperty() wrong argument:" << prop;
@@ -221,12 +224,21 @@ int Pipe::getIntProperty(string prop)
 //--------------------------------------------------------------
 void Pipe::setDoubleProperty(string prop, double value)
 {
-  if(prop == "diameter")
-    diameter = value;
-  else if(prop == "roughness")
+  if(prop == "roughness")
+  {
     roughness = value;
+    setPipeConst();
+  }
+  else if(prop == "diameter")
+  {
+    diameter = value;
+    setPipeConst();
+  }
   else if(prop == "length")
+  {
     length = value;
+    setPipeConst();
+  }
   else if(prop == "volumeFlowRate")
     volumeFlowRate = value;
   else if(prop == "density")

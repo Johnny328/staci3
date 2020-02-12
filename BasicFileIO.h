@@ -24,14 +24,14 @@
 using namespace std;
 using namespace Eigen;
 
-// Reading doubles from file, separeted with ','
+// Reading doubles from file, each line will be an element
 vector<string> readVectorString(string fileName);
 
 // Reading doubles from file to Eigen MatrixXd, separeted with "separator"
-MatrixXd readMatrixDouble(string fileName, char separator);
+MatrixXd readMatrixXdDouble(string fileName, char separator);
 
-// Reading doubles from file to Eigen VectorXd
-VectorXd readVectorDouble(string fileName);
+// Reading doubles from file to vector<double>
+vector<double> readVectorDouble(string fileName);
 
 // Counting the rows for Eigen Vectors
 int countRows(string fileName);

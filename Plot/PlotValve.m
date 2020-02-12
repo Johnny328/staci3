@@ -1,4 +1,4 @@
- function []=PlotValve(x,y,r,lw,tag)
+ function []=PlotValve(x,y,r,lw,rgb,tag)
 
 d=sqrt((x(2)-x(1))^2+(y(2)-y(1))^2);
 alfa=atan2(y(2)-y(1),x(2)-x(1));
@@ -10,9 +10,9 @@ xp = [mean(x)-r/2*cos(alfa),mean(x)+r/2*cos(alfa)];
 yp = [mean(y)-r/2*sin(alfa),mean(y)+r/2*sin(alfa)];
 
 %color
-R = 0.5;
-G = 0.5;
-B = 0.5;
+R = rgb(1);
+G = rgb(2);
+B = rgb(3);
 
 %start and end
 plot([x(1),xp(1)],[y(1),yp(1)],'linewidth',lw,'color',[R,G,B],'tag',tag);

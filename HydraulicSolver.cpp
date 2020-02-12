@@ -37,12 +37,6 @@ HydraulicSolver::HydraulicSolver(string spr_filename) : Staci(spr_filename)
   // giving initial values to head and volume flow rates
   initialization();
 
-  // calculating the max rank of the jacobian matrix
-  maxRank = 4;
-  for(int i=0; i<numberNodes; i++)
-    if(nodes[i]->edgeIn.size() + nodes[i]->edgeOut.size() > maxRank)
-      maxRank = nodes[i]->edgeIn.size() + nodes[i]->edgeOut.size();
-
   // resizing Eigen vectors
   x.resize(numberEquations);
   f.resize(numberEquations);
@@ -66,18 +60,9 @@ bool HydraulicSolver::solveSystem()
   bool isConv;
   vector<int> changedIndex;
   
-  /*for(int i=0; i<valveIndex.size(); i++)
-  { 
-    int idx = valveIndex[i];
-    if(edges[idx]->typeCode == 6) // FCV
-      edges[idx]->status = 1;
-  }*/
-
   e_mp = 1e10, e_p = 1e10, e_mp_r = 1e10, e_p_r = 1e10;
   iter = 0;
   isConv = false;
-
-  //buildJacobian(); // building the Jacobian matrix
 
   updateJacobian();
 
@@ -91,12 +76,9 @@ bool HydraulicSolver::solveSystem()
     //checkJacobianMatrix();
     linearSolver(); // Solving Jac*dx = f
 
-    //if(e_p < 1e-0 && e_mp < 1e-0)
-    {
-      changedIndex = edgeStatusUpdate();
-      if(changedIndex.size() > 0)
-        isConv = false;
-    }
+    changedIndex = edgeStatusUpdate();
+    if(changedIndex.size() > 0)
+      isConv = false;
 
     updateJacobian();
     computeError(f, e_mp, e_p, e_mp_r, e_p_r, isConv);
@@ -134,34 +116,27 @@ bool HydraulicSolver::solveSystem()
   else
   {
     for(int i=0; i<numberEdges; i++)
+    {
       edges[i]->volumeFlowRate = x(i);
+    }
     for(int i=0; i<numberNodes; i++)
     { 
       nodes[i]->head = x(numberEdges + i);
-      if(isPressureDemand)
-      {
-        double cons = nodes[i]->getConsumption(x(numberEdges + i));
-        nodes[i]->consumption = cons;
-      }
-      else
-      {
-        nodes[i]->consumption = nodes[i]->demand;
-      }
     }
     relaxationFactor = 1.0;
   }
 
   // Checking the pumps
   checkPumpOperatingPoint();
-
+  
   return isConv;
 }
 
 //--------------------------------------------------------------
 void HydraulicSolver::linearSolver()
 {
-  VectorXd dx = VectorXd::Zero(numberEquations);
-  solver.analyzePattern(jacobianMatrix);
+  VectorXd dx;
+  dx.resize(numberEquations);
   solver.factorize(jacobianMatrix); // performing LU decomposition
   //cout << endl << "EIGEN FACTORIZE: " << solver.info() << endl;
   //cout << endl << "JAC DET        : " << solver.absDeterminant() << endl;
@@ -173,6 +148,16 @@ void HydraulicSolver::linearSolver()
 //--------------------------------------------------------------
 void HydraulicSolver::buildJacobian()
 {
+  // calculating the max rank of the jacobian matrix
+  maxRank = 4;
+  for(int i=0; i<numberNodes; i++)
+  {
+    if(nodes[i]->edgeIn.size() + nodes[i]->edgeOut.size() > maxRank)
+    {
+      maxRank = nodes[i]->edgeIn.size() + nodes[i]->edgeOut.size();
+    }
+  }
+
   int n = x.rows();
   jacobianMatrix.resize(n,n);
   jacobianMatrix.reserve(VectorXi::Constant(n,maxRank));
@@ -208,6 +193,7 @@ void HydraulicSolver::buildJacobian()
       jacobianMatrix.insert(numberEdges + i, nodes[i]->edgeOut[j]) = funcDer(1+nIn+j);
     }
   }
+  solver.analyzePattern(jacobianMatrix);
 }
 
 //--------------------------------------------------------------
@@ -397,7 +383,7 @@ void HydraulicSolver::initialization()
   // Fill up the outflows (pressure points, pools)
   double sumCons = 0.;
   for(int i=0; i<numberNodes; i++)
-    sumCons += nodes[i]->consumption;
+    sumCons += nodes[i]->demand;
   int np = presIndex.size() + poolIndex.size();
   for(int i=0; i<presIndex.size(); i++)
   {
@@ -454,7 +440,7 @@ void HydraulicSolver::listResult()
   }
   cout << endl << "\t" << "-----------------------------------------------------------------";
   for(int i = 0; i < numberNodes; i++){
-    printf("\n %-12s:", nodes[i]->getName().c_str());
+    printf("\n %-12s:", nodes[i]->name.c_str());
     cout << "  p = " << nodes[i]->head * 1000. * 9.81 / 1.e5 << " bar" << "     H = " << nodes[i]->head << " m" << "      H+height=" << nodes[i]->head + nodes[i]->geodeticHeight << " m";
   }
   cout << endl << endl;

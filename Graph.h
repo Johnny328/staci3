@@ -23,13 +23,10 @@
 
 using namespace std;
 
-int GraphDiameter(vector<int> Segment_EV);
-vector< vector<int> > segmenter(vector<int> Sledge_vector);
-vector< vector<int> > segmenter2(vector<int> Sledge_vector);
-vector<vector<int> > segmenterWR(vector<int> edveVector);
-double GlobalSegmentClustering(vector<int> Segment_EV);
-double AvPathLength(vector<int> Segment_EV);
-vector<double> LocalSegmentClustering(vector<int> Segment_EV);
-vector<double> DegreeDistribution(vector<int> Segment_EV, bool selfloop);
+vector<vector<int> > segmenter(vector<int> ev); //WR
+double globalClustering(vector<int> ev);
+double avPathLength(vector<int> ev);
+int graphDiameter(vector<int> ev);
+int articulationPoints(vector<int> ev);
 
 #endif

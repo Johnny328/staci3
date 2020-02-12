@@ -48,7 +48,8 @@ string Edge::info(){
 }
 
 //--------------------------------------------------------------
-double Edge::getEdgeDoubleProperty(string prop){
+double Edge::getEdgeDoubleProperty(string prop)
+{
   double out = 0.;
   if(prop == "volumeFlowRate") // l/s
     out = volumeFlowRate;
@@ -56,10 +57,14 @@ double Edge::getEdgeDoubleProperty(string prop){
     out = abs(volumeFlowRate);
   else if(prop == "segment")
     out = (double)segment;
+  else if(prop == "status")
+    out = (double)status;
+  else if(prop == "userOutput")
+    out = userOutput;
   else if(prop == "massFlowRate") // kg/s
-    out = volumeFlowRate * density/1000.;
+    out = volumeFlowRate * density;
   else if(prop == "velocity") // m/s
-    out = volumeFlowRate / 1000. / referenceCrossSection;
+    out = volumeFlowRate  / referenceCrossSection;
   else if(prop == "density") // kg/m3
     out = density;
   else if(prop == "referenceCrossSection" || prop == "Aref")
@@ -92,7 +97,8 @@ int Edge::getEdgeIntProperty(string prop){
 }
 
 //--------------------------------------------------------------
-string Edge::getEdgeStringProperty(string prop){
+string Edge::getEdgeStringProperty(string prop)
+{
   string out = "";
   if(prop == "startNodeName" || prop == "start_node_name")
     out = startNodeName;
@@ -111,11 +117,14 @@ string Edge::getEdgeStringProperty(string prop){
 }
 
 //--------------------------------------------------------------
-void Edge::setEdgeDoubleProperty(string prop, double value){
+void Edge::setEdgeDoubleProperty(string prop, double value)
+{
   if(prop == "volumeFlowRate")
     volumeFlowRate = value;
   else if(prop == "density")
     density = value;
+  else if(prop == "userOutput")
+    userOutput = value;
   else if(prop == "referenceCrossSection" || prop == "reference_cross_section")
     referenceCrossSection = value;
   else

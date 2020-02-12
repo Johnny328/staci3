@@ -17,15 +17,15 @@
 
 #include "Edge.h"
 
-class Pool:public Edge{
-
-//private:
+class Pool:public Edge
+{
+public:
   double bottomLevel;
   double waterLevel;
   double minLevel;
   double maxLevel;
+  double initLevel;
 
-public:
   Pool(const string a_name, const string a_startNodeName, const double a_density, const double a_referenceCrossSection, const double a_bottomLevel, const double a_waterLevel, const double a_massFlowRate);
   ~Pool();
 

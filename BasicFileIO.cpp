@@ -1,16 +1,25 @@
 #include "BasicFileIO.h"
 
 // Reading lines into string from file
-vector<string> readVectorString(string fileName){
+//--------------------------------------------------------------
+vector<string> readVectorString(string fileName)
+{
   ifstream ifile(fileName);
-  string temp, line;
+  string line;
   vector<string> M;
-  if(ifile.is_open()){
-    while(getline(ifile,line)){
+  if(ifile.is_open())
+  {
+    while(getline(ifile,line))
+    { 
       if(line[0] != '/')
-        M.push_back(line);
+      {
+        string tmp = line.substr(0,line.length()-1);
+        M.push_back(tmp);
+      }
     }
-  }else{
+  }
+  else
+  {
     cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << "readStrings(), File is not open when calling CSVRead function!!!" << endl;
     exit(-1);
   }
@@ -19,26 +28,37 @@ vector<string> readVectorString(string fileName){
 }
 
 // Reading doubles from file into MatrixXd, separeted with "separator"
-MatrixXd readMatrixDouble(string fileName, char separator){
-  if(separator == '/'){
+//--------------------------------------------------------------
+MatrixXd readMatrixXdDouble(string fileName, char separator)
+{
+  if(separator == '/')
+  {
     cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << "CSVRead(), Separator cannot be '/', that is for comments ONLY!!!" << endl;
     exit(-1);
   }
+
   ifstream ifile(fileName);
   vector<int> rowscols = countRowsCols(fileName,separator);
   int rows = rowscols[0], cols = rowscols[1];
   MatrixXd M = MatrixXd::Zero(rows,cols);
+
   string temp, line;
-  if(ifile.is_open()){
+  if(ifile.is_open())
+  {
     int midx=0;
-    while(getline(ifile,line)){
-      if(line[0] != '/'){
+    while(getline(ifile,line))
+    {
+      if(line[0] != '/')
+      {
         VectorXd v = VectorXd::Zero(cols);
         int vidx=0;
         for (string::iterator j=line.begin(); j!=line.end(); j++){
           if(*j!=separator)
+          {
             temp +=*j;
-          else{
+          }
+          else
+          {
             v(vidx) = stod(temp,0);
             vidx++;
             temp = "";
@@ -48,7 +68,9 @@ MatrixXd readMatrixDouble(string fileName, char separator){
         midx++;
       }
     }
-  }else{
+  }
+  else
+  {
     cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << "Staci::CSVRead(), File is not open when calling CSVRead function!!!" << endl;
     exit(-1);
   }
@@ -56,31 +78,38 @@ MatrixXd readMatrixDouble(string fileName, char separator){
   return M;
 }
 
-// Reading doubles from file into VectorXd, separeted with "separator"
-VectorXd readVectorDouble(string fileName){
-  int rows = countRows(fileName);
+// Reading doubles from file into vector<double>
+//--------------------------------------------------------------
+vector<double> readVectorDouble(string fileName)
+{
+  //int rows = countRows(fileName);
   ifstream ifile(fileName);
-  VectorXd v = VectorXd::Zero(rows);
+  vector<double> out;
   string line;
-  if(ifile.is_open()){
-    int idx=0;
-    while(getline(ifile,line)){
-      if(line[0] != '/'){
-        v(idx) = stod(line,0);
-        idx++;
+  if(ifile.is_open())
+  {
+    while(getline(ifile,line))
+    {
+      if(line[0] != '/')
+      {
+        out.push_back(stod(line,0));
       }
     }
-  }else{
+  }
+  else
+  {
     cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl << "Staci::CSVRead(), File is not open when calling CSVRead function!!!" << endl;
     exit(-1);
   }
   ifile.close();
-  return v;
+  return out;
 }
 
 
 // Counting the rows of a file
-int countRows(string fileName){
+//--------------------------------------------------------------
+int countRows(string fileName)
+{
   ifstream ifile(fileName);
   string line;
   int rows=0;
@@ -91,7 +120,9 @@ int countRows(string fileName){
 }
 
 // Counting the rows and cols of a file
-vector<int> countRowsCols(string fileName, char separator){
+//--------------------------------------------------------------
+vector<int> countRowsCols(string fileName, char separator)
+{
   ifstream ifile(fileName);
   string line;
   int cols=0, rows;

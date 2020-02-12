@@ -4,13 +4,15 @@ using namespace std;
 using namespace Eigen;
 
 //--------------------------------------------------------------
-double average(const vector<double> &x){
+double average(const vector<double> &x)
+{
   double a=0.;
   for(int i=0; i<x.size() ;i++)
     a += x[i];
   return a/(double)x.size();
 }
-double average(const vector<int> &x){
+double average(const vector<int> &x)
+{
   double a=0.;
   for(int i=0; i<x.size() ;i++)
     a += x[i];
@@ -18,7 +20,8 @@ double average(const vector<int> &x){
 }
 
 //--------------------------------------------------------------
-double absoluteMax(const vector<double> &x){
+double absoluteMax(const vector<double> &x)
+{
   double m=0.;
   for(int i=0; i<x.size(); i++)
     if((x[i]>m))
@@ -27,7 +30,8 @@ double absoluteMax(const vector<double> &x){
 }
 
 //--------------------------------------------------------------
-double standardDeviation(const vector<double> &x){
+double standardDeviation(const vector<double> &x)
+{
   double s=0.;
   double m = average(x);
   for(int i=0; i<x.size(); i++)
@@ -36,7 +40,8 @@ double standardDeviation(const vector<double> &x){
 }
 
 //--------------------------------------------------------------
-double normalDistribution(double m, double szig){
+double normalDistribution(double m, double szig)
+{
   random_device rd;
   default_random_engine generator( rd() );
   normal_distribution<double> dist(m,szig);
@@ -51,7 +56,8 @@ double uniformDistribution(double min, double max)
 }
 
 //--------------------------------------------------------------
-bool chiSquaredTest(const vector<double> &x, double m, double szig){
+bool chiSquaredTest(const vector<double> &x, double m, double szig)
+{
   bool r=false;
   int no_intervals = 6;
   int n_data = x.size();
@@ -95,6 +101,62 @@ bool chiSquaredTest(const vector<double> &x, double m, double szig){
 
   return r;
 }
+
+//--------------------------------------------------------------
+bool discreteHomogenityChi2(vector<int> f1, vector<int> f2)
+{
+  int n1=0,n2=0;
+  vector<double> r1(f1.size()), r2(f2.size());
+  for(int i=0; i<f1.size(); i++)
+    n1 += f1[i];
+  for(int i=0; i<f1.size(); i++)
+    r1[i] = (double)f1[i] / n1;
+
+  for(int i=0; i<f2.size(); i++)
+    n2 += f2[i];
+  for(int i=0; i<f2.size(); i++)
+    r2[i] = (double)f2[i] / n2;
+
+  int m;
+  if(f1.size()<f2.size())
+  {
+    m = f2.size();
+    r1.resize(m,0.);
+    f1.resize(m,0);
+  }
+  else
+  {
+    m = f1.size();
+    r2.resize(m,0.);
+    f2.resize(m,0);
+  }
+
+  double x2obs=0.;
+  int r=m;
+  for(int i=0; i<m; i++)
+  {
+    if(f1[i] + f2[i] != 0)
+      x2obs += pow((r1[i]-r2[i]),2) / (f1[i] + f2[i]);
+    else
+      r--;
+  }
+  x2obs *= n1;
+  x2obs *= n2;
+
+  // critical values from 0 to 20 95%
+  //vector<double> x2crit{0.,0.,3.841458821,5.991464547,7.814727903,9.487729037,11.07049769,12.59158724,14.06714045,15.50731306,16.9189776,18.30703805,19.67513757,21.02606982,22.36203249,23.6847913,24.99579014,26.2962276,27.58711164,28.86929943,30.14352721};
+  // critical values from 0 to 20 98%
+  vector<double> x2crit{0.,0.,5.411894431,7.824046011,9.837409311,11.6678434,13.3882226,15.03320775,16.62242187,18.16823076,19.67901609,21.16076754,22.61794081,24.05395669,25.47150914,26.87276464,28.25949634,29.63317731,30.99504721,32.34616093,33.68742507,};
+
+  if(x2crit[r] == 0)
+    cout << endl << "!WARNING! x2crit = 0, r (" << r << ") is not handeld." << endl;
+
+  if(x2obs < x2crit[r])
+    return true;
+  else
+    return false;
+}
+
 
 //--------------------------------------------------------------
 bool twoSampleUTest(double m1, double s1, int n1, double m2, double s2, int n2, double p){
@@ -154,7 +216,8 @@ double erfinv(double x)
 }
 
 //--------------------------------------------------------------
-double correlCoefficient(const vector<double> &x, const vector<double> &y){
+double correlCoefficient(const vector<double> &x, const vector<double> &y)
+{
   if(x.size() != y.size()){
     cout << "\n\n !!!!! ERROR !!!!!\n Size of x and y are not matching in CorrelCoef, Statistic.cpp\n";
     return 0;
@@ -178,7 +241,58 @@ double correlCoefficient(const vector<double> &x, const vector<double> &y){
 }
 
 //--------------------------------------------------------------
-vector<double> grubbsTest(const vector<double> &x){
+double spearmanCoefficient(const vector<double> &xo, const vector<double> &yo)
+{
+  double sc;
+  if(xo.size() == yo.size())
+  {
+    int nv = xo.size();
+    vector<double> xs = xo, ys = yo;
+    selectionSort(xs);
+    vector<int> rx(xo.size()),ry(yo.size());
+    for(int i=0; i<xs.size(); i++)
+    {
+      for(int j=0; j<xo.size(); j++)
+      {
+        if(xo[i] == xs[j])
+        {
+          rx[i] = j;
+          break;
+        }
+      }
+    }
+
+    selectionSort(ys);
+    for(int i=0; i<ys.size(); i++)
+    {
+      for(int j=0; j<yo.size(); j++)
+      {
+        if(yo[i] == ys[j])
+        {
+          ry[i] = j;
+          break;
+        }
+      }
+    }
+
+    double d=0.;
+    for(int i=0; i<rx.size(); i++)
+      d += pow(rx[i]-ry[i],2);
+    
+    sc = 1.-6.*d/nv/(nv*nv-1.);
+  }
+  else
+  {
+    cout << endl << "!WARNING! Something is wrong. xo size " << xo.size() << " does not match with yo size " << yo.size() << " in spearmanCoefficient function. " << endl;
+    exit(-1);
+  }
+
+  return sc;
+}
+
+//--------------------------------------------------------------
+vector<double> grubbsTest(const vector<double> &x)
+{
   double a,m,s;
   a = average(x);
   m = absoluteMax(x);
@@ -299,6 +413,49 @@ double interpolate(vector<double> x, vector<double> y, double xp){
 }
 
 //-------------------------------------------------------------- 
+vector<int> unique(const vector<int> &x)
+{
+  vector<int> out;
+  for(int i=0; i<x.size(); i++)
+  {
+    bool unique = true;
+    for(int j=0; j<out.size(); j++)
+    {
+      if(x[i] == out[j])
+      {
+        unique = false;
+        break;
+      }
+    }
+    if(unique)
+    {
+      out.push_back(x[i]);
+    }
+  }
+
+  return out;
+}
+
+//-------------------------------------------------------------- 
+void selectionSort(vector<double> &x)  
+{  
+  int i, j, min_idx, n = x.size();
+
+  // One by one move boundary of unsorted subarray  
+  for(i = 0; i < n-1; i++)  
+  {  
+    // Find the minimum element in unsorted array  
+    min_idx = i;  
+    for(j = i+1; j < n; j++)  
+    if(x[j] < x[min_idx])  
+        min_idx = j;  
+
+    // Swap the found minimum element with the first element  
+    swap(x, min_idx, i);  
+  }  
+}  
+
+//-------------------------------------------------------------- 
 void quickSortWithIndicies(vector<double> &x, vector<int> &idx, int low, int high){
 
   idx.clear();
@@ -307,13 +464,35 @@ void quickSortWithIndicies(vector<double> &x, vector<int> &idx, int low, int hig
     idx[i] = i;
   quickSort(x,idx,low,high);
 }
+//-------------------------------------------------------------- 
+void quickSortWithIndicies(vector<int> &x, vector<int> &idx, int low, int high){
 
+  idx.clear();
+  idx.resize(x.size());
+  for(int i=0; i<idx.size(); i++)
+    idx[i] = i;
+  quickSort(x,idx,low,high);
+}
 
 /* The main function that implements QuickSort 
  arr[] --> Array to be sorted, 
   low  --> Starting index, 
   high  --> Ending index */
 void quickSort(vector<double> &x, vector<int> &idx, int low, int high) 
+{
+  if (low < high) 
+  { 
+    /* pi is partitioning index, arr[p] is now 
+       at right place */
+    int pi = partition(x, idx, low, high); 
+
+    // Separately sort elements before 
+    // partition and after partition 
+    quickSort(x, idx, low, pi - 1); 
+    quickSort(x, idx, pi + 1, high); 
+  } 
+}
+void quickSort(vector<int> &x, vector<int> &idx, int low, int high) 
 {
   if (low < high) 
   { 
@@ -355,27 +534,54 @@ int partition(vector<double> &x, vector<int> &idx, int low, int high)
     swap(idx,i+1,high);
   return (i + 1); 
 }
+int partition(vector<int> &x, vector<int> &idx, int low, int high) 
+{ 
+  int pivot = x[high];    // pivot 
+  int i = (low - 1);  // Index of smaller element 
+
+  for (int j = low; j <= high- 1; j++) 
+  { 
+    // If current element is smaller than or 
+    // equal to pivot 
+    if (x[j] <= pivot) 
+    { 
+      i++;    // increment index of smaller element 
+      swap(x,i,j);
+      if(idx.size() == x.size())
+        swap(idx,i,j);
+    } 
+  } 
+  swap(x,i+1,high); 
+  if(idx.size() == x.size())
+    swap(idx,i+1,high);
+  return (i + 1); 
+}
 
 //--------------------------------------------------------------
-void swap(vector<double> &x, int i, int j){
+void swap(vector<double> &x, int i, int j)
+{
   double temp = x[i];
   x[i] = x[j];
   x[j] = temp;
 }
 
 //--------------------------------------------------------------
-void swap(vector<int> &x, int i, int j){
+void swap(vector<int> &x, int i, int j)
+{
   int temp = x[i];
   x[i] = x[j];
   x[j] = temp;
 }
 
 //--------------------------------------------------------------
-double min(vector<double> x, int &idx){
+double min(vector<double> x, int &idx)
+{
   double min=x[0];
   idx = 0;
-  for(int i=1; i<x.size(); i++){
-    if(min > x[i]){
+  for(int i=1; i<x.size(); i++)
+  {
+    if(min > x[i])
+    {
       min = x[i];
       idx = i;
     }
@@ -383,17 +589,21 @@ double min(vector<double> x, int &idx){
   return min;
 }
 //--------------------------------------------------------------
-double min(vector<double> x){
+double min(vector<double> x)
+{
   int idx;
   return min(x,idx);
 }
 
 //--------------------------------------------------------------
-double max(vector<double> x, int &idx){
+double max(vector<double> x, int &idx)
+{
   double max=x[0];
   idx = 0;
-  for(int i=1; i<x.size(); i++){
-    if(max < x[i]){
+  for(int i=1; i<x.size(); i++)
+  {
+    if(max < x[i])
+    {
       max = x[i];
       idx = i;
     }
@@ -401,19 +611,45 @@ double max(vector<double> x, int &idx){
   return max;
 }
 //--------------------------------------------------------------
-double max(vector<double> x){
+int max(vector<int> x, int &idx)
+{
+  int max=x[0];
+  idx = 0;
+  for(int i=1; i<x.size(); i++)
+  {
+    if(max < x[i])
+    {
+      max = x[i];
+      idx = i;
+    }
+  }
+  return max;
+}
+//--------------------------------------------------------------
+double max(vector<double> x)
+{
+  int idx;
+  return max(x,idx);
+}
+//--------------------------------------------------------------
+int max(vector<int> x)
+{
   int idx;
   return max(x,idx);
 }
 
-//--------------------------------------------------------------
-VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int &order){
 
-  if(x.rows() != y.rows()){
+//--------------------------------------------------------------
+VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int &order)
+{
+
+  if(x.rows() != y.rows())
+  {
     cout << endl << "!!!ERROR!!! Statistic::leastSquaresPolynomial(): size of X is not equal to size of Y" << endl << "Exiting..." << endl;
     exit(0);
   }
-  if(order>x.rows()-1){
+  if(order>x.rows()-1)
+  {
     cout << endl << "!WARNING! Statistic::leastSquaresPolynomial(): order(" << order << ") is larger or equal than number of points(" << x.rows() << ")!" << endl << "order is decreased to x.rows()-1 (" << x.rows()-1 << "), then continouing..." << endl;
     order = x.rows()-1;
   }
@@ -421,8 +657,10 @@ VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int &order
   VectorXd out = VectorXd::Zero(order+1);
   MatrixXd Gram = MatrixXd::Zero(order+1,order+1);
 
-  for(int i=0; i<Gram.rows(); i++){
-    for(int j=i; j<Gram.cols(); j++){
+  for(int i=0; i<Gram.rows(); i++)
+  {
+    for(int j=i; j<Gram.cols(); j++)
+    {
       Gram(i,j) = (eigenVectorXdPow(x,i).transpose()*eigenVectorXdPow(x,j)).sum(); // <fi,fj> = [x1^i, ... xm^i]*[x1^j, ... xm^j]^T
       if(j!=i)
         Gram(j,i) = Gram(i,j); // Since Gram matrix is symmetric
@@ -440,7 +678,8 @@ VectorXd leastSquaresPolynomial(const VectorXd &x, const VectorXd &y, int &order
 }
 
 //--------------------------------------------------------------
-VectorXd eigenVectorXdPow(const VectorXd &x, int order){
+VectorXd eigenVectorXdPow(const VectorXd &x, int order)
+{
   int n=x.rows();
   VectorXd out;
   if(order==0)
@@ -448,13 +687,15 @@ VectorXd eigenVectorXdPow(const VectorXd &x, int order){
   else
     out = x;
 
-  if(order>=2 || order <=-2){
+  if(order>=2 || order <=-2)
+  {
     for(int i=0; i<n; i++)
       for(int j=0; j<order-1; j++)
         out(i) = out(i)*out(i);
   }
 
-  if(order<0){
+  if(order<0)
+  {
     for(int i=0; i<n; i++)
       out(i) = 1./out(i);
   }

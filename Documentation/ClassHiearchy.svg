@@ -48,21 +48,6 @@
          id="path2394" />
     </marker>
     <marker
-       inkscape:stockid="Arrow1Lend"
-       orient="auto"
-       refY="0.0"
-       refX="0.0"
-       id="marker2276"
-       style="overflow:visible;"
-       inkscape:isstock="true"
-       inkscape:collect="always">
-      <path
-         id="path2274"
-         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
-         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
-         transform="scale(0.8) rotate(180) translate(12.5,0)" />
-    </marker>
-    <marker
        inkscape:isstock="true"
        style="overflow:visible;"
        id="marker1988"
@@ -197,6 +182,21 @@
          style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
          transform="matrix(-0.8,0,0,-0.8,-10,0)" />
     </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Lend-09-0"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path980-8-8"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.8,0,0,-0.8,-10,0)" />
+    </marker>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -205,9 +205,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="239.65117"
-     inkscape:cy="845.56646"
+     inkscape:zoom="0.9899495"
+     inkscape:cx="334.98307"
+     inkscape:cy="835.21447"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -269,34 +269,34 @@
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
        x="72.401154"
-       y="77.787018"
+       y="101.30674"
        id="text895"><tspan
          sodipodi:role="line"
          id="tspan893"
          x="72.401154"
-         y="77.787018"
+         y="101.30674"
          style="stroke-width:0.26458332">Calibration</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
        x="71.076607"
-       y="97.483047"
+       y="121.00277"
        id="text899"><tspan
          sodipodi:role="line"
          id="tspan897"
          x="71.076607"
-         y="97.483047"
+         y="121.00277"
          style="stroke-width:0.26458332">SVDCalibration</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="124.18063"
-       y="57.679482"
+       x="73.132156"
+       y="77.457428"
        id="text903"><tspan
          sodipodi:role="line"
          id="tspan901"
-         x="124.18063"
-         y="57.679482"
+         x="73.132156"
+         y="77.457428"
          style="stroke-width:0.26458332">SeriesHydraulics</tspan></text>
     <text
        xml:space="preserve"
@@ -469,18 +469,13 @@
        inkscape:connector-curvature="0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26499999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Lend-09)"
-       d="M 73.49912,91.679868 V 80.989148"
+       d="M 73.49912,115.19959 V 104.50887"
        id="path975-44"
        inkscape:connector-curvature="0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker1988)"
        d="M 22.760587,30.337797 67.928742,18.053571"
        id="path1978"
-       inkscape:connector-curvature="0" />
-    <path
-       style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker2276)"
-       d="M 121.87491,50.310227 87.397135,40.688521"
-       id="path2266"
        inkscape:connector-curvature="0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker2396)"
@@ -546,50 +541,50 @@
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
        x="31.372021"
-       y="147.6994"
+       y="165.07191"
        id="text2868"><tspan
          sodipodi:role="line"
          id="tspan2866"
          x="31.372021"
-         y="147.6994"
+         y="165.07191"
          style="stroke-width:0.26458332">BasicFileIO</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="135.14685"
-       y="64.185654"
+       x="84.098373"
+       y="83.9636"
        id="text2872"><tspan
          sodipodi:role="line"
          id="tspan2870"
-         x="135.14685"
-         y="64.185654"
+         x="84.098373"
+         y="83.9636"
          style="font-size:4.93888903px;stroke-width:0.26458332">+Rule</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
        x="72.193459"
-       y="147.58916"
+       y="164.96167"
        id="text2876"><tspan
          sodipodi:role="line"
          id="tspan2874"
          x="72.193459"
-         y="147.58916"
+         y="164.96167"
          style="stroke-width:0.26458332">Statistic</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:5.64444447px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
        x="103.83735"
-       y="147.85591"
+       y="165.22842"
        id="text2876-5"><tspan
          sodipodi:role="line"
          x="103.83735"
-         y="147.85591"
+         y="165.22842"
          style="stroke-width:0.26458332"
          id="tspan1034">Graph</tspan></text>
     <path
-       style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker1319)"
-       d="M 73.766388,71.902004 119.20221,61.001007"
-       id="path1309"
+       style="fill:none;stroke:#000000;stroke-width:0.26499999;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Lend-09-0)"
+       d="M 73.23185,93.330553 V 82.639833"
+       id="path975-44-3"
        inkscape:connector-curvature="0" />
   </g>
 </svg>

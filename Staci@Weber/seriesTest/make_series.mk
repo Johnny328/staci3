@@ -3,7 +3,7 @@ STACI_DIR=../bin/
 FUNC=seriesTest
 
 CXX=clang++
-CXXFLAGS=-g -std=c++17 -Wall -pedantic -I/usr/include/python2.7 -I/usr/local/include/igraph -ligraph
+CXXFLAGS=-std=c++17 -I/usr/include/python2.7 -I/usr/local/include/igraph -ligraph -O3 -fopenmp -mavx
 
 OBJS += \
 $(STACI_DIR)BasicFileIO.o \
@@ -16,6 +16,7 @@ $(STACI_DIR)Pipe.o \
 $(STACI_DIR)Pool.o \
 $(STACI_DIR)PressurePoint.o \
 $(STACI_DIR)Pump.o \
+$(STACI_DIR)Sensitivity.o \
 $(STACI_DIR)SeriesHydraulics.o \
 $(STACI_DIR)Shutdown.o \
 $(STACI_DIR)Staci.o \
@@ -31,7 +32,7 @@ $(FUNC).o
 %.o: ../../%.cpp
 	@echo '[*] Building file: $<'
 	@echo '[*] Invoking: CLANG++ Compiler'
-	$(CXX) $(CXXFLAGS) -O2 -c -fmessage-length=0 -MMD -MP -MF "$(@:%.o=%.d)" -MT "$(@:%.o=%.d)" -o "$@"  "$<"
+	$(CXX) $(CXXFLAGS) -c -MT "$(@:%.o=%.d)" -o "$@"  "$<"
 	@echo '[*] Finished building: $<'
 	@echo ' '
 

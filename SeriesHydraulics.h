@@ -18,18 +18,36 @@
 #ifndef SERIESHYDRAULICS_H
 #define SERIESHYDRAULICS_H
 
-#include "HydraulicSolver.h"
+#include "Sensitivity.h"
 #include "Rule.h"
 
-class SeriesHydraulics : public HydraulicSolver
+class SeriesHydraulics : public Sensitivity
 {
 public:
 
 	SeriesHydraulics(string fileName);
 	~SeriesHydraulics();
 
+  // control parameteres of the series sensitivity
+  struct ssc
+  {
+    string parameter; // roughness, diameter or demand
+    vector<double> time; // time appointments where sensitivity calculation must be done
+    vector<int> rowIndex; // row index of stored sensitivity matrix, all if empty
+    vector<int> colIndex; // col index of stored sensitivity matrix, all if empty
+    bool isPressure; // true if pressureSensitivity, false if massFlowRateSensitivity
+  };
+
   // calculating the hydraulics in time
+  void seriesSolve(ssc seriesSensitivityControl);
   void seriesSolve();
+  // deciding between solveSystem and calculateSensitivity basd on series sensitivity control parameters
+  bool isSensitivityCalculation(ssc seriesSensitivityControl);
+  // saving the important part of the sensitivity matrix in seriesSensitivity
+  void saveSensitivityMatrix(ssc seriesSensitivityControl);
+
+  // storing the sensitivity matrices in memory, only important part
+  vector<MatrixXd> seriesSensitivity;
 
   // Printing results to console
   void timeTableNode(vector<string> ID, string unit);
@@ -39,30 +57,47 @@ public:
   // saving heads, consumtions for nodes and flow rate for edges in file
   void saveToFile(vector<string> edgeID, vector<string> nodeID, string qUnit, string hUnit);
 
-private:
-  // loading the series settings from INP file
-  void loadTimeSettings();
-    
-  // saving heads, consumtions for nodes and flow rate for edges in vector* variables
-  void saveOutput();
-
-
-  // Calculating new time step based on controls and rules (tank filling etc.)
-  double newHydraulicTimeStep();
-
+protected:
   // updating stuffs
   void updateDemand();
   void updatePressurePointPattern();
   void updatePool();
   void updateControl();
   void updateRule();
+
+  // saving heads, consumtions for nodes and flow rate for edges in vector* variables
+  void saveOutput();
+  // clearing the vectors that are push_back-d
+  void clearOutput();
+
+  // Calculating new time step based on controls and rules (tank filling etc.)
+  double newHydraulicTimeStep();
+
+  // collecting the time stamps where calculations were made
+  vector<double> vectorTime;
+
+  // controlling the series calculations
+  double endTime=0., startTime=0.;
+  // time stuff
+  double time, clockTime, hydraulicTimeStep = 60.;
+
+  // get dt
+  double getHydraulicTimeStep();
+
+  // info about the seires calculation
+  void seriesInfo();
+    
+  // setting back to original status, clearing vectors, setting pool to initial level
+  void seriesInitialization();
+  
+private:
+  // loading the series settings from INP file
+  void loadTimeSettings();
+
   bool checkCondition(int i, double dt, double dwl);
 
   // converting string to a boolean operator between val1 and val2, e.g. val1 op val2 -> val1 > val2
   bool booleanWithString(string op, double left, double right);
-
-  // info about the seires calculation
-  void seriesInfo();
 
   // Converting time (double) to a string in for of xy:as
   string secondsToTime(double seconds);
@@ -71,9 +106,7 @@ private:
   double timeToSeconds(string s1, string s2);
 
   // time stuff
-  double duration=0., startClock=0., time, clockTime;
-  double patternTimeStep, hydraulicTimeStep = 60., hydraulicTimeStepOriginal = 60.;
-  vector<double> vectorTime;
+  double patternTimeStep, hydraulicTimeStepOriginal = 60.;
 
   // demand patterns
   vector<string> patternID;

@@ -43,9 +43,6 @@ public:
   /// A line of F(x) = equation, rearranged to 0 in l/s.
   virtual double function(const VectorXd &ppq, VectorXd &fDer) = 0;
 
-  /// Jacobian: df/dhe, df/dhv, df/dmp
-  //virtual vector<double> functionDerivative(vector<double>) = 0;
-
   /// Initialization, mode: 0->automatic | 1-> using value
   virtual void initialization(int mode, double value) = 0;
 
@@ -64,6 +61,21 @@ public:
   /// Containing the status of the edge, 0: closed, 1: open, 2: active (in case of active edges)
   int status;
 
+  /* typeCode values for edges
+  -2: pool
+  -1: pressure point
+  0:  pipe with check valve
+  1:  normal pipe
+  2:  pump
+  3:  pressure reduction valve (PRV)
+  4:  pressure sustaining valve (PSV)
+  5:  pressure breaker valve (PBV)
+  6:  flow control valve (FCV)
+  7:  throttle control valve (TCV)
+  8:  general purpose valve (GPV)
+  9:  isolation valve (ISO)*/
+  int typeCode;
+
   // Used only mainly in active Valves(PRV,FCV...)
   double setting;
 
@@ -80,15 +92,13 @@ public:
   double referenceCrossSection; // [m2], used for calculating velocity
   double startHeight, endHeight; // [m] height of the connecting nodes
   const double gravity = 9.81; // [m/s2]
+  double userOutput; // for saving data
   int startNodeIndex, endNodeIndex;
   int numberNode;
   int segment=-1; // the edge takes place in which segment
   string startNodeName, endNodeName;
   string name;
   string type; // Pipe, pool, pump, etc.
-
-  // similarly to EPANET2.0, 0: pipe with cv, 1: pipe, 2: pump, 3: prv, 4: psv, 5: pbv, 6: fcv, 7: tcv, 8: gpv, 9: iso, -1: pool, -2: pressurepoint
-  int typeCode;
 
   /// Get/set double/int/string property in general for EDGE
   double getEdgeDoubleProperty(string prop);

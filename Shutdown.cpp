@@ -3,17 +3,17 @@
 //--------------------------------------------------------------
 Shutdown::Shutdown(string spr_filename) : Staci(spr_filename)
 {
-  //buildSegmentGraph();
+  buildSegmentGraph();
 }
 Shutdown::~Shutdown(){}
 
 //--------------------------------------------------------------
 void Shutdown::buildSegmentGraph()
 { 
-  updateEdgeVector();
+  updateEdgeVector(); 
 
   // creating the edge vector of the segments
-  segmentVector = segmenterWR(edgeVector);
+  segmentVector = segmenter(edgeVector);
   numberSegment = segmentVector.size();
 
   // Setting the segment variables of nodes and edges
@@ -21,18 +21,20 @@ void Shutdown::buildSegmentGraph()
   {
     for(int j=0; j<segmentVector[i].size(); j+=2)
     {
-      nodes[abs(segmentVector[i][j])]->setSegment(i);
-      nodes[abs(segmentVector[i][j+1])]->setSegment(i);
+      nodes[abs(segmentVector[i][j])]->segment = i;
+      nodes[abs(segmentVector[i][j+1])]->segment = i;
       for(int k=0; k<edges.size(); k++)
       {
-        string type = edges[k]->type;
-        if(type == "Pipe" || type == "Pump"){
+        int typeCode = edges[k]->typeCode;
+        if(typeCode != -1 && typeCode != -2 && typeCode != 9) // -1: pp, -2: pool, 9: iso
+        {
           if(abs(segmentVector[i][j]) == edges[k]->startNodeIndex && abs(segmentVector[i][j+1]) == edges[k]->endNodeIndex)
-            edges[k]->setEdgeIntProperty("segment",i);
+            edges[k]->segment = i;
         }
-        if(type == "Pool" || type == "PressurePoint"){
+        if(typeCode == -1 || typeCode == -2) // -1: pp, -2: pool
+        {
           if(abs(segmentVector[i][j]) == edges[k]->startNodeIndex || abs(segmentVector[i][j+1]) == edges[k]->startNodeIndex)
-            edges[k]->setEdgeIntProperty("segment",i);
+            edges[k]->segment = i;
         }
       }
     }
@@ -42,103 +44,200 @@ void Shutdown::buildSegmentGraph()
   segmentEdgeVector.clear();
   for(int i=0; i<edges.size(); i++)
   {
-    if(edges[i]->type == "ValveISO")
+    if(edges[i]->typeCode == 9) // 9: iso
     {
       int idx_from, idx_to;
       idx_from = edges[i]->startNodeIndex;
       idx_to = edges[i]->endNodeIndex;
-      segmentEdgeVector.push_back(nodes[idx_from]->getSegment());
-      segmentEdgeVector.push_back(nodes[idx_to]->getSegment());
+      segmentEdgeVector.push_back(nodes[idx_from]->segment);
+      segmentEdgeVector.push_back(nodes[idx_to]->segment);
 
       // Filling up the Valves which segments are they connecting
-      edges[i]->setIntProperty("startSegment",nodes[idx_from]->getSegment());
-      edges[i]->setIntProperty("endSegment",nodes[idx_to]->getSegment());
+      edges[i]->setIntProperty("startSegment",nodes[idx_from]->segment);
+      edges[i]->setIntProperty("endSegment",nodes[idx_to]->segment);
     }
+  }
+
+  segmentRank = calculateRank(segmentEdgeVector);
+}
+
+//--------------------------------------------------------------
+void Shutdown::openEverything()
+{
+  for(int i=0; i<numberEdges; i++)
+  {
+    edges[i]->status = 1;
+  }
+  for(int i=0; i<numberNodes; i++)
+  {
+    nodes[i]->status = 1;
   }
 }
 
 //--------------------------------------------------------------
-vector<string> Shutdown::shutdownPlan(string pipeID){
-  int idx=0;
-  bool gotIt = false;
-  while(!gotIt && idx<edges.size()){
-    if(edges[idx]->getEdgeStringProperty("name") == pipeID)
-    {
-      gotIt = true;
-    }
-    idx++;
-  }
-
-  vector<string> valves;
-  if(idx==edges.size())
-    cout << endl << "Shutdown::shutdownPlan(pipeID) : pipeID (" << pipeID << ") not found" << endl;
-  else{
-    int segment = edges[idx-1]->getEdgeIntProperty("segment");
-    valves = closeSegment(segment);
-  }
-
-  return valves;
-}
-
-//--------------------------------------------------------------
-vector<string> Shutdown::closeSegment(int segmentToClose){
-
-  vector<string> closedValves;
+vector<int> Shutdown::closeSegment(int segmentToClose)
+{
   for(int i=0; i<edges.size(); i++)
   {
     if(edges[i]->segment == segmentToClose)
+    {
       edges[i]->status = 0;
-      //changeEdgeStatus(edges[i]->getEdgeStringProperty("name"),false);
-    if(edges[i]->type == "ValveISO"){
-      if(edges[i]->getIntProperty("startSegment") == segmentToClose || edges[i]->getIntProperty("startSegment") == segmentToClose){
+    }
+    if(edges[i]->typeCode == 9) // 9: iso
+    {
+      if(edges[i]->getIntProperty("startSegment") == segmentToClose || edges[i]->getIntProperty("endSegment") == segmentToClose)
+      {
         edges[i]->status = 0;
-        //changeEdgeStatus(edges[i]->getEdgeStringProperty("name"),false);
-        closedValves.push_back(edges[i]->name);
       }
     }
   }
 
-  vector<int> closedSegment = closeDisconnectedParts();
-
-  // Clearing the inner isolation valves
-  for(int i=0; i<closedValves.size(); i++)
+  for(int i=0; i<numberNodes; i++)
   {
-    for(int j=0; j<edges.size(); j++)
+    if(nodes[i]->segment == segmentToClose)
     {
-      if(edges[j]->type == "ValveISO")
+      nodes[i]->status = 0;
+    }
+  }
+
+  //vector<int> closedSegment = closeDisconnectedParts();
+  vector<int> closedSegment = closeDisconnectedSegments(segmentToClose);
+
+  return closedSegment;
+}
+
+//--------------------------------------------------------------
+vector<int> Shutdown::closeDisconnectedSegments(int segmentToClose)
+{
+  vector<int> sac; // segments closed additionally
+  
+
+  // building the segment edge vector without the closed segment 
+  vector<int> ev; // new segment edge vector
+  for(int i=0; i<segmentEdgeVector.size(); i+=2)
+  {
+    if(segmentEdgeVector[i] != segmentToClose && segmentEdgeVector[i+1] != segmentToClose)
+    {
+      ev.push_back(segmentEdgeVector[i]);
+      ev.push_back(segmentEdgeVector[i+1]);
+    }
+    if(segmentEdgeVector[i+1] == segmentToClose && segmentRank[segmentEdgeVector[i]] == 1)
+    {
+      sac.push_back(segmentEdgeVector[i]);
+    }
+    if(segmentEdgeVector[i] == segmentToClose && segmentRank[segmentEdgeVector[i+1]] == 1)
+    {
+      sac.push_back(segmentEdgeVector[i+1]);
+    }
+  }
+
+  // collecting the pressured segments
+  vector<int> pi;
+  for(int i=0; i<poolIndex.size(); i++)
+  {
+    pi.push_back(edges[poolIndex[i]]->segment);
+  }
+  for(int i=0; i<presIndex.size(); i++)
+  {
+    pi.push_back(edges[presIndex[i]]->segment);
+  }
+
+  // there might be more
+  pi = unique(pi);
+
+  vector<int> sac2;
+  // clearing pressured segemnts from additionally closed segments
+  for(int i=0; i<sac.size(); i++)
+  {
+    bool ispres=false;
+    for(int j=0; j<pi.size(); j++)
+    {
+      if(sac[i] == pi[j])
       {
-        if(edges[j]->name == closedValves[i])
-        { 
-          for(int k=0; k<closedSegment.size(); k++)
-          {
-            if(edges[j]->getIntProperty("startSegment") == closedSegment[k] || edges[j]->getIntProperty("endSegment") == closedSegment[k])
-            {
-              closedValves[i] = "no";
-            }
-          }
+        ispres = true;
+      }
+    }
+    if(!ispres)
+    {
+      sac2.push_back(sac[i]);
+    }
+  }
+
+  vector<vector<int> > ss = segmenter(ev); // segments of new segment vector
+
+  // searching the segments that are not connecting to pressure source
+  for(int i=0; i<ss.size(); i++)
+  {
+    bool ispres = false;
+    for(int j=0; j<ss[i].size(); j++)
+    {
+      for(int k=0; k<pi.size(); k++)
+      {
+        if(ss[i][j] == pi[k])
+        {
+          ispres = true;
+        }
+      }
+    }
+    if(!ispres)
+    {
+      for(int j=0; j<ss[i].size(); j++)
+      {
+        sac2.push_back(ss[i][j]);
+      }
+    }
+  }
+
+  sac2 = unique(sac2);
+
+  // closing nodes and edges
+  for(int i=0; i<numberNodes; i++)
+  {
+    for(int j=0; j<sac2.size(); j++)
+    {
+      if(nodes[i]->segment == sac2[j])
+      {
+        nodes[i]->status = 0;
+        break;
+      }
+    }
+  }
+
+  for(int i=0; i<numberEdges; i++)
+  {
+    for(int j=0; j<sac2.size(); j++)
+    {
+      if(edges[i]->segment == sac2[j])
+      {
+        edges[i]->status = 0;
+        break;
+      }
+      if(edges[i]->typeCode == 9)
+      {
+        if(edges[i]->getIntProperty("startSegment") == sac2[j] || edges[i]->getIntProperty("endSegment") == sac2[j])
+        {
+          edges[i]->status = 0;
         }
       }
     }
   }
 
-  for(int i=0; i<closedValves.size(); i++)
-    if(closedValves[i] == "no")
-      closedValves.erase(closedValves.begin() + i);
-
-  return closedValves;
+  return sac2;
 }
 
 //--------------------------------------------------------------
-vector<int> Shutdown::closeDisconnectedParts(){
+vector<int> Shutdown::closeDisconnectedParts()
+{
   // build up edge vector that contains the isolation valves as well
   vector<int> edgeVectorWithValves;
+  vector<vector<int> > tmp(2);
   vector<int> pressurePrescribed;
   for(int i=0; i<edges.size(); i++)
   {
     if(edges[i]->status > 0)
     {
-      string type = edges[i]->type;
-      if(type != "PressurePoint" && type != "Pool")
+      int typeCode = edges[i]->typeCode;
+      if(typeCode != -1 && typeCode != -2)  // -2: pp, -1: pool
       {
         edgeVectorWithValves.push_back(edges[i]->startNodeIndex);
         edgeVectorWithValves.push_back(edges[i]->endNodeIndex);
@@ -151,7 +250,7 @@ vector<int> Shutdown::closeDisconnectedParts(){
   }
 
   // checking the integrity
-  vector<vector<int> > segmentVectorWithValves = segmenterWR(edgeVectorWithValves);
+  vector<vector<int> > segmentVectorWithValves = segmenter(edgeVectorWithValves);
 
   vector<int> closedSegment;
   // if we have more than one "part", checking which ones have pressure prescribed
@@ -177,7 +276,7 @@ vector<int> Shutdown::closeDisconnectedParts(){
     {
       if(!isPressurePrescribed[i])
       {
-        closedSegment.push_back(nodes[segmentVectorWithValves[i][0]]->getSegment());
+        closedSegment.push_back(nodes[segmentVectorWithValves[i][0]]->segment);
         for(int j=0; j<segmentVectorWithValves[i].size(); j++)
         {
           nodes[segmentVectorWithValves[i][j]]->status = 0;
@@ -198,16 +297,19 @@ vector<int> Shutdown::closeDisconnectedParts(){
 }
 
 //--------------------------------------------------------------
-// Building up the edge vector from pipes and pumps
-void Shutdown::updateEdgeVector(){
+// Building up the edge vector from pipes, pumps and valves (not ISO)
+void Shutdown::updateEdgeVector()
+{
+  // basic edge vector without ISO valves
   edgeVector.clear();
+  // full edge vector
   for(int i=0; i<edges.size(); i++)
   {
     if(edges[i]->status > 0)
     {
-      string type = edges[i]->type;
-      //if(edges[i]->type == "Pipe" || edges[i]->type == "Pump")
-      if(type != "PressurePoint" && type != "Pool" && type != "ValveISO")
+      int typeCode = edges[i]->typeCode;
+      // pressurepoint: -1 | pool: -2 | iso: 9
+      if(typeCode != -1 && typeCode != -2 && typeCode != 9)
       {
         edgeVector.push_back(edges[i]->startNodeIndex);
         edgeVector.push_back(edges[i]->endNodeIndex);
@@ -223,29 +325,99 @@ vector<int> Shutdown::findConnectionError(vector<int> connectingNodes)
   vector<int> rank(nodes.size());
   for(int i=0; i<edges.size(); i++)
   { 
-    string type = edges[i]->type;
-
-    if(type == "Pipe" || type == "Pump")
+    int typeCode = edges[i]->typeCode;
+    if(typeCode != -1 && typeCode != -2 && typeCode != 9) // -2: pool, -1: pp, 9: iso
     {
       rank[edges[i]->startNodeIndex]++;
       rank[edges[i]->endNodeIndex]++;
     }
-    if(type == "PressurePoint" || type == "Pool")
+    if(typeCode == -1 || typeCode == -2) // -2: pp, -1: pool
     { 
       rank[edges[i]->startNodeIndex]++;
     }
   }
 
-  for(int i=0; i<connectingNodes.size(); i++){
-    if(rank[connectingNodes[i]]!=2 && rank[connectingNodes[i]]!=0){
+  for(int i=0; i<connectingNodes.size(); i++)
+  {
+    if(rank[connectingNodes[i]]!=2 && rank[connectingNodes[i]]!=0)
+    {
       connectionErrors.push_back(connectingNodes[i]);
     }
   }
+
   if(connectionErrors.size()>0)
     cout << endl << "[*] Cleared connection nodes (with  rank): ";
-  for(int i=0; i<connectionErrors.size(); i++){
-    cout << nodes[connectionErrors[i]]->getName() << "(" << rank[connectionErrors[i]] << ")" << ", ";
+  for(int i=0; i<connectionErrors.size(); i++)
+  {
+    cout << nodes[connectionErrors[i]]->name << "(" << rank[connectionErrors[i]] << ")" << ", ";
   }
 
   return connectionErrors;
 }
+
+//--------------------------------------------------------------
+vector<int> Shutdown::calculateRank(const vector<int> &ev)
+{
+  vector<int> rank;
+  if(ev.size() != 0)
+  {
+    int max_ev = max(ev);
+    rank.resize(max_ev+1);
+    for(int i=0; i<ev.size(); i++)
+    {
+      rank[ev[i]]++;
+    }
+  }
+  else
+  {
+    rank.resize(1);
+    rank[0] = 0; 
+  }
+
+  return rank;
+}
+
+
+//--------------------------------------------------------------
+//vector<string> Shutdown::shutdownPlan(string pipeID)
+//{
+//  int idx = edgeIDtoIndex(pipeID);
+//
+//  vector<string> valvesIdx;
+//  if(idx == -1)
+//  {
+//    cout << endl << "Shutdown::shutdownPlan(pipeID) : pipeID (" << pipeID << ") not found" << endl;
+//  }
+//  else
+//  {
+//    int segment = edges[idx]->segment;
+//    valvesIdx = closeSegment(segment);
+//  }
+//
+//  return valves;
+//}
+// Clearing the inner isolation valves
+// this was for ShutdownPlan, shoud be updated
+/*for(int i=0; i<closedValves.size(); i++)
+{
+  for(int j=0; j<edges.size(); j++)
+  {
+    if(edges[j]->typeCode == 9) // 9: iso
+    {
+      if(edges[j]->name == closedValves[i])
+      { 
+        for(int k=0; k<closedSegment.size(); k++)
+        {
+          if(edges[j]->getIntProperty("startSegment") == closedSegment[k] || edges[j]->getIntProperty("endSegment") == closedSegment[k])
+          {
+            closedValves[i] = "no";
+          }
+        }
+      }
+    }
+  }
+}
+
+for(int i=0; i<closedValves.size(); i++)
+  if(closedValves[i] == "no")
+    closedValves.erase(closedValves.begin() + i);*/

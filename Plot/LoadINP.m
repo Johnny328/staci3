@@ -173,8 +173,8 @@ while(ischar(line))
           data = strsplit(line);
           data = data(data~=""); % clearing empty cells
           coordName(coordCounter) = string(data(1));
-          coordX(coordCounter) = str2double(data(2));
-          coordY(coordCounter) = -str2double(data(3));
+          coordX(coordCounter) = str2double(data(3));
+          coordY(coordCounter) = -str2double(data(2));
           line = fgetl(fileID);
       end
    end

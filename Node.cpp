@@ -33,26 +33,33 @@ double Node::function(const VectorXd &pq, bool isPressureDemand, VectorXd &fDer)
   {
     if(isPressureDemand) // if the demands are depending the nodal pressure
     {
-      if(pq(0)<pdMinPressure)
+      if(pq(0)>=pdDesiredPressure)
       {
-        out -= 0.0;
+        out -= demand;
+        consumption = demand;
+        consumptionPercent = 100.0;
         fDer(0) = 0.0;
       }
       else if(pq(0)<pdDesiredPressure && pq(0)>pdMinPressure)
       {
-        double cons = getConsumption(pq(0));
-        out -= cons;
-        fDer(0) = cons/(pdExponent*(pq(0)-pdMinPressure));
+        consumption = getConsumption(pq(0));
+        consumptionPercent = consumption / demand;
+        out -= consumption;
+        fDer(0) = -consumption/(pdExponent*(pq(0)-pdMinPressure));
       }
       else
       {
-        out -= demand;
+        out -= 0.0;
+        consumption = 0.0;
+        consumptionPercent = 0.0;
         fDer(0) = 0.0;
       }
     }
     else // for constant demands
     {
       out -= demand;
+      consumption = demand;
+      consumptionPercent = 100.0;
       fDer(0) = 0.0;
     }
 
@@ -71,6 +78,8 @@ double Node::function(const VectorXd &pq, bool isPressureDemand, VectorXd &fDer)
   else // if the node is NOT active
   {
     out = pq(0);
+    consumption = 0.0;
+    consumptionPercent = 0.0;
     fDer(0) = 1.0;
   }
   return out;
@@ -120,17 +129,21 @@ void Node::setProperty(string prop, double value)
 {
   if(prop == "demand")
     demand = value;
-  else if(prop == "consumption"){
+  else if(prop == "consumption")
+  {
     consumption = value;
     if(demand == 0.0)
       consumptionPercent = 0.0;
     else
       consumptionPercent = 100.*consumption/demand;
   }
-  else if(prop == "consumptionPercent"){
+  else if(prop == "consumptionPercent")
+  {
     consumptionPercent = value;
     consumption = consumptionPercent/100.*demand;
   }
+  else if(prop == "userOutput")
+    userOutput = value;
   else if(prop == "head")
     head = value;
   else if(prop == "density")
@@ -156,9 +169,21 @@ double Node::getProperty(string prop)
   if(prop == "demand")
     out = demand;
   else if(prop == "consumption")
-    out = consumption;
+  {
+    if(status == 1)
+      out = consumption;
+    else
+      out = 0.;
+  }
   else if(prop == "consumptionPercent")
-    out = consumptionPercent;
+  {
+    if(status == 1)
+      out = consumptionPercent;
+    else
+      out = 0.;
+  }
+  else if(prop == "userOutput")
+    out = userOutput;
   else if(prop == "pressure")
     out = head * density * 9.81;
   else if(prop == "head")
@@ -173,6 +198,8 @@ double Node::getProperty(string prop)
     out = yPosition;
   else if(prop == "segment")
     out = (double)segment;
+  else if(prop == "status")
+    out = (double)status;
   else
   {
     cout << endl << endl << "Node::getProperty() wrong argument:" << prop;

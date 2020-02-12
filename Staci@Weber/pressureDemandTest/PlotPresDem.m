@@ -1,29 +1,59 @@
 clear;
 
-pmin = 5;
-pdes = 15;
-m = 2.5;
+addpath('../../Plot');
+% blackBody, blackBodyExt, cividis, coolWarmBent, coolWarmSmooth, inferno, jet, kindlmann, 
+% kindlmannExt, magma, plasma, viridis
+colorMapName = 'grayscale'; 
+
+colorMap = importdata(['../../Plot/ColorMaps/',colorMapName,'.txt']);
+
+pmin = 15;
+pdes = 25;
+m = [1.5,2.0,2.5,3.,3.5];
 dreq = 1;
 
-p = 0:0.01:30;
+p = pmin:0.01:pdes;
 d = zeros(size(p));
 dd = zeros(size(p));
 
-for i=1:length(p)
-    if(p(i)<=pmin)
-          d(i) = 0;
-          dd(i) = 0;
-    elseif(p(i)>pmin && p(i)<pdes)
-          d(i) =  dreq*((p(i)-pmin)/(pdes-pmin))^(1/m);
-          dd(i) = dreq*(1/m)*((p(i)-pmin)/(pdes-pmin))^(1/m-1)/(pdes-pmin);
-    else
-          d(i) =  dreq;
-          dd(i) = 0;
+fig1 = figure;
+hold on; grid on;
+for j=1:length(m)
+    for i=1:length(p)
+        if(p(i)<=pmin)
+              d(i) = 0;
+              dd(i) = 0;
+        elseif(p(i)>pmin && p(i)<pdes)
+              d(i) =  dreq*((p(i)-pmin)/(pdes-pmin))^(1/m(j));
+              dd(i) = dreq*(1/m(j))*((p(i)-pmin)/(pdes-pmin))^(1/m(j)-1)/(pdes-pmin);
+        else
+              d(i) =  dreq;
+              dd(i) = 0;
+        end
     end
+    colr = min(1,max(0,interp1(colorMap(:,1),colorMap(:,2),(j-1)/size(m,2),'spline')));
+    colg = min(1,max(0,interp1(colorMap(:,1),colorMap(:,3),(j-1)/size(m,2),'spline')));
+    colb = min(1,max(0,interp1(colorMap(:,1),colorMap(:,4),(j-1)/size(m,2),'spline')));
+    
+    if(m(j) == 2.5)
+        lw = 2.5;
+        colr_width = colr;
+        colg_width = colg;
+        colb_width = colb;
+    else
+        lw = 1.1;
+    end
+    plot(p,d,'linewidth',lw,'color',[colr,colg,colb]);
 end
+plot([10,15],[0,0],'linewidth',lw,'color',[colr_width,colg_width,colb_width]);
+plot([25,30],[1,1],'linewidth',lw,'color',[colr_width,colg_width,colb_width]);
+xlabel('p [m]');
+ylabel('d/d_{des} [-]');
+xticks([pmin,pdes])
+xticklabels({'p_{min}','p_{des}'})
+lgstr = join([repmat("d=",length(m),1),num2str(m')]);
+legend(lgstr);
+saveas(fig1,'PresDemBlack.png','png');
+saveas(fig1,'PresDemBlack.fig','fig');
 
-figure;
-subplot(2,1,1);
-plot(p,d,'linewidth',1.6);
-subplot(2,1,2);
-plot(p,dd,'linewidth',1.6);
+

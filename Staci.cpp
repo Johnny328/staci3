@@ -16,6 +16,12 @@ Staci::Staci(string fileName)
   {
     loadSystem();
   }
+  else if(fileFormat == "spr") // Old STACI spr format
+  {
+    IOxml IOxmlObj(definitionFile.c_str());
+    IOxmlObj.loadSystem(nodes, edges);
+    frictionModel = "C-F";
+  }
   else
   {
     cout << endl << "Unkown file format: " << fileFormat << endl << "Available file formats are: inp" << endl;
@@ -34,8 +40,7 @@ Staci::Staci(string fileName)
 }
 
 //--------------------------------------------------------------
-Staci::~Staci() { 
-}
+Staci::~Staci(){}
 
 //--------------------------------------------------------------
 void Staci::buildSystem()
@@ -45,7 +50,8 @@ void Staci::buildSystem()
   int startNode = -1, endNode = -1;
 
   // Clearing the in/out going edges from nodes
-  for(int i=0; i<numberNodes; i++){
+  for(int i=0; i<numberNodes; i++)
+  {
     nodes[i]->edgeIn.clear();
     nodes[i]->edgeOut.clear();
   }
@@ -55,7 +61,7 @@ void Staci::buildSystem()
     startGotIt = false;
     j = 0;
     while((j < numberNodes) && (!startGotIt)){
-      if((edges[i]->getEdgeStringProperty("startNodeName")).compare(nodes[j]->getName()) == 0){
+      if((edges[i]->startNodeName).compare(nodes[j]->name) == 0){
         startGotIt = true;
         startNode = j;
         nodes[j]->edgeOut.push_back(i);
@@ -63,16 +69,16 @@ void Staci::buildSystem()
       j++;
     }
     if(!startGotIt){
-      cout << "\n!!! ERROR !!! Edge name: " << edges[i]->getEdgeStringProperty("name").c_str() << ", startnode not found !!!";
+      cout << "\n!!! ERROR !!! Edge name: " << edges[i]->name.c_str() << ", startnode not found !!!";
       cout << endl << "startNode: " << startNode << endl << "Exiting..." << endl;
       exit(-1);
     } 
 
-    if(edges[i]->getEdgeIntProperty("numberNode") == 2){
+    if(edges[i]->numberNode == 2){
       endGotIt = false;
       j = 0;
       while ((j < numberNodes) && (!endGotIt)) {
-        if ((edges[i]->getEdgeStringProperty("endNodeName")).compare(nodes[j]->getName()) == 0) {
+        if ((edges[i]->endNodeName).compare(nodes[j]->name) == 0) {
           endGotIt = true;
           endNode = j;
           nodes[j]->edgeIn.push_back(i);
@@ -80,7 +86,7 @@ void Staci::buildSystem()
         j++;
       }
       if(!endGotIt) {
-        cout << "\n!!! ERROR !!! Edge name: " << edges[i]->getEdgeStringProperty("name").c_str() << ", startnode not found !!!";
+        cout << "\n!!! ERROR !!! Edge name: " << edges[i]->name.c_str() << ", startnode not found !!!";
         cout << endl << "startNode: " << startNode << endl << "Exiting..." << endl;
         exit(-1);
       }
@@ -162,7 +168,7 @@ void Staci::listSystem()
 
 
 //--------------------------------------------------------------
-vector<int> Staci::ID2Index(const vector<string> &id){
+/*vector<int> Staci::ID2Index(const vector<string> &id){
   int n_id = id.size();
   bool gotIt = false;
   vector<int> idx(n_id);
@@ -170,7 +176,7 @@ vector<int> Staci::ID2Index(const vector<string> &id){
     int i=0;
     gotIt = false;
     while(!gotIt && i<numberNodes){
-      if(id[j] == nodes[i]->getName()){
+      if(id[j] == nodes[i]->name){
         idx[j] = i;
         gotIt = true;
       }
@@ -180,7 +186,7 @@ vector<int> Staci::ID2Index(const vector<string> &id){
       cout << "\n!!!WARNING!!!\nStaci:ID2Indicies function\nNode is not existing, id: " << id[j] << endl << "Continouing..." << endl;
   }
   return idx;
-}
+}*/
 
 //--------------------------------------------------------------
 void Staci::checkSystem()
@@ -205,7 +211,7 @@ void Staci::checkSystem()
     }
 
     for(int j = 0; j < numberNodes; j++){
-      name2 = nodes.at(j)->getName();
+      name2 = nodes.at(j)->name;
       if(i != j){
         if(name1 == name2){
           cout << "\n !!!ERROR!!! edge #" << i << ": " << name1 << " and node #" << j << ": " << name2 << " with same ID!" << endl;
@@ -224,7 +230,7 @@ void Staci::checkSystem()
 //--------------------------------------------------------------
 void Staci::saveResult(string property, string element)
 {
-  vector<string> allElement{"All","Node","Pipe","Pump","PressurePoint","Pool"};
+  vector<string> allElement{"All","Node","Pipe","Pump","PressurePoint","Pool","Valve"};
 
   bool elementExist = false;
   int i=0;
@@ -236,22 +242,24 @@ void Staci::saveResult(string property, string element)
   }
 
   if(elementExist)
-  { 
-    mkdir(caseName.c_str(),0777);
+  {
+    mkdir("Network Data",0777);
+    mkdir(("Network Data/" + caseName).c_str(),0777);
     if(element == "All")
     {
-      remove((caseName + "/Node.txt").c_str());
-      remove((caseName + "/Pipe.txt").c_str());
-      remove((caseName + "/Pump.txt").c_str());
-      remove((caseName + "/Pool.txt").c_str());
-      remove((caseName + "/Pres.txt").c_str());
+      remove(("/Network Data/" + caseName + "/Node.txt").c_str());
+      remove(("/Network Data/" + caseName + "/Pipe.txt").c_str());
+      remove(("/Network Data/" + caseName + "/Pump.txt").c_str());
+      remove(("/Network Data/" + caseName + "/Pool.txt").c_str());
+      remove(("/Network Data/" + caseName + "/Pres.txt").c_str());
+      remove(("/Network Data/" + caseName + "/Valve.txt").c_str());
     }
 
     ofstream wfile;
     if(element == "Node" || element == "All")
     { 
-      remove((caseName + "/Node.txt").c_str());
-      wfile.open(caseName + "/Node.txt");
+      remove(("Network Data/" + caseName + "/Node.txt").c_str());
+      wfile.open("Network Data/" + caseName + "/Node.txt");
       for(int i=0; i<numberNodes; i++)
         wfile << nodes[i]->getProperty(property) << endl;
       wfile.close();
@@ -259,10 +267,12 @@ void Staci::saveResult(string property, string element)
 
     if(element == "Pipe" || element == "All")
     { 
-      remove((caseName + "/Pipe.txt").c_str());
-      wfile.open(caseName + "/Pipe.txt");
-      for(int i=0; i<numberEdges; i++){
-        if(edges[i]->type == "Pipe"){
+      remove(("Network Data/" + caseName + "/Pipe.txt").c_str());
+      wfile.open("Network Data/" + caseName + "/Pipe.txt");
+      for(int i=0; i<numberEdges; i++)
+      {
+        if(edges[i]->typeCode == 0 || edges[i]->typeCode == 1) // Pipe or PipeCV
+        {
           wfile << edges[i]->getDoubleProperty(property) << endl;
         }
       }
@@ -271,10 +281,25 @@ void Staci::saveResult(string property, string element)
 
     if(element == "Pump" || element == "All")
     {
-      remove((caseName + "/Pump.txt").c_str());
-      wfile.open(caseName + "/Pump.txt");
-      for(int i=0; i<numberEdges; i++){
-        if(edges[i]->type == "Pump"){
+      remove(("Network Data/" + caseName + "/Pump.txt").c_str());
+      wfile.open("Network Data/" + caseName + "/Pump.txt");
+      for(int i=0; i<numberEdges; i++)
+      {
+        if(edges[i]->typeCode == 2) // Pump
+        {
+          wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
+        }
+      }  wfile.close();
+    }
+
+    if(element == "Valve" || element == "All")
+    {
+      remove(("Network Data/" + caseName + "/Valve.txt").c_str());
+      wfile.open("Network Data/" + caseName + "/Valve.txt");
+      for(int i=0; i<numberEdges; i++)
+      {
+        if(edges[i]->typeCode == 9) // ValveISO TODO more valve type
+        {
           wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
         }
       }  wfile.close();
@@ -282,10 +307,12 @@ void Staci::saveResult(string property, string element)
 
     if(element == "PressurePoint" || element == "All")
     {
-      remove((caseName + "/Pres.txt").c_str());
-      wfile.open(caseName + "/Pres.txt");
-      for(int i=0; i<numberEdges; i++){
-        if(edges[i]->type == "PressurePoint"){
+      remove(("Network Data/" + caseName + "/Pres.txt").c_str());
+      wfile.open("Network Data/" + caseName + "/Pres.txt");
+      for(int i=0; i<numberEdges; i++)
+      {
+        if(edges[i]->typeCode == -2)
+        {
           wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
         }
       }
@@ -294,10 +321,12 @@ void Staci::saveResult(string property, string element)
 
     if(element == "Pool" || element == "All")
     { 
-      remove((caseName + "/Pool.txt").c_str());
-      wfile.open(caseName + "/Pool.txt");
-      for(int i=0; i<numberEdges; i++){
-        if(edges[i]->type == "Pool"){
+      remove(("Network Data/" + caseName + "/Pool.txt").c_str());
+      wfile.open("Network Data/" + caseName + "/Pool.txt");
+      for(int i=0; i<numberEdges; i++)
+      {
+        if(edges[i]->typeCode == -1)
+        {
           wfile << edges[i]->getEdgeDoubleProperty(property) << endl;
         }
       }

@@ -79,26 +79,6 @@ public:
   vector<string> vectorPatternID;
   vector<int> vectorPatternIndex;
 
-  //========================
-  //GETSETGETSETGETSETGETSET
-  //========================
-  string getName()
-  {
-    return name;
-  }
-  void setName(string a)
-  {
-    name = a;
-  }
-  int getSegment()
-  {
-    return segment;
-  }
-  void setSegment(int a)
-  {
-    segment = a;
-  }
-
   string name;
   double head;
   double density;
@@ -106,9 +86,13 @@ public:
   double geodeticHeight;
   double demand; // independent from pressure, however it can be varying in time
   //double valveFlow = 0.0; // Storing the active inflow from controlled valves;
+  int segment=-1; // the node takes place in which segment
+  double pdExponent = 2.5, pdDesiredPressure = 25., pdMinPressure = 10.; // in case of pressure dependent consumptions
+  double userOutput;
+
+private:
   double consumption = 0.0; // in case of presure dependent demands consumption can be smaller than demand
   double consumptionPercent = 0.0; // consumption/demand*100 [%]
-  int segment=-1; // the node takes place in which segment
-  double pdExponent = 2., pdDesiredPressure = 25., pdMinPressure = 10.; // in case of pressure dependent consumptions
+  
 };
 #endif

@@ -27,10 +27,21 @@ public:
 	~SVDCalibration();
 
 	/*! WR: Calibration technique using SVD
-	*  fric_est:		starting point of the calibration
-	*  tol:				NEW: tol determine the part of trace that will be counted || OLD: if tol>0, under tol every singular value will be 0; but if tol<0, the cut is under the largest singular value diveded with (-tol)
-	*  return:     0: no convergence, 1: full convergence (errorPressure~0), 2: local convergence (d(errorPressure)>0)*/
-	int calibrate(const vector<double> &fric_est, double tol);
+	*  return:     0: no convergence, 1: full convergence (errorPressure~0), 2: local convergence*/
+	int calibrate();
+
+  /// indicies of the measurement that were actually used for SVD calibration
+  vector<int> measuredUsedIndex;
+  vector<double> measuredUsedTime;
+  /// every queue-th measurement is used
+  int numberMeasuredUsed;
+
+  /// parameters of the iteration
+  int iterMax = 1e2; // max iteration number
+  double SVDTolerance = 0.9; // how much part of singular values will be used
+  double errorPressureStop = 1e-2; // if max eP change is smaller than this will cause iteration stop
+  double dlambdaStop = 1e-2; // if max dlambda change is smaller than this will cause iteration stop
+  double maxChange = 10.; // max change allowed in dlambda, above that will rescale vector
 
 	/*! WR: Singular value decomposition using Eigen
 	*  A:    matrix for SVD
@@ -43,37 +54,11 @@ public:
   *return:  Pseudoinverse matrix*/
   MatrixXd pinvSVD(const MatrixXd &U, const MatrixXd &S, const MatrixXd &V);
 
-  /*! WR: Determines the rank (i.e. linearly independent vectors ) of a matrix using SVD (see Numerical Recipes)
-  *S:       S matrix coming from eigenSVD()
-  *return:  rank of the matrix*/
-  int rankSVD(const MatrixXd &S);
-
-	/*! WR: Determinant (i.e. product of non-zero eigen values) of a matrix
-  *S:       coming from eigenSVD()
-  *return:  det of the matrix*/
-  double detSVD(const MatrixXd &S);
-
-  /*! WR: Trace (i.e. sum of the eigen values) of a matrix
-  *S:       coming from eigenSVD()
-  *return:  det of the matrix*/
-  double traceSVD(const MatrixXd &S);
-
-  //========================
-  //GETSETGETSETGETSETGETSET
-  //========================
-  void setDebugLevelSVD(int a)
-  {
-    debugLevelSVD = a;
-  }
-
-private:
-		/*! WR: Building up the reduced sensitivity matrix for SVDCalibrate
-	*  calculatedPressure:		giving back the calculated pressures for SVDCalibrate
-	*	return:		reduced sensitivity matrix*/
-  MatrixXd constructSensitivity(const vector<double> &fric, MatrixXd &calculatedPressure);
-
   /// Debugging the SVDCalibration class
-  int debugLevelSVD;
+  int printLevelSVD = 0;
+
+  /// struct to control the series sensitivity calculation, see SeriesHydraulis.h
+  ssc seriesSensitivityControl;
 };
 
 #endif

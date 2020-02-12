@@ -19,6 +19,7 @@
 #include "BasicFileIO.h"
 #include "Edge.h"
 #include "Graph.h"
+#include "IOxml.h"
 #include "Node.h"
 #include "Pipe.h"
 #include "PressurePoint.h"
@@ -42,7 +43,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
-#include <sys/stat.h> //mkdir
+#include <sys/stat.h> // mkdir
 
 using namespace Eigen;
 
@@ -60,20 +61,6 @@ public:
 
   // indicies vector for edge types, avoiding the for cycles
   // e.g. poolIndex contains the indicies of the pools in the edges list
-  /* typeCode values for edges
-  -2: pool
-  -1: pressure point
-  0:  pipe with check valve
-  1:  normal pipe
-  2:  pump
-  3:  pressure reduction valve (PRV)
-  4:  pressure sustaining valve (PSV)
-  5:  pressure breaker valve (PBV)
-  6:  flow control valve (FCV)
-  7:  throttle control valve (TCV)
-  8:  general purpose valve (GPV)
-  9:  isolation valve (ISO)
-  */
   vector<int> poolIndex, presIndex, pumpIndex, valveIndex, valveISOIndex, pipeIndex, pipeCVIndex;
 
   // Prints everything 

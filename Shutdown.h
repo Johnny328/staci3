@@ -23,9 +23,11 @@ public:
 	Shutdown(string spr_filename);
 	~Shutdown();
 	void buildSegmentGraph();
-	vector<int> closeDisconnectedParts(); // gives back closed segments
-	vector<string> shutdownPlan(string pipeID);	// gives back id of closed valves i.e. shutdownplan
-	vector<string> closeSegment(int segmentToClose); // gives back id of closed valves i.e. shutdownplan
+	vector<int> closeDisconnectedParts(); // output: additionally closed segment indecies
+	vector<int> closeDisconnectedSegments(int segmentToClose); // output: additionally closed segment indecies
+	//vector<string> shutdownPlan(string pipeID);	
+	vector<int> closeSegment(int segmentToClose); // output: additionally closed segment indecies
+	void openEverything(); // setting every status to 1
 	vector<int> getEdgeVector()
 	{
 		return edgeVector;
@@ -47,10 +49,12 @@ private:
 	vector<int> edgeVector; // edge vector of the original network
 	vector<int> segmentEdgeVector; // edge vector of the segment graph
 	vector<vector<int> > segmentVector; // contains the original node indicies of pipes
+	vector<int> segmentRank; // rank of each segment
 	int numberSegment;
 
 	void updateEdgeVector();
 	vector<int> findConnectionError(vector<int> connectingNodes);
+	vector<int> calculateRank(const vector<int> &ev);
 };
 
 #endif

@@ -31,6 +31,9 @@ public:
 	/// Fills up the unknown variables pressure, velovity
 	bool solveSystem();
 
+  /// Building up the Jacobian matrix (also calculating the function f(x)) before the Newtonian iteration
+  void buildJacobian();
+
 	/*! Giving initial values for unknows (i.e. x vector)
 			If isInitialization (found in Staci class) variable is false
 			pressureInitial and massFlowInitial will be used, if it is true,
@@ -69,8 +72,6 @@ protected:
   /// numeric tolerance for status updates
   double volumeFlowRateTolerance, headTolerance;
 
-  /// Building up the Jacobian matrix (also calculating the function f(x)) before the Newtonian iteration
-  void buildJacobian();
   // Eigen vectors for the solver
   VectorXd x, f;
   

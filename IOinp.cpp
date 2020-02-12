@@ -160,6 +160,11 @@ void Staci::loadSystem()
 						l.push_back(stod(sv[3],0));
 						D.push_back(stod(sv[4],0));
 						roughness.push_back(stod(sv[5],0));
+						if(roughness.back()<0.)
+						{
+							cout << endl << " !ERROR! Negative roughness values\n Definition file: " << definitionFile << "\n Pipe name: " << pipe_name.back() << endl; 
+							exit(-1);
+						}
 						if(sv.size() > 7)
 							pipe_status.push_back(sv[7]);
 						else
@@ -350,7 +355,7 @@ void Staci::loadSystem()
 									friction_model = 2;
 								else
 								{
-									cout << endl << " !ERROR! Friction model is unknown: " << sv[1] << "\n Available options: H-W, D-W, C-F\n Exiting..." << endl;
+									cout << endl << " !ERROR! Friction model is unknown: " << sv[1] << "\n Available options: H-W, C-F\n Case name: " << definitionFile << "\n Exiting..." << endl;
 									exit(-1);
 								}
 							}
@@ -557,7 +562,7 @@ void Staci::loadSystem()
   }
   else if(flow_unit == "CMH")
   {
-  	demandUnit = 0.001/3.6;
+  	demandUnit = 1./3600.;
   	headUnit = 1.;
   	unit = "SI";
   }
@@ -769,7 +774,7 @@ void Staci::saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string fric
     if(edges[i]->getEdgeStringProperty("type") == "PressurePoint"){
       int idx=-1;
       for(int j=0; j<nodes.size(); j++)
-        if(nodes[j]->getName()==edges[i]->getEdgeStringProperty("startNodeName"))
+        if(nodes[j]->name==edges[i]->getEdgeStringProperty("startNodeName"))
           idx = j;
 
     edges[i]->setDoubleProperty("head", (edges[i]->getDoubleProperty("head") + nodes[idx]->getProperty("height"))); // meter to Pascal minus elevation
@@ -792,19 +797,19 @@ void Staci::saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string fric
       string type = edges[j]->getEdgeStringProperty("type");
       if(type == "PressurePoint" || type == "Pool")
       {
-        if(nodes[i]->getName() == edges[j]->getEdgeStringProperty("startNodeName"))
+        if(nodes[i]->name == edges[j]->getEdgeStringProperty("startNodeName"))
         {
           isRealNode[i] = false;
           if(nodes[i]->getProperty("demand") != 0)
-            cout << "!WARNING! Pressure point " << nodes[i]->getName() << " DOES have non-zero demand " << nodes[i]->getProperty("demand") << endl;
-          string node_name = nodes[i]->getName();
-          nodes[i]->setName(edges[j]->getEdgeStringProperty("name"));
+            cout << "!WARNING! Pressure point " << nodes[i]->name << " DOES have non-zero demand " << nodes[i]->getProperty("demand") << endl;
+          string node_name = nodes[i]->name;
+          nodes[i]->name = edges[j]->getEdgeStringProperty("name");
           for(int k=0; k<edges.size(); k++)
           {
             if(node_name == edges[k]->getEdgeStringProperty("startNodeName"))
-              edges[k]->setEdgeStringProperty("startNodeName",nodes[i]->getName());
+              edges[k]->setEdgeStringProperty("startNodeName",nodes[i]->name);
             if(node_name == edges[k]->getEdgeStringProperty("endNodeName"))
-              edges[k]->setEdgeStringProperty("endNodeName",nodes[i]->getName());
+              edges[k]->setEdgeStringProperty("endNodeName",nodes[i]->name);
           }
         }
       }
@@ -816,7 +821,7 @@ void Staci::saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string fric
   fprintf(wfile, ";ID              \tElev        \tDemand      \tPattern         \n");
   for(int i=0; i<nodes.size(); i++){
     if(isRealNode[i])
-    	fprintf(wfile, " %-16s\t%-12.4f\t%-12.6f\t%-16s\t;\n", nodes[i]->getName().c_str(),nodes[i]->getProperty("geodeticHeight"),1000.*nodes[i]->getProperty("demand"),"");
+    	fprintf(wfile, " %-16s\t%-12.4f\t%-12.6f\t%-16s\t;\n", nodes[i]->name.c_str(),nodes[i]->getProperty("geodeticHeight"),1000.*nodes[i]->getProperty("demand"),"");
   }
 
   fprintf(wfile, "\n[RESERVOIRS]\n");
@@ -938,7 +943,7 @@ void Staci::saveSystem(vector<Node *> &nodes, vector<Edge *> &edges, string fric
   fprintf(wfile, "\n[COORDINATES]\n");
   fprintf(wfile, ";Node           \tX-Coord         \tY-Coord\n");
   for(int i=0; i<nodes.size(); i++){
-    fprintf(wfile, " %-16s\t%-16.4f\t%-16.4f\n", nodes[i]->getName().c_str(), nodes[i]->getProperty("xPosition"), nodes[i]->getProperty("yPosition"));
+    fprintf(wfile, " %-16s\t%-16.4f\t%-16.4f\n", nodes[i]->name.c_str(), nodes[i]->getProperty("xPosition"), nodes[i]->getProperty("yPosition"));
   }
 
   fprintf(wfile, "\n[VERTICES]\n");

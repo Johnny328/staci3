@@ -8,6 +8,7 @@ Pool::Pool(const string a_name, const string a_startNodeName, const double a_den
     endNodeName = "<none>";
     bottomLevel = a_bottomLevel;
     waterLevel = a_waterLevel;
+    initLevel = a_waterLevel;
     status = 1;
     typeCode = -1;
 }
@@ -48,35 +49,9 @@ double Pool::function(const VectorXd &ppq, VectorXd &fDer)
   return out;
 }
 
-/*
-double Pool::function(vector<double> x){ // x = [Pstart, Pend, MassFlowRate]
-  if(status == 1) // open
-    return x[0] + startHeight - (bottomLevel + waterLevel);
-  else // closed
-    return x[2];
-}*/
-
-/*//--------------------------------------------------------------
-vector<double> Pool::functionDerivative(vector<double> x){
-  vector<double> out;
-  if(status == 1) // open
-  {
-    out.push_back(1.0);
-    out.push_back(0.0);
-    out.push_back(0.0);
-  }
-  else // closed
-  {
-    out.push_back(0.0);
-    out.push_back(0.0);
-    out.push_back(1.0);
-  }
-
-  return out;
-}*/
-
 //--------------------------------------------------------------
-void Pool::initialization(int mode, double value) {
+void Pool::initialization(int mode, double value)
+{
   if (mode == 0)
     volumeFlowRate = 1;
   else
@@ -84,7 +59,8 @@ void Pool::initialization(int mode, double value) {
 }
 
 //--------------------------------------------------------------
-double Pool::getDoubleProperty(string prop){
+double Pool::getDoubleProperty(string prop)
+{
   double out = 0.;
   if(prop == "waterLevel")
     out = waterLevel;
@@ -94,6 +70,8 @@ double Pool::getDoubleProperty(string prop){
     out = minLevel;
   else if(prop == "maxLevel")
     out = maxLevel;
+  else if(prop == "initLevel")
+    out = initLevel;
   else if(prop == "head")
     out = (bottomLevel + waterLevel);
   else if(prop == "pressure")
@@ -117,7 +95,8 @@ double Pool::getDoubleProperty(string prop){
 }
 
 //--------------------------------------------------------------
-void Pool::setDoubleProperty(string prop, double value){
+void Pool::setDoubleProperty(string prop, double value)
+{
   if(prop == "waterLevel")
     waterLevel = value;
   else if(prop == "bottomLevel")
@@ -126,6 +105,8 @@ void Pool::setDoubleProperty(string prop, double value){
     minLevel = value;
   else if(prop == "maxLevel")
     maxLevel = value;
+  else if(prop == "initLevel")
+    initLevel = value;
   else if(prop == "volumeFlowRate")
     volumeFlowRate = value;
   else if(prop == "density")

@@ -1,0 +1,96 @@
+[TITLE]
+Converted from Epanet to Staci, case name: grid_4.spr
+
+
+[JUNCTIONS]
+;ID              	Elev        	Demand      	Pattern         
+ node_1          	1.0000      	154.320988    	                	;
+ node_2          	1.0000      	154.320988  	                	;
+ node_3          	1.0000      	154.320988  	                	;
+
+[RESERVOIRS]
+;ID              	Head        	Pattern         
+ pres_0          	51.9684     	                
+
+[TANKS]
+;ID             	Elevation   	InitLevel   	MinLevel    	MaxLevel    	Diameter    	MinVol      	VolCurve
+
+[PIPES]
+;ID             	Node1           	Node2           	Length      	Diameter    	Roughness   	MinorLoss   	Status
+ pipe_0          	pres_0          	node_1          	10.0000     	200.0000    	120     	0.0000      	Open  ;
+ pipe_1          	node_2          	node_3          	10.0000     	200.0000    	120     	0.0000      	Open  ;
+ pipe_2          	pres_0          	node_2          	10.0000     	200.0000    	120     	0.0000      	Open  ;
+ pipe_3          	node_1          	node_3          	10.0000     	200.0000    	120     	0.0000      	Open  ;
+
+[PUMPS]
+;ID             	Node1           	Node2           	Parameters
+
+[VALVES]
+;ID             	Node1           	Node2           	Diameter    	Type	Setting     	MinorLoss   
+
+[TAGS]
+
+[DEMANDS]
+;Junction       	Demand      	Pattern         	Category
+
+[STATUS]
+;ID              	Status/Setting
+
+[PATTERNS]
+;ID             	Multipliers
+
+[CURVES]
+;ID             	X-Value     	Y-Value
+
+[CONTROLS]
+
+[RULES]
+
+[ENERGY]
+
+[EMITTERS]
+
+[QUALITY]
+
+[SOURCES]
+
+[REACTIONS]
+
+[MIXING]
+
+[TIMES]
+
+[REPORT]
+
+[OPTIONS]
+ Units              	LPS
+ Headloss           	H-W
+ Specific Gravity   	1.0
+ Viscosity          	1.0
+ Trials             	40
+ Accuracy           	0.001
+ CHECKFREQ          	2
+ MAXCHECK           	10
+ DAMPLIMIT          	0
+ Unbalanced         	Continue 10
+ Pattern            	1
+ Demand Multiplier  	1.0
+ Emitter Exponent   	0.5
+ Quality            	Chlorine mg/L
+ Diffusivity        	1.0
+ Tolerance          	0.01
+
+[COORDINATES]
+;Node           	X-Coord         	Y-Coord
+ pres_0          	10.0000         	10.0000         
+ node_1          	10.0000         	730.0000        
+ node_2          	730.0000        	10.0000         
+ node_3          	730.0000        	730.0000        
+
+[VERTICES]
+
+[LABELS]
+
+[BACKDROP]
+
+[END]
