@@ -13,7 +13,7 @@ idx = 1:27;
 
 %blackBody, blackBodyExt, cividis, coolWarmBent, coolWarmSmooth, inferno, jet, kindlmann, kindlmannExt, magma, plasma, viridis
 %discrete: lines, prism
-colorMapName = 'grayscale'; 
+colorMapName = 'plasma'; 
 
 colorMap = importdata(['../../Plot/ColorMaps/',colorMapName,'.txt']);
 
@@ -84,8 +84,8 @@ ylim([1e-1,1e8])
 ColumnLegend(2,num2str(idx(:)));
 % ColumnLegend(3,cases(idx),'location','southwest_sf');
 rectangle('Position',[2.8e-3 3.0e3 8e-2 6.5e7],'FaceColor',[1 1 1])
-saveas(gca,'Plots/GammaDensityBlack.fig','fig');
-saveas(gca,'Plots/GammaDensityBlack.png','png');
+% saveas(gca,'Plots/GammaDensityBlack.fig','fig');
+% saveas(gca,'Plots/GammaDensityBlack.png','png');
 
 
 % % CREATING THE OVERALL DENSITY FUNCTION

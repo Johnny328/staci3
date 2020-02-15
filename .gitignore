@@ -272,3 +272,5 @@ Networks/Basic/linearTCV.inp
 Networks/Basic/linear_3Calib2.inp
 Networks/Basic/linear_3Calib.inp
 Staci@Weber/expectedShutdownEffect/tomalom.pdf
+*.o
+*.d

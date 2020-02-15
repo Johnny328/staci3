@@ -63,10 +63,12 @@ cases = cases(idx);
 
 nSeg = M1(:,4);
 nISO = M1(:,5);
+nNodes = M1(:,6);
 n1n3p = M1(:,7);
 L1L3p = M1(:,8);
 V1V3p = M1(:,9);
 gamma = M1(:,13);
+lPipes = M1(:,14);
 apl = M1(:,16);
 diam = M1(:,17);
 cc = M1(:,18);
